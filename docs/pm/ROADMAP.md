@@ -36,24 +36,33 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 | 版本 | 目标 | 关键特性 | 预期 |
 |------|------|----------|------|
 | **v0.1 MVP (M1)** | 自用论文日报端到端 | arXiv + HF Papers / 最简 rewriter / TL;DR / 邮件 / Django CLI | 2026-05 |
-| **v0.2 (M2)** | 渠道 + 源扩展 | HF Models / GitHub (trending/topic/org) / 飞书 / 深度解读 / HTTP 触发 | 2026-06 |
-| **v0.3 (M3)** | 智能化 | rewriter 增强（按 source 定制）/ embedding 相关性排序 / 代码组分组 | 2026-07 |
+| **v0.2 (M2)** | 注意力分层 | 综合分 rerank / 精读+略读分档 / 视角注入 / Daily Narrative | 2026-05 |
+| **v0.3 (M3)** | 精读深度化 | arXiv PDF 拉取 / 图表提取+分类+多模态解读 / 精读档框架图 | 2026-05/06 |
+| **v0.4 (M3.5)** | 时间线与回溯 | HF 历史回填 / Postgres 落库 / 月报+半年报 / 热度信号多源 | 2026-06/07 |
+| **v0.5 (M3.7)** | 渠道与源扩展（原 v0.2 内容延后） | HF Models / GitHub / 飞书 / HTTP 触发 | 2026-07 |
 | **v1.0 (M4)** | 产品化基线 | 多用户 / Web 配置面板（React+Vite）/ 用量计费骨架 | 2026-09 |
 | **v1.x (M5+)** | 扩展方向 | xingsuo 作为 source / 商业动态信源 / 公众号知乎半自动发文 | 待评估 |
 
 ## Features 索引
 
 - [ft-001](features/ft-001.md) — 订阅配置 schema（interests + sources + delivery）
-- [ft-002](features/ft-002.md) — Interest Rewriter（最简 LLM 翻译）
-- [ft-003](features/ft-003.md) — Source: arXiv
-- [ft-004](features/ft-004.md) — Source: HF Papers
+- [ft-002](features/ft-002.md) — Interest Rewriter（最简 LLM 翻译）✅
+- [ft-003](features/ft-003.md) — Source: arXiv ✅
+- [ft-004](features/ft-004.md) — Source: HF Papers ✅
 - [ft-005](features/ft-005.md) — 推送去重 & 运行历史
-- [ft-006](features/ft-006.md) — LLM TL;DR 解读
-- [ft-007](features/ft-007.md) — Email 渲染与投递 + Django CLI
+- [ft-006](features/ft-006.md) — LLM TL;DR 解读 ✅
+- [ft-007](features/ft-007.md) — Email 渲染与投递 + Django CLI ✅
+- [ft-008](features/ft-008.md) — 综合分 rerank + 自适应 Top-N（iter-002）
+- [ft-009](features/ft-009.md) — 精读/略读分档渲染 + 视角注入（iter-002）
+- [ft-010](features/ft-010.md) — Daily Narrative 跨篇合成（iter-002）
+- [ft-011](features/ft-011.md) — arXiv PDF 拉取 + 章节拆分（iter-003）
+- [ft-012](features/ft-012.md) — 图表提取 + LLM 分类 + 多模态解读（iter-003）
 
 ## 当前迭代
 
-- [iter-001](iterations/iter-001.md) — MVP Sprint 1
+- [iter-001](iterations/iter-001.md) — MVP Sprint 1（ft-002/003/004/006/007 已完成；ft-001/005 DB 落库延后）
+- [iter-002](iterations/iter-002.md) — Sprint 2：注意力分层（ft-008/009/010）**← next**
+- [iter-003](iterations/iter-003.md) — Sprint 3：精读深度化（ft-011/012）
 
 ## 未决议题
 

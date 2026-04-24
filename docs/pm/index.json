@@ -11,6 +11,11 @@
     {"id": "ft-004", "title": "Source: HF Papers", "status": "done", "milestone": "v0.1"},
     {"id": "ft-005", "title": "推送去重 & 运行历史", "status": "planned", "milestone": "v0.1"},
     {"id": "ft-006", "title": "LLM TL;DR 解读", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-007", "title": "Email 渲染与投递 + CLI", "status": "done", "milestone": "v0.1"}
+    {"id": "ft-007", "title": "Email 渲染与投递 + CLI", "status": "done", "milestone": "v0.1"},
+    {"id": "ft-008", "title": "综合分 rerank + 自适应 Top-N", "status": "planned", "milestone": "v0.2"},
+    {"id": "ft-009", "title": "精读/略读分档渲染 + 视角注入", "status": "planned", "milestone": "v0.2"},
+    {"id": "ft-010", "title": "Daily Narrative 跨篇合成", "status": "planned", "milestone": "v0.2"},
+    {"id": "ft-011", "title": "arXiv PDF 拉取 + 章节拆分", "status": "planned", "milestone": "v0.3"},
+    {"id": "ft-012", "title": "图表提取 + LLM 分类 + 多模态解读", "status": "planned", "milestone": "v0.3"}
   ]
 }
