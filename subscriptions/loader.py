@@ -8,6 +8,12 @@ import yaml
 
 
 @dataclass(slots=True)
+class PerspectiveSpec:
+    preset: str = ""   # researcher | engineer | pm | student
+    custom: str = ""   # 自由文本，优先级高于 preset
+
+
+@dataclass(slots=True)
 class SourceSpec:
     key: str
     params: dict = field(default_factory=dict)
@@ -29,6 +35,7 @@ class SubscriptionSpec:
     exclude: list[str] = field(default_factory=list)
     sources: list[SourceSpec] = field(default_factory=list)
     deliveries: list[DeliverySpec] = field(default_factory=list)
+    perspective: PerspectiveSpec = field(default_factory=PerspectiveSpec)
     enabled: bool = True
 
 
@@ -36,6 +43,7 @@ def load(path: str | Path) -> list[SubscriptionSpec]:
     data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     subs: list[SubscriptionSpec] = []
     for raw in data.get("subscriptions") or []:
+        persp = raw.get("perspective") or {}
         subs.append(SubscriptionSpec(
             name=raw["name"],
             enabled=raw.get("enabled", True),
@@ -50,6 +58,10 @@ def load(path: str | Path) -> list[SubscriptionSpec]:
                 schedule=d.get("schedule", ""),
                 max_items=int(d.get("max_items", 15)),
             ) for d in (raw.get("deliveries") or [])],
+            perspective=PerspectiveSpec(
+                preset=str(persp.get("preset") or ""),
+                custom=str(persp.get("custom") or ""),
+            ),
         ))
     return subs
 

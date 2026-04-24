@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### 2026-04-25 (later) — iter-002 Sprint 2 完成
+- **ft-008** 综合分 rerank：embedding (text-embedding-v3) 余弦相关性 + HF upvotes 热度，
+  权重 0.3/0.7；自适应分档（≥0.75 为 deep，保底 1，上限 3）。
+- **ft-009** 分档渲染 + 视角注入：
+  - interpret/interpretation.py：skim（LLM 一句话 + 关键词，视角前缀）
+    + deep（iter-002 仅透传 abstract + 占位符）
+  - 4 个内置视角 preset（researcher / engineer / pm / student），custom 优先
+  - email_renderer 重写：narrative 块 + 精读卡 + 略读卡 + 索引编号
+- **ft-010** Daily Narrative：LLM 读全部 skim 产 hero_sentence + bullets + note_for_you，
+  失败降级不渲染。
+- 实战：video-generation-daily + `perspective.preset=researcher`，
+  9 篇 → 1 精读 + 8 略读，narrative 精准聚类 4 个主题并点名阅读建议，
+  邮件发 Gmail OK。
+- 全量 55 tests 通过。
+
 ### 2026-04-25
 - **Phase B 打通**：ft-002（rewriter）+ ft-006（TL;DR）+ ft-007（email+CLI）一次性实现。
 - 新增模块：`interpret/llm.py` `rewriter.py` `tldr.py` / `delivery/email_renderer.py` `email_sender.py` /

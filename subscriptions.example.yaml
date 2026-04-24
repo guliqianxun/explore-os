@@ -8,6 +8,13 @@ subscriptions:
   - name: video-generation-daily
     enabled: true
 
+    # 视角（ft-009）：所有 LLM 解读（skim / deep / narrative）都以此视角展开
+    # preset ∈ researcher | engineer | pm | student（留空=中立）
+    # custom 自由文本，优先级高于 preset
+    perspective:
+      preset: researcher
+      # custom: "我是做视频生成模型研究的博士生，关注扩散/自回归/世界模型……"
+
     # 自由文本兴趣，由 rewriter (ft-002) 翻译成各 source 的 query
     interests:
       - "video generation"

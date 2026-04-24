@@ -3,7 +3,7 @@ pm_id: iter-002
 pm_type: iteration
 title: Sprint 2 — 注意力分层（邮件形态改造）
 milestone: v0.2
-status: planned
+status: done
 start_at: 2026-04-25
 end_at: 2026-05-05
 ---
