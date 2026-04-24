@@ -32,7 +32,7 @@ from sources.base import Group, Item, SourceFetcher, SourceKey, SourceQuery, reg
 log = logging.getLogger(__name__)
 
 
-ARXIV_API_URL = "http://export.arxiv.org/api/query"
+ARXIV_API_URL = "https://export.arxiv.org/api/query"
 ATOM_NS = {
     "atom": "http://www.w3.org/2005/Atom",
     "arxiv": "http://arxiv.org/schemas/atom",
@@ -175,7 +175,7 @@ class ArxivFetcher:
     def _get_client(self) -> tuple[httpx.Client, bool]:
         if self._client is not None:
             return self._client, False
-        return httpx.Client(timeout=self._timeout), True
+        return httpx.Client(timeout=self._timeout, follow_redirects=True), True
 
     def fetch(
         self,
