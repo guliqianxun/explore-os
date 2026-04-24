@@ -16,6 +16,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from delivery.email_renderer import RenderedItem, render_html
 from delivery.email_sender import send as send_email
+from interpret.ranker import rank
 from interpret.rewriter import RewriteInput, rewrite
 from interpret.tldr import summarize
 from sources import fetchers  # noqa: F401  触发 registry 注册
@@ -103,6 +104,23 @@ class Command(BaseCommand):
             unique.append(it)
         unique = unique[:max_items]
         self.stdout.write(f"  [dedup] {len(all_items)} -> {len(unique)} after dedup+limit")
+
+        # ---- 3.5. rerank (ft-008) ----
+        if opts["no_llm"]:
+            self.stdout.write("  [ranker] skipped (--no-llm)")
+        else:
+            scored = rank(unique, interests=sub.interests, dedup_sources=dedup_sources)
+            unique = [s.item for s in scored]
+            deep_n = sum(1 for s in scored if s.tier == "deep")
+            self.stdout.write(
+                f"  [ranker] {len(scored)} items scored; "
+                f"deep={deep_n} skim={len(scored) - deep_n}"
+            )
+            for s in scored[:5]:
+                self.stdout.write(
+                    f"    [{s.tier:4s}] total={s.total:.2f} "
+                    f"rel={s.relevance:.2f} hot={s.hotness:.2f}  {s.item.title[:70]}"
+                )
 
         # ---- 4. TL;DR ----
         rendered: list[RenderedItem] = []
