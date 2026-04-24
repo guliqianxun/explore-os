@@ -7,8 +7,8 @@
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "planned", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "planned", "milestone": "v0.1"},
-    {"id": "ft-003", "title": "Source: arXiv", "status": "planned", "milestone": "v0.1"},
-    {"id": "ft-004", "title": "Source: HF Papers", "status": "planned", "milestone": "v0.1"},
+    {"id": "ft-003", "title": "Source: arXiv", "status": "done", "milestone": "v0.1"},
+    {"id": "ft-004", "title": "Source: HF Papers", "status": "done", "milestone": "v0.1"},
     {"id": "ft-005", "title": "推送去重 & 运行历史", "status": "planned", "milestone": "v0.1"},
     {"id": "ft-006", "title": "LLM TL;DR 解读", "status": "planned", "milestone": "v0.1"},
     {"id": "ft-007", "title": "Email 渲染与投递 + CLI", "status": "planned", "milestone": "v0.1"}
