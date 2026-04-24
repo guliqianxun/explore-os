@@ -1,0 +1,31 @@
+[project]
+name = "explore-os"
+version = "0.1.0"
+description = "订阅驱动的信息检索推送助手"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.1,<6.0",
+    "djangorestframework>=3.15",
+    "psycopg[binary]>=3.2",
+    "django-environ>=0.12",
+    "pyyaml>=6.0",
+    "httpx>=0.28",
+    "pydantic>=2.9",
+    "tenacity>=9.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.9",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
