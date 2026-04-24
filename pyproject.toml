@@ -13,6 +13,8 @@ dependencies = [
     "httpx>=0.28",
     "pydantic>=2.9",
     "tenacity>=9.0",
+    "pymupdf>=1.24",
+    "pymupdf4llm>=0.0.17",
 ]
 
 [dependency-groups]

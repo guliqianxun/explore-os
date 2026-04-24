@@ -40,6 +40,9 @@ htmlcov/
 # Docker volumes (if mounted locally)
 pgdata/
 
+# PDF & figure cache (iter-003)
+media/
+
 # Claude local
 .claude/settings.local.json
 .claude/worktrees/
