@@ -28,4 +28,4 @@ target-version = "py312"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
-python_files = ["tests.py", "test_*.py", "*_tests.py"]
+python_files = ["tests.py", "test_*.py", "tests_*.py", "*_tests.py"]
