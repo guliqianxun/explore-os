@@ -1,0 +1,55 @@
+# explore-os 订阅配置示例
+# 用法：cp subscriptions.example.yaml subscriptions.yaml（已 gitignore）
+# 导入：uv run python manage.py sync_subscriptions subscriptions.yaml   (ft-001 实现后可用)
+# 运行：uv run python manage.py run_subscription video-generation-daily (ft-007)
+
+subscriptions:
+  # ---- 示例 1：视频生成领域日报（Phase B 实战订阅）----
+  - name: video-generation-daily
+    enabled: true
+
+    # 自由文本兴趣，由 rewriter (ft-002) 翻译成各 source 的 query
+    interests:
+      - "video generation"
+      - "text-to-video"
+      - "video diffusion"
+      - "video world model"
+
+    # 负向关键词（rewriter 把它们排除在 arXiv query / HF 过滤之外）
+    exclude:
+      - "medical imaging"
+      - "surveillance"
+
+    # 多源可插拔；params 由 source 自己解释
+    sources:
+      - key: arxiv
+        params:
+          categories: [cs.CV, cs.LG, cs.MM]
+          since_days: 1           # 日报拉 1 天；首次运行可临时改 7
+          limit: 30
+      - key: hf_papers
+        params:
+          since_days: 1
+          limit: 20
+
+    # 多渠道；同订阅可挂多条 delivery
+    deliveries:
+      - channel: email
+        to: your-inbox@yourdomain.com   # 不写则用 .env 的 EMAIL_TO_DEFAULT
+        depth: tldr                 # MVP 只支持 tldr；v0.2 支持 deep
+        schedule: "0 8 * * *"       # cron；MVP 由外部调度，此字段仅记录意图
+        max_items: 15               # 超出部分降级为清单
+
+  # ---- 示例 2：仅 HF 的轻量订阅（对比）----
+  - name: hf-trends-weekly
+    enabled: false
+    interests:
+      - "multimodal"
+      - "agent"
+    sources:
+      - key: hf_papers
+        params: { since_days: 7, limit: 30 }
+    deliveries:
+      - channel: email
+        depth: tldr
+        schedule: "0 9 * * 1"

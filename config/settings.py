@@ -78,6 +78,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LLM_API_BASE = env("LLM_API_BASE", default="https://api.openai.com/v1")
 LLM_API_KEY = env("LLM_API_KEY", default="")
 LLM_MODEL = env("LLM_MODEL", default="gpt-4o-mini")
+LLM_MODEL_TEXT = env("LLM_MODEL_TEXT", default=LLM_MODEL)
+LLM_MODEL_MULTIMODAL = env("LLM_MODEL_MULTIMODAL", default="")
+LLM_DAILY_BUDGET_CNY = env.float("LLM_DAILY_BUDGET_CNY", default=30.0)
 
 # ---- Email ----
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -86,4 +89,6 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
 DEFAULT_FROM_EMAIL = env("EMAIL_FROM", default="explore-os@localhost")
+EMAIL_TO_DEFAULT = env("EMAIL_TO_DEFAULT", default="")

@@ -19,6 +19,10 @@ staticfiles/
 .env
 .env.local
 
+# User-specific subscription config (may contain email addresses)
+subscriptions.yaml
+subscriptions.local.yaml
+
 # IDE
 .idea/
 .vscode/

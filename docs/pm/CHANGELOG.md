@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### 2026-04-25
+- **Phase B 打通**：ft-002（rewriter）+ ft-006（TL;DR）+ ft-007（email+CLI）一次性实现。
+- 新增模块：`interpret/llm.py` `rewriter.py` `tldr.py` / `delivery/email_renderer.py` `email_sender.py` /
+  `subscriptions/loader.py` + `run_subscription` management command。
+- LLM 走阿里百炼 DashScope OpenAI 兼容端点，文本 `deepseek-v4-flash`、多模态预留 `qwen3.6-plus`。
+- Email 走企业微信邮箱 SSL 465（非 Gmail TLS 587），`settings.py` 加 `EMAIL_USE_SSL` 字段。
+- **实战验证**："video generation" 订阅：rewriter 产出布尔查询，arXiv + HF 共 9 条 TL;DR，
+  真实发到 Gmail 收件箱 OK。
+- MVP 阶段状态仍在内存，未走 DB（ft-001 / ft-005 完整版留待下一步）。
+
 ### 2026-04-24 (later)
 - Django 骨架 + docker compose + uv 初始化。
 - `sources/base.py` 定义 SourceFetcher 接口契约。
