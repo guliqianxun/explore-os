@@ -3,7 +3,7 @@ pm_id: iter-003
 pm_type: iteration
 title: Sprint 3 — 精读深度化（PDF + 图表 + 多模态）
 milestone: v0.3
-status: planned
+status: done
 start_at: 2026-05-06
 end_at: 2026-05-20
 ---

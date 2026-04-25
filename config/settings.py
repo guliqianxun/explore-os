@@ -80,6 +80,7 @@ LLM_API_KEY = env("LLM_API_KEY", default="")
 LLM_MODEL = env("LLM_MODEL", default="gpt-4o-mini")
 LLM_MODEL_TEXT = env("LLM_MODEL_TEXT", default=LLM_MODEL)
 LLM_MODEL_MULTIMODAL = env("LLM_MODEL_MULTIMODAL", default="")
+LLM_MODEL_VISION_CLASSIFIER = env("LLM_MODEL_VISION_CLASSIFIER", default=LLM_MODEL_MULTIMODAL)
 LLM_DAILY_BUDGET_CNY = env.float("LLM_DAILY_BUDGET_CNY", default=30.0)
 
 # ---- Email ----

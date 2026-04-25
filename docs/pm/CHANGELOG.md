@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### 2026-04-25 (latest) — iter-003 Sprint 3 完成
+- **ft-011** arXiv PDF 拉取 + pymupdf4llm 章节切分（intro/method/experiments/conclusion，
+  按桶字符上限截断）；本地缓存 + JSON 缓存。
+- **ft-012** 图表提取 + 多模态分类 + 多模态深度解读：
+  - figure_extractor: pymupdf 抽图 + sha1 去重 + 上限 15 张 + 临近 caption 抓取
+  - figure_classifier: qwen-vl-plus 7 类标签（architecture/result_figure/...），timeout 120s
+  - deep_interpret_rich: method 文本 + 架构图（若有）+ qwen3.6-plus 产出
+    method_summary / key_innovation / limitations / for_you 四段，timeout 180s
+  - email_sender: 支持 inline_images CID 内嵌 PNG/JPEG
+- 全量 80 tests 通过。
+- 实战 video-generation-daily / researcher 视角：
+  Top-1 UniT 论文，PDF 拉到 15 图，深度解读输出"视觉锚定+双向互重建"等
+  3 条精准创新点 + 3 条限制 + 个性化建议。邮件投递 OK。
+
 ### 2026-04-25 (later) — iter-002 Sprint 2 完成
 - **ft-008** 综合分 rerank：embedding (text-embedding-v3) 余弦相关性 + HF upvotes 热度，
   权重 0.3/0.7；自适应分档（≥0.75 为 deep，保底 1，上限 3）。

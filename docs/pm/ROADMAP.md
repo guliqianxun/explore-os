@@ -55,14 +55,14 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [ft-008](features/ft-008.md) — 综合分 rerank + 自适应 Top-N（iter-002）
 - [ft-009](features/ft-009.md) — 精读/略读分档渲染 + 视角注入（iter-002）
 - [ft-010](features/ft-010.md) — Daily Narrative 跨篇合成（iter-002）
-- [ft-011](features/ft-011.md) — arXiv PDF 拉取 + 章节拆分（iter-003）
-- [ft-012](features/ft-012.md) — 图表提取 + LLM 分类 + 多模态解读（iter-003）
+- [ft-011](features/ft-011.md) — arXiv PDF 拉取 + 章节拆分 ✅
+- [ft-012](features/ft-012.md) — 图表提取 + LLM 分类 + 多模态解读 ✅
 
 ## 当前迭代
 
 - [iter-001](iterations/iter-001.md) — MVP Sprint 1（ft-002/003/004/006/007 已完成；ft-001/005 DB 落库延后）
-- [iter-002](iterations/iter-002.md) — Sprint 2：注意力分层（ft-008/009/010）**← next**
-- [iter-003](iterations/iter-003.md) — Sprint 3：精读深度化（ft-011/012）
+- [iter-002](iterations/iter-002.md) — Sprint 2：注意力分层（ft-008/009/010）✅
+- [iter-003](iterations/iter-003.md) — Sprint 3：精读深度化（ft-011/012）✅
 
 ## 未决议题
 

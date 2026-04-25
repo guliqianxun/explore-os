@@ -75,6 +75,29 @@ def chat(
     return LLMResult(content=content or "", usage=usage, model=model)
 
 
+def build_image_content(text: str, image_path: str | None = None,
+                         image_b64: str | None = None,
+                         mime: str = "image/png") -> list[dict[str, Any]]:
+    """构造 OpenAI 兼容多模态 content blocks。
+
+    image_path 和 image_b64 二选一；image_b64 优先。
+    返回：[{"type":"image_url","image_url":{"url":"data:..."}}, {"type":"text","text":"..."}]
+    """
+    import base64
+    blocks: list[dict[str, Any]] = []
+    if image_b64 is None and image_path:
+        from pathlib import Path as _P
+        data = _P(image_path).read_bytes()
+        image_b64 = base64.b64encode(data).decode("ascii")
+    if image_b64:
+        blocks.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:{mime};base64,{image_b64}"},
+        })
+    blocks.append({"type": "text", "text": text})
+    return blocks
+
+
 def extract_json(text: str) -> Any:
     """容错地从 LLM 输出中提取 JSON。支持 ```json``` 围栏。"""
     s = text.strip()

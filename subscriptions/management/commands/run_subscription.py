@@ -14,14 +14,21 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from pathlib import Path as _Path
+
 from delivery.email_renderer import RenderedDeep, RenderedSkim, render_html
 from delivery.email_sender import send as send_email
+from interpret.deep_interpret import deep_interpret_rich
+from interpret.figure_classifier import classify_figures, pick_architecture_figure
+from interpret.figure_extractor import extract_figures, figures_root, save_index
 from interpret.interpretation import deep_interpret, skim_interpret
 from interpret.narrative import build_narrative
+from interpret.pdf_chunker import chunk_pdf
 from interpret.ranker import rank
 from interpret.rewriter import RewriteInput, rewrite
 from sources import fetchers  # noqa: F401  触发 registry 注册
 from sources.base import REGISTRY, SourceQuery
+from sources.pdf_fetcher import arxiv_id_of, fetch_pdf
 from subscriptions.loader import find, load
 
 log = logging.getLogger(__name__)
@@ -43,6 +50,8 @@ class Command(BaseCommand):
         parser.add_argument("--since-days", type=int, default=None)
         parser.add_argument("--no-narrative", action="store_true",
                             help="跳过 Daily Narrative 生成")
+        parser.add_argument("--no-deep", action="store_true",
+                            help="跳过精读深度处理（PDF + 图 + 多模态），用 ft-009 占位")
 
     def handle(self, *args, **opts) -> None:
         yaml_path = Path(opts["yaml"])
@@ -130,10 +139,35 @@ class Command(BaseCommand):
                     skim_out_by_id[it.dedup_key] = out
             self.stdout.write(f"  [skim] {len(skim_out_by_id)}/{len(scored_items)} ok")
 
-        # ---- 6. deep interpret (iter-002: passthrough abstract + 占位) ----
-        deep_out_by_id = {
-            it.dedup_key: deep_interpret(it, sub.perspective) for it in deep_items
-        }
+        # ---- 6. deep interpret (ft-012: PDF + 图 + 多模态) ----
+        deep_out_by_id = {}
+        inline_images: dict[str, _Path] = {}
+        for it in deep_items:
+            if opts["no_llm"] or opts["no_deep"]:
+                deep_out_by_id[it.dedup_key] = deep_interpret(it, sub.perspective)
+                continue
+            arxiv_id = arxiv_id_of(it)
+            pdf_path = fetch_pdf(it) if arxiv_id else None
+            chunks = chunk_pdf(arxiv_id, pdf_path) if (arxiv_id and pdf_path) else None
+            figure = None
+            if arxiv_id and pdf_path:
+                figs = extract_figures(arxiv_id, pdf_path)
+                if figs:
+                    figs = classify_figures(arxiv_id, figs)
+                    save_index(arxiv_id, figs)
+                    figure = pick_architecture_figure(figs)
+                self.stdout.write(
+                    f"  [deep/{arxiv_id}] sections={len(chunks.sections) if chunks else 0} "
+                    f"figures={len(figs) if figs else 0}  "
+                    f"arch={figure.path if figure else '-'}"
+                )
+            out = deep_interpret_rich(it, chunks, figure, sub.perspective)
+            deep_out_by_id[it.dedup_key] = out
+            # 为邮件准备内嵌图
+            if out.figure_path and arxiv_id:
+                img_fp = figures_root() / arxiv_id / out.figure_path
+                if img_fp.exists():
+                    inline_images[out.figure_path] = img_fp
 
         # ---- 7. narrative ----
         narrative = None
@@ -208,7 +242,8 @@ class Command(BaseCommand):
             to = d.to or settings.EMAIL_TO_DEFAULT
             if not to:
                 raise CommandError("no recipient (set delivery.to or EMAIL_TO_DEFAULT)")
-            ok = send_email(subject, html_body, plain_body, to=to)
+            ok = send_email(subject, html_body, plain_body, to=to,
+                            inline_images=inline_images or None)
             mark = self.style.SUCCESS("OK") if ok else self.style.ERROR("FAIL")
             self.stdout.write(f"  [email -> {to}] {mark}")
 
