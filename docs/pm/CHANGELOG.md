@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### 2026-04-25 (latest+3) — 4 个 bug 修 + ft-015 调研记录
+- **picker**: Fig 1 优先 + 关键词加持。CS 论文 Fig 1 ≈ teaser/architecture
+  默认胜出；只在 Fig 1 caption 明显是定性结果时跳过走关键词。
+- **HF ±1d 容差**: HF dailypapers 收录日 ≠ arxiv 提交日；hf_* 源放宽
+  到 [target-1, target+2)。in_window 从 0 → 2。
+- **CID 跨论文唯一**（关键修）: inline_images key 用 {arxiv_id}__name 命名，
+  消除 3 篇论文共用同 cid 导致的"图反复应用"。
+- **bbox 多策略**:
+  - kind=table 优先 page.find_tables() 取最近表格 bbox
+  - figure ink 候选空时 → text-blocks 聚合兜底
+  - 渲染后空白检测（color_topusage > 99.9% 视为空白丢弃）
+  - 实战 8/9 命中（89%）
+- **ft-015 planned**: 启发式覆盖率达天花板 ~85-95%，记录 pdffigures2 / Nougat
+  候选作为升级路径，等数据决定何时启动。
+
 ### 2026-04-25 (latest+2) — ft-014 略读升级 + 精读多图多表
 - 用户反馈：原"精读 + abstract + 占位"实际是想要的略读形态——整体抬一档。
 - **略读卡**（每篇都有）：标题 + 作者 + **中文翻译 abstract** +

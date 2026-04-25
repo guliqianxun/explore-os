@@ -113,6 +113,10 @@ class Command(BaseCommand):
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(self.style.ERROR(f"  [{spec.key}] raised: {exc!r}"))
                 continue
+            # HF dailypapers 收录日 ≠ arxiv submittedDate，常错位 1-2 天 → 加容差
+            tol = timedelta(days=1) if spec.key.startswith("hf") else timedelta(0)
+            local_since = since_utc - tol
+            local_until = until_utc + tol
             kept = []
             for it in items:
                 if it.published_at is None:
@@ -120,10 +124,11 @@ class Command(BaseCommand):
                 pub = it.published_at
                 if pub.tzinfo is None:
                     pub = pub.replace(tzinfo=timezone.utc)
-                if since_utc <= pub < until_utc:
+                if local_since <= pub < local_until:
                     kept.append(it)
+            tol_label = f" (±{tol.days}d tolerance)" if tol.days else ""
             self.stdout.write(self.style.SUCCESS(
-                f"  [{spec.key}] raw={len(items)} in_window={len(kept)}"
+                f"  [{spec.key}] raw={len(items)} in_window={len(kept)}{tol_label}"
             ))
             for it in kept:
                 dedup_sources[it.dedup_key].append(spec.key)
@@ -211,22 +216,24 @@ class Command(BaseCommand):
                 d = DeepOut(abstract=it.abstract or "", placeholder=DEEP_PLACEHOLDER)
                 fig_dir = figures_root() / arxiv_id
                 fig_dir.mkdir(parents=True, exist_ok=True)
+                # CID 加 arxiv_id 前缀避免跨论文 cid 冲突
+                arxiv_cid = arxiv_id.replace("/", "_").replace(":", "_")
                 if arch:
-                    name = f"arch_{arch.kind}{arch.number}.png"
+                    name = f"{arxiv_cid}__arch_{arch.kind}{arch.number}.png"
                     fp = fig_dir / name
                     if render_bbox_to_png(pdf_path, arch.page, arch.bbox_image, fp):
                         d.figure_path = name
                         d.figure_caption = arch.text
                         inline_images[name] = fp
                 if qual:
-                    name = f"qual_{qual.kind}{qual.number}.png"
+                    name = f"{arxiv_cid}__qual_{qual.kind}{qual.number}.png"
                     fp = fig_dir / name
                     if render_bbox_to_png(pdf_path, qual.page, qual.bbox_image, fp):
                         d.qualitative_path = name
                         d.qualitative_caption = qual.text
                         inline_images[name] = fp
                 if tbl:
-                    name = f"tbl_{tbl.kind}{tbl.number}.png"
+                    name = f"{arxiv_cid}__tbl_{tbl.kind}{tbl.number}.png"
                     fp = fig_dir / name
                     if render_bbox_to_png(pdf_path, tbl.page, tbl.bbox_image, fp):
                         d.table_path = name

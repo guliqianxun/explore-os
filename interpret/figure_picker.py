@@ -42,29 +42,44 @@ def pick_architecture(
     captions: list[Caption],
     llm_fallback: bool = False,
 ) -> Caption | None:
+    """选架构图。"Fig 1 优先 + 关键词加持"原则：
+    - Fig 1 默认胜出（CS 论文 Fig 1 ≈ teaser/architecture）
+    - 例外：Fig 1 caption 是明显的定性结果（含 qualitative/comparison/examples
+      等 QUALITATIVE_KEYWORDS 但无 arch 关键词）→ 跳过 Fig 1 走关键词搜
+    - Fig 1 不存在或被例外排除时：取最小编号的 arch 关键词命中图
+    - 都没命中：取最小编号 figure
+    """
     figures = [c for c in captions if c.kind == "figure"]
     if not figures:
         return None
 
-    # 规则 1：关键词命中
+    fig1 = next((c for c in figures if c.number == 1), None)
+    fig1_is_qualitative_only = bool(
+        fig1 and QUALITATIVE_KEYWORDS.search(fig1.text)
+        and not ARCH_KEYWORDS.search(fig1.text)
+    )
+
+    # 规则 1：Fig 1 默认胜出（除非明显是定性结果）
+    if fig1 and not fig1_is_qualitative_only:
+        kw_match = bool(ARCH_KEYWORDS.search(fig1.text))
+        log.info("figure_picker: Fig 1 wins%s (%s)",
+                 " [arch keyword]" if kw_match else "",
+                 fig1.text[:60])
+        return fig1
+
+    # 规则 2：Fig 1 不可用 → 关键词命中（最小编号）
     keyword_hits = [c for c in figures if ARCH_KEYWORDS.search(c.text)]
     if keyword_hits:
         keyword_hits.sort(key=lambda c: (c.number, c.page))
-        log.info("figure_picker: rule-keyword pick %s (%s)",
+        log.info("figure_picker: keyword pick %s (%s)",
                  keyword_hits[0].label, keyword_hits[0].text[:60])
         return keyword_hits[0]
 
-    # 规则 2：figure 1 兜底
-    fig_by_num = {c.number: c for c in figures}
-    if 1 in fig_by_num:
-        log.info("figure_picker: rule-fig1 pick (%s)", fig_by_num[1].text[:60])
-        return fig_by_num[1]
-
-    # 规则 3：取 number 最小的 figure
+    # 规则 3：最小编号 figure
     figures.sort(key=lambda c: c.number)
-    fallback = figures[0] if figures else None
-
-    if not llm_fallback or fallback is None:
+    fallback = figures[0]
+    if not llm_fallback:
+        log.info("figure_picker: min-number fallback %s", fallback.label)
         return fallback
 
     # 规则 4：文本 LLM 兜底

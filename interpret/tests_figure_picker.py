@@ -18,29 +18,42 @@ def _cap(kind: str, num: int, text: str, page: int = 1) -> Caption:
     )
 
 
-def test_keyword_pick_framework():
+def test_fig1_wins_with_arch_keyword():
+    """Fig 1 含 architecture/framework → 必胜，最高置信度。"""
+    captions = [
+        _cap("figure", 1, "Figure 1: Overview of our framework."),
+        _cap("figure", 2, "Figure 2: Method pipeline."),
+    ]
+    assert pick_architecture(captions).number == 1
+
+
+def test_fig1_wins_without_keyword():
+    """Fig 1 优先：没有任何 arch 关键词时，Fig 1 仍胜出（teaser 默认是架构图）。"""
     captions = [
         _cap("figure", 1, "Figure 1: Some teaser image."),
-        _cap("figure", 2, "Figure 2: Overview of our framework."),
+        _cap("figure", 2, "Figure 2: Overview of our framework."),  # 含 framework
         _cap("figure", 3, "Figure 3: Qualitative results."),
     ]
     out = pick_architecture(captions)
-    assert out is not None and out.number == 2
+    assert out is not None and out.number == 1   # Fig 1 优先
 
 
-def test_keyword_pick_architecture():
+def test_fig1_excluded_when_qualitative_only():
+    """Fig 1 caption 明显是定性结果 + 无 arch 词 → 跳过 Fig 1 走关键词。"""
     captions = [
-        _cap("figure", 1, "Figure 1: The overall architecture of the model."),
+        _cap("figure", 1, "Figure 1: Qualitative comparison with baselines."),
+        _cap("figure", 2, "Figure 2: Overview of our framework."),
     ]
-    assert pick_architecture(captions).number == 1
+    assert pick_architecture(captions).number == 2
 
 
-def test_no_keyword_falls_back_to_fig1():
+def test_no_fig1_keyword_hit_wins():
+    """Fig 1 不存在 → 关键词命中胜出，最小编号优先。"""
     captions = [
-        _cap("figure", 1, "Figure 1: Visualization of dataset."),
-        _cap("figure", 2, "Figure 2: Loss curves."),
+        _cap("figure", 3, "Figure 3: Method pipeline overview."),
+        _cap("figure", 5, "Figure 5: Loss curves."),
     ]
-    assert pick_architecture(captions).number == 1
+    assert pick_architecture(captions).number == 3
 
 
 def test_no_figures_returns_none():
@@ -48,17 +61,18 @@ def test_no_figures_returns_none():
     assert pick_architecture(captions) is None
 
 
-def test_only_higher_numbered_figures():
+def test_no_fig1_no_keyword_min_number():
+    """Fig 1 不存在 + 无关键词 → 最小编号兜底。"""
     captions = [
         _cap("figure", 3, "Figure 3: ablation"),
         _cap("figure", 5, "Figure 5: comparison"),
     ]
     out = pick_architecture(captions)
-    assert out is not None and out.number == 3   # min number
+    assert out is not None and out.number == 3
 
 
 def test_llm_fallback_used(monkeypatch):
-    """关键词都不命中且 fig1 不存在 → 启用 llm_fallback 应调 LLM。"""
+    """Fig 1 不存在、关键词都不命中 → 启用 llm_fallback 应调 LLM。"""
     captions = [
         _cap("figure", 2, "Figure 2: A vague description."),
         _cap("figure", 3, "Figure 3: Another vague one."),
@@ -146,4 +160,4 @@ def test_llm_fallback_not_used_by_default(monkeypatch):
 
     monkeypatch.setattr(fp, "chat", boom)
     out = pick_architecture(captions)   # llm_fallback default False
-    assert out is not None and out.number == 2   # min num fallback
+    assert out is not None and out.number == 2   # min num fallback (no Fig 1)

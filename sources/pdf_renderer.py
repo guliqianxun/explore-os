@@ -48,9 +48,26 @@ def render_bbox_to_png(
             zoom = dpi / 72.0
             mat = pymupdf.Matrix(zoom, zoom)
             pix = pg.get_pixmap(matrix=mat, clip=clip, alpha=False)
+            # 空白检测：用 pixmap 颜色范围判断
+            if _is_blank(pix):
+                log.info("render_bbox: blank pixmap, skip %s", out_path.name)
+                return False
             out_path.parent.mkdir(parents=True, exist_ok=True)
             pix.save(str(out_path))
             return True
     except Exception as exc:  # noqa: BLE001
         log.error("render_bbox failed: %r", exc)
         return False
+
+
+def _is_blank(pix) -> bool:
+    """空白图判定：占主导色超过 99.9% 才算空白。"""
+    if pix.width == 0 or pix.height == 0:
+        return True
+    try:
+        ratio, _ = pix.color_topusage()
+        if ratio > 0.999:
+            return True
+    except Exception:
+        pass
+    return False
