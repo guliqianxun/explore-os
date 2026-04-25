@@ -1,82 +1,86 @@
-"""ft-012: 多模态深度解读 — method 文本 + 架构图 + 视角 → 结构化四段."""
+"""ft-013: 精读深度解读（纯文本 LLM）.
+
+输入：method/exp/conclusion 文本 + caption 列表 + 引用上下文 + 近期 memory。
+输出：method_summary / key_innovation / limitations / for_you（带 [Fig. N] 锚点）.
+
+不再调多模态。架构图由 figure_picker 选好后由调用方渲染 PNG（pdf_renderer），
+DeepOut.figure_path 仍承载图路径，但只用于邮件展示，不送 LLM。
+"""
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from django.conf import settings
 
-from interpret.figure_extractor import Figure, figures_root
+from interpret.caption_extractor import Caption
 from interpret.interpretation import DEEP_PLACEHOLDER, DeepOut, perspective_prefix
-from interpret.llm import LLMError, build_image_content, chat, extract_json
+from interpret.llm import LLMError, chat, extract_json
 from interpret.pdf_chunker import PaperChunks
 from sources.base import Item
 from subscriptions.loader import PerspectiveSpec
+from subscriptions.memory import PaperRecord
 
 log = logging.getLogger(__name__)
 
-DEEP_SYSTEM_SUFFIX = """任务：结合方法章节文本和架构图（若提供），产出论文的结构化深度解读。
-输出 JSON：
+
+DEEP_SYSTEM_SUFFIX = """任务：基于方法章节文本 + 配图 caption + 正文引用上下文 + 近期推送过的相关论文，
+产出论文结构化深度解读。输出 JSON：
 {
-  "method_summary": "方法怎么做的（200-300字，精炼学术语言）",
+  "method_summary": "方法怎么做的（200-300字，精炼学术语言；可引用 [Fig. N] 锚点）",
   "key_innovation": ["关键创新点 1", "关键创新点 2", "可选 3"],
   "limitations": ["局限 1", "可选局限 2"],
-  "for_you": "基于视角给读者的 1-2 句个人化解读"
+  "for_you": "结合视角的 1-2 句个人化解读"
 }
+
 规则：
-- method_summary 要看架构图与方法文本互相印证，不要复述 abstract。
-- key_innovation 必须是"相对于已有工作"的差异点，不要列 trivial 设计。
-- limitations 尽量从论文自承或可推断的弱点出发。
-- 只输出 JSON，不要解释。"""
+- method_summary 优先解释 caption 含 framework/overview 那张图描述的结构。
+- key_innovation 是"相对已有工作的差异点"，避免列 trivial 设计。
+- limitations 从论文自承或可推断的弱点出发。
+- 若提供"近期推送过的相关论文"，可在 for_you 里点出与之的延续/差异关系（让读者建立 trend 感）。
+- 用 [Fig. 1] / [Tab. 2] 形式引用配图。
+- 只输出 JSON，不要解释，不要 markdown 围栏。"""
 
 
 def deep_interpret_rich(
     item: Item,
     chunks: PaperChunks | None,
-    figure: Figure | None,
+    captions: list[Caption] | None,
+    memory_papers: list[PaperRecord] | None,
     perspective: PerspectiveSpec,
 ) -> DeepOut:
-    """升级版 deep_interpret。调 qwen3.6-plus。失败降级到 ft-009 的占位。"""
-    # abstract 仍然透传
     out = DeepOut(abstract=item.abstract or "", placeholder=DEEP_PLACEHOLDER)
-
-    # 构造 method+exp+conclusion 文本
     body = _compose_body(chunks) if chunks else ""
-    if not body and not figure:
-        log.info("deep_interpret_rich: no chunks & no figure for %s, placeholder-only",
+    cap_block = _compose_captions(captions or [])
+    mem_block = _compose_memory(memory_papers or [])
+
+    if not body and not cap_block:
+        log.info("deep_interpret_rich: no body & no captions for %s, placeholder",
                  item.dedup_key)
         return out
 
     system = perspective_prefix(perspective) + DEEP_SYSTEM_SUFFIX
-    user_text = (
+    user = (
         f"title: {item.title}\n\n"
-        f"abstract: {item.abstract}\n\n"
-        f"=== 方法与实验章节 ===\n{body or '(无)'}\n"
-        f"\n请产出 JSON 四段。"
+        f"abstract: {item.abstract}\n"
     )
-
-    model = settings.LLM_MODEL_MULTIMODAL or settings.LLM_MODEL_TEXT
+    if body:
+        user += f"\n=== 方法 / 实验 / 结论文本 ===\n{body}\n"
+    if cap_block:
+        user += f"\n=== 论文配图 captions + 引用上下文 ===\n{cap_block}\n"
+    if mem_block:
+        user += f"\n=== 近期推送过的相关论文（供联想/对比） ===\n{mem_block}\n"
+    user += "\n请产出 JSON 四段。"
 
     try:
-        if figure:
-            img_path = figures_root() / item.dedup_key.replace("arxiv:", "") / figure.path
-            if img_path.exists():
-                user_content = build_image_content(user_text, image_path=str(img_path),
-                                                    mime=_mime_of(img_path))
-            else:
-                user_content = user_text
-        else:
-            user_content = user_text
-
         res = chat(
             messages=[
                 {"role": "system", "content": system},
-                {"role": "user", "content": user_content},
+                {"role": "user", "content": user},
             ],
-            model=model,
+            model=settings.LLM_MODEL_TEXT,
             temperature=0.3,
             max_tokens=900,
-            timeout=180.0,   # 多模态 + 长上下文，给足时间
+            timeout=60.0,
         )
         parsed = extract_json(res.content)
     except (LLMError, Exception) as exc:  # noqa: BLE001
@@ -87,11 +91,10 @@ def deep_interpret_rich(
     out.key_innovation = [str(s).strip() for s in parsed.get("key_innovation") or []][:4]
     out.limitations = [str(s).strip() for s in parsed.get("limitations") or []][:3]
     out.for_you = str(parsed.get("for_you") or "").strip()
-    if figure:
-        out.figure_path = figure.path
-        out.figure_caption = figure.caption
     return out
 
+
+# ---------------- helpers ----------------
 
 def _compose_body(chunks: PaperChunks) -> str:
     parts = []
@@ -102,8 +105,24 @@ def _compose_body(chunks: PaperChunks) -> str:
     return "\n\n".join(parts)
 
 
-def _mime_of(path: Path) -> str:
-    ext = path.suffix.lstrip(".").lower()
-    return {
-        "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
-    }.get(ext, "image/png")
+def _compose_captions(captions: list[Caption]) -> str:
+    if not captions:
+        return ""
+    lines = []
+    for c in captions[:8]:   # 上限避免 token 过多
+        lines.append(f"[{c.label}] {c.text}")
+        for ref in c.references[:2]:
+            lines.append(f"    引用上下文：{ref}")
+    return "\n".join(lines)
+
+
+def _compose_memory(papers: list[PaperRecord]) -> str:
+    if not papers:
+        return ""
+    # 只取最近 8 条避免 token 膨胀
+    recent = papers[-8:]
+    lines = []
+    for p in recent:
+        kw = "/".join(p.keywords[:3]) if p.keywords else ""
+        lines.append(f"- {p.target_date}  {p.title}  ({kw})  ::  {p.one_liner[:100]}")
+    return "\n".join(lines)

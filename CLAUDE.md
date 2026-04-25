@@ -20,6 +20,30 @@
 
 - `E:/codes/xingsuo` — 仅**方法论**参考其 `query_rewriter`（兴趣拆解思路）。**不做代码移植**，不作依赖。未来可能作为一个 source 插件接入。
 
+## 设计原则：工具 vs LLM 的边界
+
+```
+确定性产出 → 工具化（代码 + 规则 + 缓存）
+需要语义理解 / 动态编排 → LLM
+LLM 是「填补 / 扩充」边界的，不是「替代规则」的
+```
+
+具体到本项目：
+- 信源抓取、字段规范化、dedup_key 计算、章节正则归桶、caption 抽取、bbox 渲染、SMTP 投递、记忆线读写 → **工具**
+- 兴趣 → 查询翻译、论文摘要、跨篇 narrative、深度解读、未命中规则时的图选取兜底 → **LLM**
+
+错位的代价：把 caption 文本（确定信号）丢给视觉模型重新猜测——这是 ft-012 的根因，
+ft-013 用 caption_extractor + figure_picker 校正回来。
+
+## 产品定位
+
+explore-os 是独立工具（OpenClaw-like），目前借助 Claude Code 协助开发，
+**Python 代码本身就是产品**，不是临时脚手架。架构演进路径：
+1. 完善 skill 边界（每个能力一个清晰接口）
+2. 引入跨 run 记忆线（已在 ft-013 落地）
+3. orchestrator 从固定 pipeline → 可分支 agent
+4. 提取为可分发 package + CLI
+
 ## 并行开发：worktree + subagent 协作规范
 
 多 feature 并行时使用 `Agent(isolation="worktree")` 让每个 subagent 在独立分支/工作区开发，主会话负责合并。**踩过的坑 + 规则**：

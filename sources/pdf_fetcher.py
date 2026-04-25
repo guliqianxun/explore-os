@@ -21,7 +21,7 @@ from sources.base import Item
 
 log = logging.getLogger(__name__)
 
-PDF_SIZE_CAP = 30 * 1024 * 1024  # 30 MB
+PDF_SIZE_CAP = 100 * 1024 * 1024  # 100 MB（视频/多模态论文常超 30MB）
 HTTP_TIMEOUT = 60.0
 
 

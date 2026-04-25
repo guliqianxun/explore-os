@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### 2026-04-25 (latest+1) — ft-013 重设计（替代 ft-012 多模态路径）
+- **设计原则升级**：CLAUDE.md 加"工具 vs LLM 边界"段——确定性产出工具化，
+  LLM 仅用于语义理解/动态编排。ft-012 的多模态图分类被识别为错位（caption
+  文本是确定信号，应规则匹配，不应送视觉模型猜）。
+- **caption_extractor**: pymupdf 抽 "Figure N: ..." caption + bbox + 正文引用上下文。
+- **figure_picker**: 关键词规则（framework/overview/architecture/pipeline）+ figure 1
+  兜底；可选文本 LLM 兜底（不喂图）。
+- **pdf_renderer**: page.get_pixmap(clip=bbox) 渲染指定区域 PNG，替代抽矢量碎片。
+- **memory**: media/memory/<sub_name>/ 三件套（runs.jsonl / papers.jsonl /
+  digests.md），跨 run 去重 + 给 deep_interpret 提供"近期相关论文"上下文。
+- **deep_interpret 改造**: 纯文本 LLM；输入加 captions + 引用上下文 + memory；
+  输出引用 [Fig. N] 锚点。
+- **target-date 时间窗**: 默认昨日（Asia/Shanghai），按 published_at 严格过滤。
+- **多模态保留代码但默认关闭**：--multimodal-figures 显式开启。
+- ft-012 status = superseded。
+
 ### 2026-04-25 (latest) — iter-003 Sprint 3 完成
 - **ft-011** arXiv PDF 拉取 + pymupdf4llm 章节切分（intro/method/experiments/conclusion，
   按桶字符上限截断）；本地缓存 + JSON 缓存。

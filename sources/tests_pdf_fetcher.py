@@ -106,8 +106,8 @@ def test_fetch_hits_cache_on_second_call(fake_cache, monkeypatch):
 
 
 def test_fetch_size_cap(fake_cache, monkeypatch):
-    # 33MB exceeds 30MB cap
-    big = b"\x00" * (33 * 1024 * 1024)
+    # 101MB exceeds 100MB cap
+    big = b"\x00" * (101 * 1024 * 1024)
     _patch_stream(monkeypatch, big)
     path = pdf_fetcher.fetch_pdf(_item())
     assert path is None

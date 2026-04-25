@@ -16,6 +16,7 @@
     {"id": "ft-009", "title": "精读/略读分档渲染 + 视角注入", "status": "done", "milestone": "v0.2"},
     {"id": "ft-010", "title": "Daily Narrative 跨篇合成", "status": "done", "milestone": "v0.2"},
     {"id": "ft-011", "title": "arXiv PDF 拉取 + 章节拆分", "status": "done", "milestone": "v0.3"},
-    {"id": "ft-012", "title": "图表提取 + LLM 分类 + 多模态解读", "status": "done", "milestone": "v0.3"}
+    {"id": "ft-012", "title": "图表提取 + LLM 分类 + 多模态解读", "status": "superseded", "milestone": "v0.3"},
+    {"id": "ft-013", "title": "caption + bbox + 记忆线（精读重设计）", "status": "planned", "milestone": "v0.4"}
   ]
 }
