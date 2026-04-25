@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### 2026-04-25 (latest+4) — ft-016 DeliveryAdapter 抽象层
+- **方向调整**：工具核心 = 内容生产；推送渠道作为可插拔 adapter。
+  后续主推 微信订阅号 + 飞书 + 邮件 三渠道并存。
+- delivery/base.py 定义 Digest / DeliveryTarget / DeliveryResult /
+  DeliveryAdapter Protocol + REGISTRY（同 SourceFetcher 模式）。
+- delivery/adapters/email.py: 现有 email 投递迁入，实现 EmailAdapter。
+- delivery/adapters/feishu.py: stub（ft-017 planned）。
+- delivery/adapters/wechat_subscription.py: stub（ft-018 planned）。
+- run_subscription 改为通过 REGISTRY 路由 d.channel → adapter.deliver()，
+  原 SMTP 直调代码删除。
+- delivery/email_renderer.py / email_sender.py 保留为 thin wrapper 重导出。
+- 12 new tests（base 6 + email_adapter 6）；全量 118 passing。
+- ROADMAP v0.5 重新定位为"多渠道"；GitHub/HF Models/月报推到 v0.6+。
+
 ### 2026-04-25 (latest+3) — 4 个 bug 修 + ft-015 调研记录
 - **picker**: Fig 1 优先 + 关键词加持。CS 论文 Fig 1 ≈ teaser/architecture
   默认胜出；只在 Fig 1 caption 明显是定性结果时跳过走关键词。

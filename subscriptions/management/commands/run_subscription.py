@@ -15,8 +15,14 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from delivery.email_renderer import RenderedDeep, RenderedSkim, render_html
-from delivery.email_sender import send as send_email
+import delivery  # noqa: F401  触发各 adapter 注册到 registry
+from delivery.base import (
+    Digest,
+    DeliveryTarget,
+    RenderedDeep,
+    RenderedSkim,
+    get as get_adapter,
+)
 from interpret.caption_extractor import Caption, extract_captions
 from interpret.deep_interpret import deep_interpret_rich
 from interpret.figure_extractor import figures_root
@@ -316,18 +322,25 @@ class Command(BaseCommand):
             f"{sub.name} · {date_str} · {len(deeps)} 精读 + {len(skims)} 略读 · "
             f"来源 {', '.join(s.key for s in sub.sources)} · 视角 {persp_label}"
         )
-        html_body, plain_body = render_html(
-            subject=subject, narrative=narrative,
-            deeps=deeps, skims=skims, run_summary=run_summary,
+
+        # ---- Build channel-neutral Digest ----
+        digest = Digest(
+            subject=subject,
+            run_summary=run_summary,
+            narrative=narrative,
+            deeps=deeps,
+            skims=skims,
+            inline_images=inline_images,
         )
 
-        # ---- 10. send ----
+        # ---- 10. dispatch to all configured channels via DeliveryAdapter ----
         if opts["dry_run"]:
+            from delivery.adapters.email import render_html as _email_render
+            _, plain_body = _email_render(digest)
             self.stdout.write(self.style.WARNING("\n--- DRY RUN: plain body ---"))
             self.stdout.write(plain_body)
             self.stdout.write(self.style.WARNING(
-                f"\n--- HTML body ({len(html_body)} chars) "
-                f"+ {len(inline_images)} inline images ---"
+                f"\n--- {len(inline_images)} inline images would attach ---"
             ))
             self._write_memory(sub.name, target_date, scored, scored_items,
                                skim_out_by_id, narrative, dry_run=True)
@@ -337,17 +350,17 @@ class Command(BaseCommand):
             raise CommandError("no deliveries configured")
         sent_ok = False
         for d in sub.deliveries:
-            if d.channel != "email":
-                self.stderr.write(f"  [channel={d.channel}] skip (MVP)")
+            try:
+                adapter = get_adapter(d.channel)
+            except KeyError as exc:
+                self.stderr.write(self.style.ERROR(f"  [{d.channel}] {exc}"))
                 continue
-            to = d.to or settings.EMAIL_TO_DEFAULT
-            if not to:
-                raise CommandError("no recipient")
-            ok = send_email(subject, html_body, plain_body, to=to,
-                            inline_images=inline_images or None)
-            mark = self.style.SUCCESS("OK") if ok else self.style.ERROR("FAIL")
-            self.stdout.write(f"  [email -> {to}] {mark} ({len(inline_images)} imgs)")
-            sent_ok = sent_ok or ok
+            target = DeliveryTarget(channel=d.channel, to=d.to or "")
+            result = adapter.deliver(digest, target)
+            mark = (self.style.SUCCESS("OK") if result.success
+                    else self.style.ERROR("FAIL"))
+            self.stdout.write(f"  [{d.channel}] {mark} {result.detail}")
+            sent_ok = sent_ok or result.success
 
         if sent_ok:
             self._write_memory(sub.name, target_date, scored, scored_items,

@@ -39,7 +39,8 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 | **v0.2 (M2)** | 注意力分层 | 综合分 rerank / 精读+略读分档 / 视角注入 / Daily Narrative | 2026-05 |
 | **v0.3 (M3)** | 精读深度化 | arXiv PDF 拉取 / 图表提取+分类+多模态解读 / 精读档框架图 | 2026-05/06 |
 | **v0.4 (M3.5)** | 时间线与回溯 | HF 历史回填 / Postgres 落库 / 月报+半年报 / 热度信号多源 | 2026-06/07 |
-| **v0.5 (M3.7)** | 渠道与源扩展（原 v0.2 内容延后） | HF Models / GitHub / 飞书 / HTTP 触发 | 2026-07 |
+| **v0.5 (M4)** | **多渠道**（产品化关键） | DeliveryAdapter 抽象 ✅ / 飞书 / **微信订阅号** | 2026-05 |
+| **v0.6+** | 源扩展 + 历史回顾 | GitHub / HF Models / 月报半年报 / HTTP 触发 | 2026-06+ |
 | **v1.0 (M4)** | 产品化基线 | 多用户 / Web 配置面板（React+Vite）/ 用量计费骨架 | 2026-09 |
 | **v1.x (M5+)** | 扩展方向 | xingsuo 作为 source / 商业动态信源 / 公众号知乎半自动发文 | 待评估 |
 
@@ -56,7 +57,13 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [ft-009](features/ft-009.md) — 精读/略读分档渲染 + 视角注入（iter-002）
 - [ft-010](features/ft-010.md) — Daily Narrative 跨篇合成（iter-002）
 - [ft-011](features/ft-011.md) — arXiv PDF 拉取 + 章节拆分 ✅
-- [ft-012](features/ft-012.md) — 图表提取 + LLM 分类 + 多模态解读 ✅
+- [ft-012](features/ft-012.md) — 图表提取 + LLM 分类 + 多模态解读（superseded by ft-013）
+- [ft-013](features/ft-013.md) — caption + bbox + 记忆线 ✅
+- [ft-014](features/ft-014.md) — 略读升级（中文摘要+双图）+ 精读多图多表 ✅
+- [ft-015](features/ft-015.md) — 学术 PDF 解析升级（pdffigures2/Nougat 候选）
+- [ft-016](features/ft-016.md) — DeliveryAdapter 抽象层 ✅
+- [ft-017](features/ft-017.md) — 飞书 DeliveryAdapter
+- [ft-018](features/ft-018.md) — 微信订阅号 DeliveryAdapter（**产品化关键**）
 
 ## 当前迭代
 
