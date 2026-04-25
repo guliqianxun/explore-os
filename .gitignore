@@ -33,6 +33,7 @@ subscriptions.local.yaml
 Thumbs.db
 Snipaste_*.png
 *.tmp.png
+*.eml
 
 # Test / coverage
 .pytest_cache/
