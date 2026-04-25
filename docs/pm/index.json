@@ -1,9 +1,10 @@
 {
   "project": "explore-os",
-  "version": "v0.4",
+  "version": "v0.5",
   "updated_at": "2026-04-25",
   "roadmap": "ROADMAP.md",
-  "current_iteration": "iter-003",
+  "current_iteration": "iter-004",
+  "current_focus": "ft-017 飞书 DeliveryAdapter (next)",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
