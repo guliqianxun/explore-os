@@ -30,6 +30,13 @@ ARCH_KEYWORDS = re.compile(
     re.IGNORECASE,
 )
 
+QUALITATIVE_KEYWORDS = re.compile(
+    r"\b(qualitative|comparison|examples?|samples?|generated|visualization|"
+    r"visualisations?|demos?|results?\s+on|generation\s+results?|"
+    r"reconstruction\s+results?|synthesi[sz]ed)\b",
+    re.IGNORECASE,
+)
+
 
 def pick_architecture(
     captions: list[Caption],
@@ -72,6 +79,46 @@ LLM_PICK_SYSTEM = """你是论文配图选择助手。给你一组论文的 figu
 
 判断依据：caption 描述了模型结构、pipeline、framework、approach overview 的优先；
 描述定性结果、消融、对比的不优先。"""
+
+
+def pick_qualitative(
+    captions: list[Caption],
+    skip: Caption | None = None,
+) -> Caption | None:
+    """挑一张定性效果图。规则：
+    1. 关键词命中（qualitative/comparison/examples/...）
+    2. 关键词无命中：取最后一张非 architecture figure（实验图常在中后部）
+    skip：跳过这张（通常是 architecture caption，避免重复挑回）。
+    """
+    figures = [c for c in captions if c.kind == "figure"]
+    if skip is not None:
+        figures = [c for c in figures if not (c.number == skip.number)]
+    if not figures:
+        return None
+
+    keyword_hits = [c for c in figures if QUALITATIVE_KEYWORDS.search(c.text)]
+    # 排除明显的 framework 配图（容错）
+    keyword_hits = [c for c in keyword_hits if not ARCH_KEYWORDS.search(c.text)]
+    if keyword_hits:
+        keyword_hits.sort(key=lambda c: (c.number, c.page))
+        log.info("figure_picker.qualitative: kw pick %s", keyword_hits[0].label)
+        return keyword_hits[0]
+
+    # 兜底：取 number 最大的 figure（论文实验图常排在后部）
+    figures.sort(key=lambda c: c.number, reverse=True)
+    fallback = figures[0]
+    log.info("figure_picker.qualitative: fallback %s", fallback.label)
+    return fallback
+
+
+def pick_table(captions: list[Caption]) -> Caption | None:
+    """挑一张实验/比较表（按 number 升序首张）."""
+    tables = [c for c in captions if c.kind == "table"]
+    if not tables:
+        return None
+    tables.sort(key=lambda c: c.number)
+    log.info("figure_picker.table: pick %s", tables[0].label)
+    return tables[0]
 
 
 def _llm_pick(figures: list[Caption]) -> Caption | None:

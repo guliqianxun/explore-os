@@ -63,15 +63,15 @@ def _mock_chat(monkeypatch, content: str):
 
 
 def test_skim_ok(monkeypatch):
-    _mock_chat(monkeypatch, '{"one_liner": "语速控制生成", "keywords": ["diffusion","speed","video"]}')
+    _mock_chat(monkeypatch, '{"abstract_zh": "本文研究视频时间流的可学习视觉概念", "keywords": ["diffusion","speed","video"]}')
     out = skim_interpret(_item(), PerspectiveSpec())
     assert out is not None
-    assert out.one_liner == "语速控制生成"
+    assert "可学习视觉概念" in out.abstract_zh
     assert out.keywords == ["diffusion", "speed", "video"]
 
 
 def test_skim_perspective_injected(monkeypatch):
-    calls = _mock_chat(monkeypatch, '{"one_liner":"x","keywords":["a"]}')
+    calls = _mock_chat(monkeypatch, '{"abstract_zh":"x","keywords":["a"]}')
     skim_interpret(_item(), PerspectiveSpec(preset="engineer"))
     system = calls["messages"][0]["content"]
     assert PRESETS["engineer"] in system
@@ -79,6 +79,11 @@ def test_skim_perspective_injected(monkeypatch):
 
 def test_skim_empty_title_returns_none():
     out = skim_interpret(_item(title=""), PerspectiveSpec())
+    assert out is None
+
+
+def test_skim_empty_abstract_returns_none():
+    out = skim_interpret(_item(abstract=""), PerspectiveSpec())
     assert out is None
 
 
@@ -91,16 +96,16 @@ def test_skim_llm_failure_returns_none(monkeypatch):
 
 
 def test_skim_handles_code_fence(monkeypatch):
-    _mock_chat(monkeypatch, '```json\n{"one_liner":"a","keywords":["b"]}\n```')
+    _mock_chat(monkeypatch, '```json\n{"abstract_zh":"中文","keywords":["b"]}\n```')
     out = skim_interpret(_item(), PerspectiveSpec())
     assert out is not None
-    assert out.one_liner == "a"
+    assert out.abstract_zh == "中文"
 
 
 def test_skim_keywords_capped(monkeypatch):
     _mock_chat(
         monkeypatch,
-        '{"one_liner":"a","keywords":["1","2","3","4","5","6","7"]}',
+        '{"abstract_zh":"a","keywords":["1","2","3","4","5","6","7"]}',
     )
     out = skim_interpret(_item(), PerspectiveSpec())
     assert out is not None

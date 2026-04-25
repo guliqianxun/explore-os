@@ -83,8 +83,10 @@ class PaperRecord:
     target_date: str       # YYYY-MM-DD（论文所属"今日"）
     score: float
     tier: str              # deep | skim
-    one_liner: str = ""
+    abstract_zh: str = ""        # ft-014 中文摘要
     keywords: list[str] = field(default_factory=list)
+    # 兼容旧 ft-013 文件：one_liner 字段会被读，但新代码不再写
+    one_liner: str = ""
 
 
 def append_papers(sub_name: str, recs: list[PaperRecord]) -> None:

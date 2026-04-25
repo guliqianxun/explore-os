@@ -54,9 +54,9 @@ def build_narrative(
 
     lines = []
     for idx, item, skim in entries:
-        one_liner = skim.one_liner if skim else (item.abstract or "")[:80]
+        zh = skim.abstract_zh if skim else (item.abstract or "")[:80]
         score = item.raw.get("score", {}).get("total", 0.0) if item.raw else 0.0
-        lines.append(f"#{idx}  score={score:.2f}  {item.title}\n    {one_liner}")
+        lines.append(f"#{idx}  score={score:.2f}  {item.title}\n    {zh[:160]}")
     user = "今日入选论文：\n\n" + "\n\n".join(lines)
 
     system = perspective_prefix(perspective) + NARRATIVE_SYSTEM_SUFFIX

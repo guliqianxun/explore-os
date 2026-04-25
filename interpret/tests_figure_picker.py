@@ -3,7 +3,11 @@ from __future__ import annotations
 
 from interpret import figure_picker as fp
 from interpret.caption_extractor import Caption
-from interpret.figure_picker import pick_architecture
+from interpret.figure_picker import (
+    pick_architecture,
+    pick_qualitative,
+    pick_table,
+)
 from interpret.llm import LLMResult
 
 
@@ -70,6 +74,65 @@ def test_llm_fallback_used(monkeypatch):
     out = pick_architecture(captions, llm_fallback=True)
     assert out is not None and out.number == 3
     assert called["n"] == 1
+
+
+def test_qualitative_keyword_pick():
+    captions = [
+        _cap("figure", 1, "Figure 1: Overview of our framework"),
+        _cap("figure", 2, "Figure 2: Loss curves on benchmark"),
+        _cap("figure", 3, "Figure 3: Qualitative comparison with baselines"),
+    ]
+    out = pick_qualitative(captions, skip=captions[0])
+    assert out is not None and out.number == 3
+
+
+def test_qualitative_excludes_arch_caption():
+    captions = [
+        _cap("figure", 5, "Figure 5: Qualitative results from our framework"),
+    ]
+    # 即使含 qualitative 但同时含 framework，应被排除关键词命中
+    # 但兜底会取最大编号 figure（仍是 5）
+    out = pick_qualitative(captions)
+    assert out is not None and out.number == 5
+
+
+def test_qualitative_skip_works():
+    captions = [
+        _cap("figure", 1, "Figure 1: A picture"),
+        _cap("figure", 2, "Figure 2: Another"),
+    ]
+    out = pick_qualitative(captions, skip=captions[1])
+    assert out is not None and out.number == 1
+
+
+def test_qualitative_fallback_largest_number():
+    captions = [
+        _cap("figure", 1, "Figure 1: Setup"),
+        _cap("figure", 2, "Figure 2: Mid"),
+        _cap("figure", 5, "Figure 5: Last"),
+    ]
+    out = pick_qualitative(captions, skip=captions[0])
+    assert out is not None and out.number == 5
+
+
+def test_qualitative_no_figures():
+    captions = [_cap("table", 1, "Table 1")]
+    assert pick_qualitative(captions) is None
+
+
+def test_pick_table_first():
+    captions = [
+        _cap("figure", 1, "Figure 1"),
+        _cap("table", 2, "Table 2: Ablation"),
+        _cap("table", 1, "Table 1: Main results"),
+    ]
+    out = pick_table(captions)
+    assert out is not None and out.number == 1
+
+
+def test_pick_table_none():
+    captions = [_cap("figure", 1, "Figure 1")]
+    assert pick_table(captions) is None
 
 
 def test_llm_fallback_not_used_by_default(monkeypatch):

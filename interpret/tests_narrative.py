@@ -36,8 +36,8 @@ def test_narrative_ok(monkeypatch):
         '"note_for_you":"先读 #1"}'
     ))
     entries = [
-        (1, _item("World Model paper"), SkimOut(one_liner="世界模型", keywords=["a"])),
-        (2, _item("Speculative decoding"), SkimOut(one_liner="加速", keywords=["b"])),
+        (1, _item("World Model paper"), SkimOut(abstract_zh="世界模型", keywords=["a"])),
+        (2, _item("Speculative decoding"), SkimOut(abstract_zh="加速", keywords=["b"])),
     ]
     nar = build_narrative(entries, PerspectiveSpec())
     assert nar is not None
@@ -71,7 +71,7 @@ def test_narrative_uses_skim_when_available(monkeypatch):
     calls = _mock_chat(monkeypatch, '{"hero_sentence":"h","bullets":[],"note_for_you":""}')
     entries = [
         (1, _item(title="paper A", abstract="long abstract"),
-         SkimOut(one_liner="短要点 A", keywords=["k"])),
+         SkimOut(abstract_zh="短要点 A", keywords=["k"])),
     ]
     build_narrative(entries, PerspectiveSpec())
     user = calls["messages"][1]["content"]

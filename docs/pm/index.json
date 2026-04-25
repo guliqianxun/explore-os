@@ -17,6 +17,7 @@
     {"id": "ft-010", "title": "Daily Narrative 跨篇合成", "status": "done", "milestone": "v0.2"},
     {"id": "ft-011", "title": "arXiv PDF 拉取 + 章节拆分", "status": "done", "milestone": "v0.3"},
     {"id": "ft-012", "title": "图表提取 + LLM 分类 + 多模态解读", "status": "superseded", "milestone": "v0.3"},
-    {"id": "ft-013", "title": "caption + bbox + 记忆线（精读重设计）", "status": "planned", "milestone": "v0.4"}
+    {"id": "ft-013", "title": "caption + bbox + 记忆线（精读重设计）", "status": "done", "milestone": "v0.4"},
+    {"id": "ft-014", "title": "略读升级（中文摘要+双图）+ 精读多图多表", "status": "done", "milestone": "v0.4"}
   ]
 }

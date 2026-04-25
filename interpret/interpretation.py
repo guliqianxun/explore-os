@@ -51,38 +51,45 @@ def perspective_prefix(p: PerspectiveSpec) -> str:
 
 # ---------------- skim ----------------
 
-SKIM_SYSTEM_SUFFIX = """任务：读输入的 title + abstract，产出中文 JSON：
+SKIM_SYSTEM_SUFFIX = """任务：把英文 abstract 翻译成精炼中文 + 抽 3-5 个领域关键词。
+
+输出 JSON：
 {
-  "one_liner": "10-40字的一句话要点，结合视角措辞",
+  "abstract_zh": "中文翻译；忠于原意，专业术语用业内通行译法，可保留少量英文术语（如 diffusion, transformer 等）；
+                  尽量与原文等长，不要无谓压缩",
   "keywords": ["关键词1", "关键词2", "关键词3"]
 }
-只输出 JSON，不要解释。one_liner 用陈述句，避免"本文""作者"模板词。"""
+
+规则：
+- 翻译要专业、不口语化，符合视角语境。
+- keywords 是检索用，覆盖论文核心概念，不要太宽泛（如"machine learning"）。
+- 只输出 JSON，不要解释，不要 markdown 围栏。"""
 
 
 @dataclass(slots=True)
 class SkimOut:
-    one_liner: str
-    keywords: list[str]
+    abstract_zh: str = ""
+    keywords: list[str] = field(default_factory=list)
     usage: dict[str, int] = field(default_factory=dict)
 
 
 def skim_interpret(item: Item, perspective: PerspectiveSpec) -> SkimOut | None:
-    if not item.title:
+    if not item.title or not (item.abstract or "").strip():
         return None
     system = perspective_prefix(perspective) + SKIM_SYSTEM_SUFFIX
-    user = f"title: {item.title}\n\nabstract: {item.abstract or '(no abstract)'}"
+    user = f"title: {item.title}\n\nabstract: {item.abstract}"
     try:
         result = chat(
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            temperature=0.3,
-            max_tokens=200,
+            temperature=0.2,
+            max_tokens=600,
         )
         parsed = extract_json(result.content)
         return SkimOut(
-            one_liner=str(parsed.get("one_liner") or "").strip(),
+            abstract_zh=str(parsed.get("abstract_zh") or "").strip(),
             keywords=[str(k) for k in parsed.get("keywords") or []][:5],
             usage=result.usage,
         )
@@ -102,12 +109,19 @@ DEEP_PLACEHOLDER = (
 class DeepOut:
     abstract: str          # 原文 abstract 透传
     placeholder: str       # iter-002 占位
-    method_summary: str = ""     # iter-003 ft-012 填
+    method_summary: str = ""
     key_innovation: list[str] = field(default_factory=list)
     limitations: list[str] = field(default_factory=list)
     for_you: str = ""
-    figure_path: str = ""  # iter-003 ft-012 填
+    # 架构图（略读和精读都用）
+    figure_path: str = ""
     figure_caption: str = ""
+    # 效果图（略读和精读都用）
+    qualitative_path: str = ""
+    qualitative_caption: str = ""
+    # 表（仅精读）
+    table_path: str = ""
+    table_caption: str = ""
 
 
 def deep_interpret(item: Item, perspective: PerspectiveSpec) -> DeepOut:

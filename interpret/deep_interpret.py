@@ -124,5 +124,6 @@ def _compose_memory(papers: list[PaperRecord]) -> str:
     lines = []
     for p in recent:
         kw = "/".join(p.keywords[:3]) if p.keywords else ""
-        lines.append(f"- {p.target_date}  {p.title}  ({kw})  ::  {p.one_liner[:100]}")
+        zh = (p.abstract_zh or p.one_liner)[:120]
+        lines.append(f"- {p.target_date}  {p.title}  ({kw})  ::  {zh}")
     return "\n".join(lines)

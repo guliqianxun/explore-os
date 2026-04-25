@@ -19,7 +19,8 @@ log = logging.getLogger(__name__)
 
 # Caption 正则（行首，宽松匹配中英文期刊常见前缀）
 CAPTION_PREFIX_RE = re.compile(
-    r"^\s*(Figure|Fig\.?|Table|Tab\.?)\s*(\d+)\s*[:.。：]\s*(.+)$",
+    # 兼容 "Figure 1: ..." / "Fig. 3. ..." / "Figure 1 We propose ..."（无冒号）
+    r"^\s*(Figure|Fig\.?|Table|Tab\.?)\s*(\d+)\s*[:.。：]?\s+(.+)$",
     re.IGNORECASE,
 )
 # 正文里对图的引用，如 "Figure 1" / "Fig. 3" / "Tab. 2"
@@ -77,23 +78,38 @@ def extract_captions(arxiv_id: str, pdf_path: Path) -> list[Caption]:
                     text_one = text.strip().replace("\n", " ")
                     full_text_blocks.append((page_idx + 1, text_one))
 
-                    m = CAPTION_PREFIX_RE.match(text_one)
-                    if not m:
+                    # block 内可能多行，逐行尝试 caption 匹配
+                    matched = None
+                    for line in text.splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        m = CAPTION_PREFIX_RE.match(line)
+                        if m:
+                            matched = (m, line)
+                            break
+                    if not matched:
                         continue
+                    m, caption_line = matched
                     kind_raw, num_raw = m.group(1), m.group(2)
                     kind = "figure" if kind_raw.lower().startswith("fig") else "table"
                     try:
                         num = int(num_raw)
                     except ValueError:
                         continue
-                    # caption 上方一段区域猜为图像
+                    # caption 整段：从匹配行开始到 block 末尾（caption 常跨多行）
+                    full_caption = " ".join(
+                        ln.strip() for ln in text.splitlines()
+                        if ln.strip() and (ln.strip() == caption_line
+                                            or text.find(caption_line) <= text.find(ln))
+                    )[:600]
                     img_y1 = y0 - 2
                     img_y0 = max(0.0, img_y1 - DEFAULT_FIG_BAND_ABOVE)
                     captions.append(Caption(
                         arxiv_id=arxiv_id,
                         kind=kind,
                         number=num,
-                        text=text_one[:600],
+                        text=full_caption or caption_line[:600],
                         page=page_idx + 1,
                         bbox_caption=(x0, y0, x1, y1),
                         bbox_image=(x0, img_y0, x1, img_y1),

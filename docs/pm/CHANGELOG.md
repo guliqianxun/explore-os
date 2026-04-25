@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### 2026-04-25 (latest+2) — ft-014 略读升级 + 精读多图多表
+- 用户反馈：原"精读 + abstract + 占位"实际是想要的略读形态——整体抬一档。
+- **略读卡**（每篇都有）：标题 + 作者 + **中文翻译 abstract** +
+  折叠英文原文 + framework PNG + qualitative PNG + 关键词
+- **精读卡**（Top-N）：略读 + 方法摘要 / 关键创新 / 局限 / 视角解读 + 表 PNG
+- `figure_picker` 扩展 `pick_qualitative` / `pick_table`
+- `SkimOut.one_liner → abstract_zh`（删 one_liner，旧 memory 字段保留兼容）
+- `DeepOut` 加 qualitative_path/caption + table_path/caption
+- pipeline：所有 items 都拉 PDF + 抽 caption + 渲三类图
+- 邮件 inline_images 每篇至多 3 张
+- 全量 105 tests passing。
+
 ### 2026-04-25 (latest+1) — ft-013 重设计（替代 ft-012 多模态路径）
 - **设计原则升级**：CLAUDE.md 加"工具 vs LLM 边界"段——确定性产出工具化，
   LLM 仅用于语义理解/动态编排。ft-012 的多模态图分类被识别为错位（caption
