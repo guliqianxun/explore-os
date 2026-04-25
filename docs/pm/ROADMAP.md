@@ -2,8 +2,8 @@
 pm_id: roadmap
 pm_type: roadmap
 project: explore-os
-version: v0.2-plan
-updated_at: 2026-04-24
+version: v0.6-plan
+updated_at: 2026-04-25
 ---
 
 # explore-os Roadmap
@@ -39,10 +39,12 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 | **v0.2 (M2)** | 注意力分层 | 综合分 rerank / 精读+略读分档 / 视角注入 / Daily Narrative | 2026-05 |
 | **v0.3 (M3)** | 精读深度化 | arXiv PDF 拉取 / 图表提取+分类+多模态解读 / 精读档框架图 | 2026-05/06 |
 | **v0.4 (M3.5)** | 时间线与回溯 | HF 历史回填 / Postgres 落库 / 月报+半年报 / 热度信号多源 | 2026-06/07 |
-| **v0.5 (M4)** | **多渠道**（产品化关键） | DeliveryAdapter 抽象 ✅ / 飞书 / **微信订阅号** | 2026-05 |
-| **v0.6+** | 源扩展 + 历史回顾 | GitHub / HF Models / 月报半年报 / HTTP 触发 | 2026-06+ |
-| **v1.0 (M4)** | 产品化基线 | 多用户 / Web 配置面板（React+Vite）/ 用量计费骨架 | 2026-09 |
-| **v1.x (M5+)** | 扩展方向 | xingsuo 作为 source / 商业动态信源 / 公众号知乎半自动发文 | 待评估 |
+| **v0.5 (M4)** | DeliveryAdapter（多渠道**降级为可选**） | DeliveryAdapter 抽象 ✅ / 飞书 / 微信订阅号（按需） | 2026-05 |
+| **v0.6 (M5)** | **抽取器素材索引层**（三段中台主线） | 五类 material（section/figure/table/equation/citation）/ 同库前缀 `extract_*` / 稳定 material_id | 2026-05/06 |
+| **v0.7 (M6)** | **解读器 L1+L2** | claim 抽取 + evidence 映射（L1）/ 论文内反向信号扫描（L2）/ 强制 cite material_id | 2026-06/07 |
+| **v0.8 (M7)** | **渲染分级 + drawio 图谱** | L0/L1/L2 速读卡片 / drawio XML 单篇图谱（claim/figure/table/citation 节点） | 2026-07/08 |
+| **v1.0 (M8)** | **单机 app packaging** | Tauri 优先（Electron 兜底）/ Django sidecar / SQLite 切换 / 桌面端 UI | 2026-09+ |
+| **v1.x (M9+)** | 扩展方向 | xingsuo 作为 source / GitHub + HF Models 信源 / 跨篇图谱 / 商业化探索 | 待评估 |
 
 ## Features 索引
 
@@ -63,17 +65,34 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [ft-015](features/ft-015.md) — 学术 PDF 解析升级（pdffigures2/Nougat 候选）
 - [ft-016](features/ft-016.md) — DeliveryAdapter 抽象层 ✅
 - [ft-017](features/ft-017.md) — 飞书 DeliveryAdapter
-- [ft-018](features/ft-018.md) — 微信订阅号 DeliveryAdapter（**产品化关键**）
+- [ft-018](features/ft-018.md) — 微信订阅号 DeliveryAdapter（按需，非主线）
+- [ft-019](features/ft-019.md) — 抽取器素材索引层（v0.6 主线）
+- [ft-020](features/ft-020.md) — 解读器 L1+L2（claim→evidence + 反向信号）
+- [ft-021](features/ft-021.md) — 渲染分级 + drawio 单篇图谱
+- [ft-022](features/ft-022.md) — 单机 app packaging 调研（Tauri / Electron）
 
 ## 当前迭代
 
 - [iter-001](iterations/iter-001.md) — MVP Sprint 1（ft-002/003/004/006/007 已完成；ft-001/005 DB 落库延后）
 - [iter-002](iterations/iter-002.md) — Sprint 2：注意力分层（ft-008/009/010）✅
 - [iter-003](iterations/iter-003.md) — Sprint 3：精读深度化（ft-011/012）✅
+- [iter-004](iterations/iter-004.md) — Sprint 4：三段中台（ft-019 入口；ft-022 调研并行）
+
+## 战略转向（2026-04-25）
+
+商业化暂缓，重心从「多渠道推送」转向「**论文理解中台**」三段拆分：
+
+```
+内容抽取器 → 解读器 → 渲染器
+（确定性素材） （L1+L2 逻辑+反向信号） （L0/L1/L2 卡片+drawio 图谱）
+```
+
+长期形态：**单机 app**（Tauri 优先），Django 作为本地 sidecar，DB 切到 SQLite。
+v0.5 多渠道降级为可选，飞书/微信订阅号按需推进。
 
 ## 未决议题
 
 1. **rewriter 的调用粒度**：全局一次还是按 source 一次？MVP 先全局一次，v0.3 按源定制。
-2. **Django 项目布局**：单 app 还是按领域切 app（subscriptions / sources / delivery）？倾向后者。
-3. **xingsuo 集成形态**：真要接时再定（HTTP / package / 共享数据层），现阶段不设计。
-4. **调度**：MVP 外部 cron。v0.2 决定是否内置 Celery beat / Django-Q。
+2. **xingsuo 集成形态**：真要接时再定（HTTP / package / 共享数据层），现阶段不设计。
+3. **调度**：MVP 外部 cron。桌面端切换到 in-process scheduler（APScheduler 候选），v1.0 packaging 时定。
+4. **解读器 L2 的开放批判边界**：当前严格禁止引用论文外 prior work，仅扫描论文内反向信号；待 L1+L2 跑稳后重审。

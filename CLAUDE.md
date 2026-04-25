@@ -41,8 +41,18 @@ explore-os 是独立工具（OpenClaw-like），目前借助 Claude Code 协助�
 **Python 代码本身就是产品**，不是临时脚手架。架构演进路径：
 1. 完善 skill 边界（每个能力一个清晰接口）
 2. 引入跨 run 记忆线（已在 ft-013 落地）
-3. orchestrator 从固定 pipeline → 可分支 agent
-4. 提取为可分发 package + CLI
+3. **拆三段中台**：抽取器（确定性 material）→ 解读器（L1+L2）→ 渲染器（卡片+drawio）（v0.6/0.7/0.8）
+4. orchestrator 从固定 pipeline → 可分支 agent
+5. **打包为单机 app**（Tauri 优先 / Electron 兜底），Django 作为 sidecar，DB 切 SQLite（v1.0）
+
+## 长期形态约束（2026-04-25 锁定）
+
+- **长期形态是单机 app**，不是云端 SaaS。新功能避免引入仅云端可用的依赖耦合（hardcoded SMTP、必需的远程数据库、外部 cron 假设等都要可拔）。
+- **数据层避免 PG-only 特性**，为未来 SQLite 切换留口：
+  - jsonb → 用 Django `JSONField`（ORM 已抽象）
+  - 禁用 `ArrayField`、PG `tsvector`、PG-only 的 `ON CONFLICT` 写法（走 ORM `update_or_create`）
+  - migrations 不要写 raw PG SQL
+- **同库不同前缀**而非 schema：跨段表用 `extract_*` / `interpret_*` / `render_*` 前缀区分，SQLite 友好
 
 ## 并行开发：worktree + subagent 协作规范
 

@@ -1,10 +1,10 @@
 {
   "project": "explore-os",
-  "version": "v0.5",
+  "version": "v0.6-plan",
   "updated_at": "2026-04-25",
   "roadmap": "ROADMAP.md",
   "current_iteration": "iter-004",
-  "current_focus": "ft-017 飞书 DeliveryAdapter (next)",
+  "current_focus": "ft-019 抽取器素材索引层 (in_progress) + ft-022 packaging 调研 (parallel)",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -20,9 +20,19 @@
     {"id": "ft-012", "title": "图表提取 + LLM 分类 + 多模态解读", "status": "superseded", "milestone": "v0.3"},
     {"id": "ft-013", "title": "caption + bbox + 记忆线（精读重设计）", "status": "done", "milestone": "v0.4"},
     {"id": "ft-014", "title": "略读升级（中文摘要+双图）+ 精读多图多表", "status": "done", "milestone": "v0.4"},
-    {"id": "ft-015", "title": "学术 PDF 解析升级（pdffigures2/Nougat 候选）", "status": "planned", "milestone": "v0.5"},
+    {"id": "ft-015", "title": "学术 PDF 解析升级（pdffigures2/Nougat 候选）", "status": "deferred", "milestone": "v1.x"},
     {"id": "ft-016", "title": "DeliveryAdapter 抽象层", "status": "done", "milestone": "v0.5"},
-    {"id": "ft-017", "title": "飞书 DeliveryAdapter", "status": "planned", "milestone": "v0.5"},
-    {"id": "ft-018", "title": "微信订阅号 DeliveryAdapter", "status": "planned", "milestone": "v0.5"}
+    {"id": "ft-017", "title": "飞书 DeliveryAdapter", "status": "deferred", "milestone": "v0.5"},
+    {"id": "ft-018", "title": "微信订阅号 DeliveryAdapter", "status": "deferred", "milestone": "v0.5"},
+    {"id": "ft-019", "title": "抽取器素材索引层", "status": "in_progress", "milestone": "v0.6"},
+    {"id": "ft-020", "title": "解读器 L1+L2", "status": "planned", "milestone": "v0.7"},
+    {"id": "ft-021", "title": "渲染分级 + drawio 单篇图谱", "status": "planned", "milestone": "v0.8"},
+    {"id": "ft-022", "title": "单机 app packaging 调研", "status": "in_progress", "milestone": "v1.0"}
+  ],
+  "iterations": [
+    {"id": "iter-001", "status": "done"},
+    {"id": "iter-002", "status": "done"},
+    {"id": "iter-003", "status": "done"},
+    {"id": "iter-004", "status": "in_progress", "scope": ["ft-019", "ft-022"]}
   ]
 }
