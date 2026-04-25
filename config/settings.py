@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "sources",
     "interpret",
     "delivery",
+    "apps.extract",
 ]
 
 MIDDLEWARE = [

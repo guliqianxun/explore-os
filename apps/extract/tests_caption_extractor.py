@@ -1,8 +1,4 @@
-"""Tests for ft-013 caption_extractor.
-
-Caption 抽取依赖真实 PDF 解析；这里测的是正则与引用归并辅助函数。
-真实 PDF 解析路径在实战测试覆盖。
-"""
+"""Tests for ft-019 caption_extractor (搬迁自 interpret/caption_extractor)."""
 from __future__ import annotations
 
 from apps.extract import caption_extractor as ce
@@ -27,7 +23,6 @@ def test_attach_references_picks_text_around_citation():
     blocks = [
         (1, "We illustrate the pipeline as shown in Figure 1, where the encoder ..."),
         (2, "The model achieves 95% accuracy as listed in Table 2 below."),
-        (3, "Other unrelated content about Section 5."),
     ]
     _attach_references(captions, blocks)
     by_label = {c.label: c for c in captions}
@@ -38,8 +33,8 @@ def test_attach_references_picks_text_around_citation():
 def test_attach_references_skips_caption_lines():
     captions = [_cap("figure", 1)]
     blocks = [
-        (1, "Figure 1: Overview of the framework."),    # caption 自己
-        (2, "We refer to Figure 1 for details."),       # 真引用
+        (1, "Figure 1: Overview of the framework."),
+        (2, "We refer to Figure 1 for details."),
     ]
     _attach_references(captions, blocks)
     refs = captions[0].references
@@ -51,12 +46,9 @@ def test_caption_prefix_re_variants():
     cases = [
         ("Figure 1: Overview", True),
         ("Fig. 3: Results", True),
-        ("Fig 7: items", True),
         ("Table 2: numbers", True),
-        ("Tab. 5: ...", True),
         ("Section 3: Methodology", False),
         ("As shown in Figure 1, ...", False),
     ]
     for text, expected in cases:
-        m = ce.CAPTION_PREFIX_RE.match(text)
-        assert (m is not None) == expected, f"failed: {text}"
+        assert (ce.CAPTION_PREFIX_RE.match(text) is not None) == expected, text

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from interpret import pdf_chunker
-from interpret.pdf_chunker import (
+from apps.extract import section_extractor as pdf_chunker
+from apps.extract.section_extractor import (
     BUCKET_CHAR_CAP,
     PaperChunks,
     _classify_bucket,
