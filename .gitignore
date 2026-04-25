@@ -31,6 +31,8 @@ subscriptions.local.yaml
 # OS
 .DS_Store
 Thumbs.db
+Snipaste_*.png
+*.tmp.png
 
 # Test / coverage
 .pytest_cache/
