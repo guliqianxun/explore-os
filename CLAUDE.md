@@ -41,18 +41,32 @@ explore-os 是独立工具（OpenClaw-like），目前借助 Claude Code 协助�
 **Python 代码本身就是产品**，不是临时脚手架。架构演进路径：
 1. 完善 skill 边界（每个能力一个清晰接口）
 2. 引入跨 run 记忆线（已在 ft-013 落地）
-3. **拆三段中台**：抽取器（确定性 material）→ 解读器（L1+L2）→ 渲染器（卡片+drawio）（v0.6/0.7/0.8）
+3. **拆三段中台**：抽取器（确定性 material）→ 解读器（L1+L2）→ 渲染器（Excalidraw 图谱）（v0.6/0.7/0.8 ✅）
 4. orchestrator 从固定 pipeline → 可分支 agent
-5. **打包为单机 app**（Tauri 优先 / Electron 兜底），Django 作为 sidecar，DB 切 SQLite（v1.0）
+5. **打包为 Electron 桌面 app**（v0.9–v1.2，弃 Tauri），Django 作为 Python sidecar，DB 切 SQLite
 
-## 长期形态约束（2026-04-25 锁定）
+## 长期形态约束（2026-04-25 锁定 / 2026-04-26 修订）
 
-- **长期形态是单机 app**，不是云端 SaaS。新功能避免引入仅云端可用的依赖耦合（hardcoded SMTP、必需的远程数据库、外部 cron 假设等都要可拔）。
+- **长期形态是 Electron 桌面 app**，不是云端 SaaS。新功能避免引入仅云端可用的依赖耦合（hardcoded SMTP、必需的远程数据库、外部 cron 假设等都要可拔）。
 - **数据层避免 PG-only 特性**，为未来 SQLite 切换留口：
   - jsonb → 用 Django `JSONField`（ORM 已抽象）
   - 禁用 `ArrayField`、PG `tsvector`、PG-only 的 `ON CONFLICT` 写法（走 ORM `update_or_create`）
   - migrations 不要写 raw PG SQL
 - **同库不同前缀**而非 schema：跨段表用 `extract_*` / `interpret_*` / `render_*` 前缀区分，SQLite 友好
+- **路径假设**：所有持久化路径走 `EXPLORE_OS_DATA_DIR`（v0.9 ft-022 引入），禁止 hardcoded `BASE_DIR/'media'`，frozen exe 中 `BASE_DIR` 不可写
+- **图谱渲染统一走 Excalidraw**（v0.8 ft-021 锁定），不留 tldraw / drawio renderer
+
+## 桌面端栈（2026-04-26 锁定）
+
+- **Shell**: Electron + electron-builder（Tauri 弃用，理由：CLI 已通；Electron sidecar 模式社区最成熟）
+- **Sidecar**: PyInstaller-bundled Django，HTTP localhost 通信
+- **前端**: Vite + React + TypeScript + Tailwind + shadcn/ui + @excalidraw/excalidraw + Zustand
+- **调度器**: APScheduler in-process（不依赖系统 cron / 外部 broker）
+- **签名**: 自用阶段不签（跳 Apple Dev / Win EV cert）；公开分发延后到 v1.x
+- **CUDA / CPU 双轨**：v1.2 落两套 PyInstaller spec：
+  - CUDA bundle（自用，~1.5GB，含 cu124 torch + docling 模型）
+  - CPU bundle（分发接口，~700MB，CPU torch）
+  - 单一代码库，pyproject.toml `[tool.uv.sources]` 区分 index
 
 ## 并行开发：worktree + subagent 协作规范
 

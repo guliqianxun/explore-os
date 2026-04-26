@@ -42,9 +42,12 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 | **v0.5 (M4)** | DeliveryAdapter（多渠道**降级为可选**） | DeliveryAdapter 抽象 ✅ / 飞书 / 微信订阅号（按需） | 2026-05 |
 | **v0.6 (M5)** | **抽取器素材索引层**（三段中台主线） | 五类 material（section/figure/table/equation/citation）/ 同库前缀 `extract_*` / 稳定 material_id | 2026-05/06 |
 | **v0.7 (M6)** | **解读器 L1+L2** | claim 抽取 + evidence 映射（L1）/ 论文内反向信号扫描（L2）/ 强制 cite material_id | 2026-06/07 |
-| **v0.8 (M7)** | **渲染分级 + drawio 图谱** | L0/L1/L2 速读卡片 / drawio XML 单篇图谱（claim/figure/table/citation 节点） | 2026-07/08 |
-| **v1.0 (M8)** | **单机 app packaging** | Tauri 优先（Electron 兜底）/ Django sidecar / SQLite 切换 / 桌面端 UI | 2026-09+ |
-| **v1.x (M9+)** | 扩展方向 | xingsuo 作为 source / GitHub + HF Models 信源 / 跨篇图谱 / 商业化探索 | 待评估 |
+| **v0.8 (M7)** | **图谱抽象层 + Excalidraw renderer** | PaperGraphModel / `.excalidraw` JSON / SVG fallback（drop tldraw / drawio） | 2026-04/05 |
+| **v0.9 (M8)** | **Electron 基础设施 + DRF API** | C1/C3/C5/C9 单机化清理 / EXPLORE_OS_DATA_DIR / DRF 包装 CLI / APScheduler in-process | 2026-05 |
+| **v1.0 (M9)** | **Electron shell + Python sidecar** | electron-builder / PyInstaller Django / HTTP localhost / 端口与进程管理 | 2026-05 |
+| **v1.1 (M10)** | **前端 MVP 4 页** | Vite+React+TS+Tailwind+shadcn/ui+Excalidraw 嵌入 / 论文列表 / 精读视图 / 订阅配置 / 抓取触发 | 2026-05/06 |
+| **v1.2 (M11)** | **自动更新 + CUDA/CPU 双轨** | electron-updater / 双 PyInstaller spec（CUDA bundle 自用 + CPU bundle 分发接口）/ 不签名（自用阶段） | 2026-06 |
+| **v1.x (M12+)** | 扩展方向 | 代码签名 / 公开分发 / xingsuo 作为 source / GitHub + HF Models 信源 / 跨篇图谱 | 待评估 |
 
 ## Features 索引
 
@@ -68,8 +71,11 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [ft-018](features/ft-018.md) — 微信订阅号 DeliveryAdapter（按需，非主线）
 - [ft-019](features/ft-019.md) — 抽取器素材索引层（v0.6 主线）
 - [ft-020](features/ft-020.md) — 解读器 L1+L2（claim→evidence + 反向信号）
-- [ft-021](features/ft-021.md) — 渲染分级 + drawio 单篇图谱
-- [ft-022](features/ft-022.md) — 单机 app packaging 调研（Tauri / Electron）
+- [ft-021](features/ft-021.md) — 图谱抽象层 + Excalidraw renderer + SVG fallback
+- [ft-022](features/ft-022.md) — Electron 基础设施清理 + DRF API（原 packaging 调研已 done，rpt-002）
+- [ft-023](features/ft-023.md) — Electron shell + Python sidecar + PyInstaller Django
+- [ft-024](features/ft-024.md) — 前端 MVP 4 页（Vite+React+TS+Tailwind+shadcn/ui+Excalidraw）
+- [ft-025](features/ft-025.md) — 自动更新 + CUDA/CPU 双轨打包
 
 ## 当前迭代
 
@@ -77,7 +83,8 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [iter-002](iterations/iter-002.md) — Sprint 2：注意力分层（ft-008/009/010）✅
 - [iter-003](iterations/iter-003.md) — Sprint 3：精读深度化（ft-011/012）✅
 - [iter-004](iterations/iter-004.md) — Sprint 4：三段中台（ft-019 + ft-022 + ft-015 ✅）
-- [iter-005](iterations/iter-005.md) — Sprint 5：解读器 L1+L2 生产侧（ft-020）
+- [iter-005](iterations/iter-005.md) — Sprint 5：解读器 L1+L2 生产侧（ft-020 ✅）
+- [iter-006](iterations/iter-006.md) — Sprint 6：渲染层（ft-021 图谱抽象 + Excalidraw）
 
 ## 战略转向（2026-04-25）
 
@@ -85,11 +92,18 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 
 ```
 内容抽取器 → 解读器 → 渲染器
-（确定性素材） （L1+L2 逻辑+反向信号） （L0/L1/L2 卡片+drawio 图谱）
+（确定性素材） （L1+L2 逻辑+反向信号） （Excalidraw 图谱 + 速读卡片）
 ```
 
-长期形态：**单机 app**（Tauri 优先），Django 作为本地 sidecar，DB 切到 SQLite。
+长期形态：**Electron 桌面 app**（2026-04-26 锁定，弃 Tauri），Django 作为 Python sidecar，DB 切到 SQLite。
 v0.5 多渠道降级为可选，飞书/微信订阅号按需推进。
+
+## 桌面端决策（2026-04-26 锁定）
+
+- **直上 Electron**：Tauri 弃用。理由：CLI 已通；Electron sidecar 模式社区最成熟；前端栈灵活
+- **前端栈**：Vite + React + TypeScript + Tailwind + shadcn/ui + @excalidraw/excalidraw + Zustand
+- **自用阶段不签名**：跳过 Apple Dev / Windows EV cert（约省 1.5 周 + 钱）；公开分发延后到 v1.x
+- **CUDA / CPU 双轨**：v1.2 ft-025 落两套 PyInstaller spec；自用走 CUDA bundle，CPU bundle 留接口待分发
 
 ## 未决议题
 
