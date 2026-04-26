@@ -9,7 +9,6 @@ import logging
 from pathlib import Path
 
 import httpx
-from django.conf import settings
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -17,6 +16,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from apps.core.paths import papers_dir
 from sources.base import Item
 
 log = logging.getLogger(__name__)
@@ -26,9 +26,7 @@ HTTP_TIMEOUT = 60.0
 
 
 def cache_root() -> Path:
-    root = Path(getattr(settings, "BASE_DIR", Path.cwd())) / "media" / "papers"
-    root.mkdir(parents=True, exist_ok=True)
-    return root
+    return papers_dir()
 
 
 def arxiv_id_of(item: Item) -> str | None:

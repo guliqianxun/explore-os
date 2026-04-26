@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from apps.core.paths import render_dir
 from apps.render.excalidraw_renderer import ExcalidrawRenderer
 from apps.render.graph import build_graph
 from apps.render.persist import persist_artifact
@@ -43,9 +43,9 @@ class Command(BaseCommand):
 
         if opts["out_dir"]:
             out_dir = Path(opts["out_dir"])
+            out_dir.mkdir(parents=True, exist_ok=True)
         else:
-            out_dir = Path(settings.BASE_DIR) / "media" / "render" / arxiv_id
-        out_dir.mkdir(parents=True, exist_ok=True)
+            out_dir = render_dir(arxiv_id)
 
         renderer = ExcalidrawRenderer() if fmt == "excalidraw" else SvgRenderer()
         path = renderer.render(graph, out_dir)

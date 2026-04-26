@@ -21,8 +21,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from django.conf import settings
-
+from apps.core.paths import figures_dir as _core_figures_dir
 from apps.extract.base import (
     CitationMaterial,
     EquationMaterial,
@@ -97,9 +96,7 @@ def _convert(arxiv_id: str, pdf_path: Path) -> Any:
 
 
 def _figures_dir(arxiv_id: str) -> Path:
-    base = Path(getattr(settings, "BASE_DIR", Path.cwd())) / "media" / "figures" / arxiv_id
-    base.mkdir(parents=True, exist_ok=True)
-    return base
+    return _core_figures_dir(arxiv_id)
 
 
 # ---------------- Mappers ----------------

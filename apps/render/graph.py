@@ -18,15 +18,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from django.conf import settings
-
+from apps.core.paths import equations_dir
 from apps.render.base import GraphNode, PaperGraphModel
 from apps.render.equation_render import png_size, render_latex_to_png
 
 
 def _equation_image_path(arxiv_id: str, seq: str) -> Path:
-    base = Path(getattr(settings, "BASE_DIR", Path.cwd())) / "media" / "equations" / arxiv_id
-    return base / f"eq_{seq}.png"
+    return equations_dir(arxiv_id) / f"eq_{seq}.png"
 
 
 def build_graph(arxiv_id: str) -> PaperGraphModel:

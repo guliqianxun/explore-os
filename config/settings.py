@@ -2,12 +2,21 @@ from pathlib import Path
 
 import environ
 
+# ft-022: 触发 apps.core.paths 副作用（HF_HOME / TRANSFORMERS_CACHE 重定向），
+# 必须在任何可能 import docling 的代码之前。也提供 data_dir() 供下面 DATA_DIR 复用。
+from apps.core.paths import data_dir as _data_dir
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
     DJANGO_DEBUG=(bool, False),
 )
 environ.Env.read_env(BASE_DIR / ".env")
+
+# ft-022: 数据根目录（环境变量 EXPLORE_OS_DATA_DIR 优先，否则跨平台默认）
+DATA_DIR = _data_dir()
+MEDIA_ROOT = DATA_DIR / "media"
+MEDIA_URL = "media/"
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-insecure-change-me")
 DEBUG = env("DJANGO_DEBUG")
@@ -22,6 +31,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     # Local apps
+    "apps.core",
+    "apps.api",
     "subscriptions",
     "sources",
     "interpret",
@@ -63,7 +74,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'explore_os.sqlite3'}",
+        default=f"sqlite:///{DATA_DIR / 'explore_os.sqlite3'}",
     ),
 }
 

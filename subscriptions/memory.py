@@ -13,15 +13,13 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from django.conf import settings
+from apps.core.paths import memory_dir
 
 log = logging.getLogger(__name__)
 
 
 def memory_root() -> Path:
-    root = Path(getattr(settings, "BASE_DIR", Path.cwd())) / "media" / "memory"
-    root.mkdir(parents=True, exist_ok=True)
-    return root
+    return memory_dir()
 
 
 def sub_dir(name: str) -> Path:

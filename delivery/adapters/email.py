@@ -7,12 +7,16 @@ from __future__ import annotations
 import html
 import logging
 from dataclasses import dataclass
+from datetime import datetime
+from email.message import EmailMessage
 from email.mime.image import MIMEImage
 from pathlib import Path
 
 from django.conf import settings
 from django.core.mail import get_connection
 from django.core.mail.message import EmailMultiAlternatives
+
+from apps.core.paths import outbox_dir
 
 from delivery.base import (
     Digest,
@@ -333,6 +337,40 @@ def render_html(digest: Digest) -> tuple[str, str]:
 
 # ---------------- SMTP send + DeliveryAdapter ----------------
 
+def _write_outbox_eml(
+    subject: str, html_body: str, plain_body: str,
+    to: list[str], sender: str,
+    inline_images: dict[str, Path] | None = None,
+) -> Path:
+    """ft-022: SMTP 未配置时落 .eml 到 DATA_DIR/outbox/。"""
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = ", ".join(to)
+    msg.set_content(plain_body or "")
+    msg.add_alternative(html_body or "", subtype="html")
+    if inline_images:
+        for cid, img_path in inline_images.items():
+            if not img_path or not img_path.exists():
+                continue
+            with img_path.open("rb") as f:
+                data = f.read()
+            subtype = img_path.suffix.lstrip(".").lower() or "png"
+            if subtype == "jpg":
+                subtype = "jpeg"
+            msg.get_payload()[1].add_related(
+                data, maintype="image", subtype=subtype, cid=f"<{cid}>",
+            )
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_subject = "".join(
+        c if c.isalnum() or c in "-_." else "_" for c in subject
+    )[:80]
+    out = outbox_dir() / f"{ts}__{safe_subject}.eml"
+    out.write_bytes(bytes(msg))
+    log.info("[email] SMTP not configured, wrote .eml -> %s", out)
+    return out
+
+
 def _send_smtp(
     subject: str, html_body: str, plain_body: str,
     to: str | list[str], from_email: str | None = None,
@@ -340,6 +378,17 @@ def _send_smtp(
 ) -> bool:
     recipients = [to] if isinstance(to, str) else list(to)
     sender = from_email or settings.DEFAULT_FROM_EMAIL
+    # ft-022: SMTP 未配置时 fallback 写 .eml，不抛错（桌面端用户可手动转发）
+    if not getattr(settings, "EMAIL_HOST", ""):
+        try:
+            _write_outbox_eml(
+                subject, html_body, plain_body, recipients, sender,
+                inline_images=inline_images,
+            )
+            return True
+        except Exception as exc:  # noqa: BLE001
+            log.error("email outbox fallback failed: %r", exc)
+            return False
     try:
         connection = get_connection(
             host=settings.EMAIL_HOST,
