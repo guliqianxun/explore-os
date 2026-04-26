@@ -62,7 +62,7 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [ft-012](features/ft-012.md) — 图表提取 + LLM 分类 + 多模态解读（superseded by ft-013）
 - [ft-013](features/ft-013.md) — caption + bbox + 记忆线 ✅
 - [ft-014](features/ft-014.md) — 略读升级（中文摘要+双图）+ 精读多图多表 ✅
-- [ft-015](features/ft-015.md) — 学术 PDF 解析升级（pdffigures2/Nougat 候选）
+- [ft-015](features/ft-015.md) — 学术 PDF 解析升级（Docling-based，**ft-019 启发式 baseline 替换**）
 - [ft-016](features/ft-016.md) — DeliveryAdapter 抽象层 ✅
 - [ft-017](features/ft-017.md) — 飞书 DeliveryAdapter
 - [ft-018](features/ft-018.md) — 微信订阅号 DeliveryAdapter（按需，非主线）

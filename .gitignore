@@ -12,8 +12,13 @@ venv/
 *.log
 local_settings.py
 db.sqlite3
+explore_os.sqlite3
+*.sqlite3-journal
 media/
 staticfiles/
+
+# 本地探索脚本（不提交）
+scripts/probe_*.py
 
 # Env
 .env

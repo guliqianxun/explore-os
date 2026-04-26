@@ -20,15 +20,17 @@ end_at: 2026-05-09
 
 | # | Feature | 优先级 | 状态 | 备注 |
 |---|---|---|---|---|
-| 1 | ft-019 抽取器素材索引层 | P0 | in_progress | 主线 |
-| 2 | ft-022 单机 app packaging 调研 | P1 | in_progress | 与 ft-019 并行（仅文档，不冲突） |
+| 1 | ft-019 抽取器素材索引层 | P0 | done | 接口契约 + 启发式 baseline |
+| 2 | ft-022 单机 app packaging 调研 | P1 | done | 文档已交付 |
+| 3 | ft-015 Docling 学术 PDF 解析升级 | P0 | in_progress | ft-019 启发式 baseline 实战不可用，启动 Docling 替换 |
 
-ft-020 / ft-021 **不在本 sprint 范围**，等 ft-019 合并后再开 iter-005。
+ft-020 / ft-021 **不在本 sprint 范围**，等 ft-015 合并后再开 iter-005。
 
 ## Scope
 
-- ft-019：建 `apps/extract/` Django app，搬迁 pdf_chunker / caption_extractor / figure_extractor，落 5 张 `extract_*` 表，CLI `extract_paper` 跑通
-- ft-022：调研文档 `docs/architecture/packaging.md`，覆盖 Tauri / Electron / SQLite 切换 / 调度器 / 风险
+- ft-019：建 `apps/extract/` Django app，搬迁 pdf_chunker / caption_extractor / figure_extractor，落 5 张 `extract_*` 表，CLI `extract_paper` 跑通 ✅
+- ft-022：调研文档 `docs/architecture/packaging.md`，覆盖 Tauri / Electron / SQLite 切换 / 调度器 / 风险 ✅
+- ft-015：用 Docling 替换启发式 extractor 实现（DoclingExtractor + 5 类 material 映射 + 删除 equation/citation 启发式 + section/caption/figure 三 façade 改写）
 
 ## Out of Scope
 
@@ -48,8 +50,9 @@ ft-020 / ft-021 **不在本 sprint 范围**，等 ft-019 合并后再开 iter-00
 
 | 工作流 | 职责 | Dispatch |
 |---|---|---|
-| backend-extract | ft-019 抽取层重构 + 五类 model + CLI | dsp-001 |
-| research | ft-022 单机 app packaging 决策文档 | dsp-002 |
+| backend-extract | ft-019 抽取层重构 + 五类 model + CLI | dsp-001 ✅ |
+| research | ft-022 单机 app packaging 决策文档 | dsp-002 ✅ |
+| backend-extract | ft-015 DoclingExtractor + façade 改写 + 删除启发式 | dsp-003 |
 
 ## 验收
 

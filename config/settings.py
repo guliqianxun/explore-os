@@ -61,7 +61,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default="postgres://explore:explore@localhost:5432/explore_os",
+        default=f"sqlite:///{BASE_DIR / 'explore_os.sqlite3'}",
     ),
 }
 
