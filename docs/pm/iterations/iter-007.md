@@ -3,9 +3,9 @@ pm_id: iter-007
 pm_type: iteration
 title: Sprint 7 — Electron 基础设施清理 + DRF API
 milestone: v0.9
-status: in_progress
+status: done
 start_at: 2026-04-26
-end_at: 2026-05-03
+end_at: 2026-04-26
 ---
 
 # iter-007 Sprint 7：Electron 基础设施清理 + DRF API

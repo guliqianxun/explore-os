@@ -80,6 +80,7 @@ explore-os 是独立工具（OpenClaw-like），目前借助 Claude Code 协助�
 6. **subagent 沙箱默认禁 git write**。本次 ft-003 agent 完成代码但无法 commit，由主会话代为 `git -C <worktree> add && commit`。把这步当成协议的一部分，别假设 subagent 能自己提交。
 7. **合并顺序**：先 merge 一个 → 跑一次全量测试 → 再 merge 下一个。两边若都修了同一个轻量文件（如 `fetchers/__init__.py` 各自加一行 import），第二次 merge 必冲突，手动合并即可。
 8. **worktree 清理**：`.claude/worktrees/` 已加入 `.gitignore`。运行结束后 worktree 可能仍被 Claude runtime lock，`git worktree remove --force` 若失败，下次 Claude Code 重启会自动释放，或 `-f -f` 强制。
+9. **worktree base 漂移已知问题**：`Agent(isolation="worktree")` 偶发从过时 main 引用派生（多次实测：基线落到 `33be9ac` MVP 时期，缺所有后续 commits 的 apps/*）。**默认派发不用 isolation**，让 agent 直接在主仓写（前几次 ft-021/ft-020/ft-022 都跑通）。需要并行隔离时再用 worktree，并在派发前 `git -C <worktree> reset --hard main` 校正基线。
 
 ## 开发节奏
 
