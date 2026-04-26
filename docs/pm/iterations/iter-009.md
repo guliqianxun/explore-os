@@ -3,9 +3,9 @@ pm_id: iter-009
 pm_type: iteration
 title: Sprint 9 — 前端 MVP 4 页（Vite + React + Tailwind + shadcn/ui + KaTeX）
 milestone: v1.1
-status: in_progress
+status: done
 start_at: 2026-04-26
-end_at: 2026-05-10
+end_at: 2026-04-26
 ---
 
 # iter-009 Sprint 9：前端 MVP 4 页

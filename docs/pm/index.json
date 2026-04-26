@@ -4,7 +4,7 @@
   "updated_at": "2026-04-25",
   "roadmap": "ROADMAP.md",
   "current_iteration": "iter-009",
-  "current_focus": "iter-009：ft-024 前端 MVP 4 页 (in_progress) + ft-023 两个 follow-up",
+  "current_focus": "iter-009 完成 (ft-024 ✅ 4 页 + 构建过)；iter-010 待启动 ft-025 自动更新 + CUDA/CPU",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -29,7 +29,7 @@
     {"id": "ft-021", "title": "图谱抽象层 + Excalidraw renderer", "status": "done", "milestone": "v0.8"},
     {"id": "ft-022", "title": "Electron 基础设施清理 + DRF API", "status": "done", "milestone": "v0.9"},
     {"id": "ft-023", "title": "Electron shell + Python sidecar + PyInstaller", "status": "done", "milestone": "v1.0"},
-    {"id": "ft-024", "title": "前端 MVP 4 页（Vite+React+TS+Tailwind+shadcn/ui+KaTeX）", "status": "in_progress", "milestone": "v1.1"},
+    {"id": "ft-024", "title": "前端 MVP 4 页（Vite+React+TS+Tailwind+shadcn/ui+KaTeX）", "status": "done", "milestone": "v1.1"},
     {"id": "ft-025", "title": "自动更新 + CUDA/CPU 双轨打包", "status": "planned", "milestone": "v1.2"}
   ],
   "iterations": [
@@ -41,6 +41,6 @@
     {"id": "iter-006", "status": "done", "scope": ["ft-021"]},
     {"id": "iter-007", "status": "done", "scope": ["ft-022"]},
     {"id": "iter-008", "status": "done", "scope": ["ft-023"]},
-    {"id": "iter-009", "status": "in_progress", "scope": ["ft-024"]}
+    {"id": "iter-009", "status": "done", "scope": ["ft-024"]}
   ]
 }
