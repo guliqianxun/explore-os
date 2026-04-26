@@ -3,9 +3,9 @@ pm_id: iter-006
 pm_type: iteration
 title: Sprint 6 — 渲染层（图谱抽象 + Excalidraw renderer）
 milestone: v0.8
-status: in_progress
+status: done
 start_at: 2026-04-26
-end_at: 2026-04-30
+end_at: 2026-04-26
 ---
 
 # iter-006 Sprint 6：渲染层
