@@ -42,7 +42,7 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 | **v0.5 (M4)** | DeliveryAdapter（多渠道**降级为可选**） | DeliveryAdapter 抽象 ✅ / 飞书 / 微信订阅号（按需） | 2026-05 |
 | **v0.6 (M5)** | **抽取器素材索引层**（三段中台主线） | 五类 material（section/figure/table/equation/citation）/ 同库前缀 `extract_*` / 稳定 material_id | 2026-05/06 |
 | **v0.7 (M6)** | **解读器 L1+L2** | claim 抽取 + evidence 映射（L1）/ 论文内反向信号扫描（L2）/ 强制 cite material_id | 2026-06/07 |
-| **v0.8 (M7)** | **图谱抽象层 + Excalidraw renderer** | PaperGraphModel / `.excalidraw` JSON / SVG fallback（drop tldraw / drawio） | 2026-04/05 |
+| **v0.8 (M7)** | **索引层闭环（图谱可视化 freeze）** | PaperGraphModel / `.excalidraw` / SVG 已落地，**实测可读性不及 HTML**；交互式可视化推迟到 Electron HTML 视图 | 2026-04/05 ✅ |
 | **v0.9 (M8)** | **Electron 基础设施 + DRF API** | C1/C3/C5/C9 单机化清理 / EXPLORE_OS_DATA_DIR / DRF 包装 CLI / APScheduler in-process | 2026-05 |
 | **v1.0 (M9)** | **Electron shell + Python sidecar** | electron-builder / PyInstaller Django / HTTP localhost / 端口与进程管理 | 2026-05 |
 | **v1.1 (M10)** | **前端 MVP 4 页** | Vite+React+TS+Tailwind+shadcn/ui+Excalidraw 嵌入 / 论文列表 / 精读视图 / 订阅配置 / 抓取触发 | 2026-05/06 |
@@ -84,7 +84,8 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [iter-003](iterations/iter-003.md) — Sprint 3：精读深度化（ft-011/012）✅
 - [iter-004](iterations/iter-004.md) — Sprint 4：三段中台（ft-019 + ft-022 + ft-015 ✅）
 - [iter-005](iterations/iter-005.md) — Sprint 5：解读器 L1+L2 生产侧（ft-020 ✅）
-- [iter-006](iterations/iter-006.md) — Sprint 6：渲染层（ft-021 图谱抽象 + Excalidraw）
+- [iter-006](iterations/iter-006.md) — Sprint 6：渲染层（ft-021 ✅ freeze；图谱可视化推迟到 v1.x，索引层数据建立完成）
+- [iter-007](iterations/iter-007.md) — Sprint 7：Electron 基础设施 + DRF API（ft-022）
 
 ## 战略转向（2026-04-25）
 
@@ -98,10 +99,12 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 长期形态：**Electron 桌面 app**（2026-04-26 锁定，弃 Tauri），Django 作为 Python sidecar，DB 切到 SQLite。
 v0.5 多渠道降级为可选，飞书/微信订阅号按需推进。
 
-## 桌面端决策（2026-04-26 锁定）
+## 桌面端决策（2026-04-26 锁定 / 二次修订）
 
 - **直上 Electron**：Tauri 弃用。理由：CLI 已通；Electron sidecar 模式社区最成熟；前端栈灵活
-- **前端栈**：Vite + React + TypeScript + Tailwind + shadcn/ui + @excalidraw/excalidraw + Zustand
+- **前端栈**：Vite + React + TypeScript + Tailwind + shadcn/ui + KaTeX（公式真渲染）+ Zustand
+- **图谱可视化退到 v1.x**：v0.8 cluster cards 实测可读性不及 HTML 邮件渲染。Excalidraw 静态格式无折叠 / 无交叉跳转 / 无 KaTeX；这些 HTML 自然支持。**Excalidraw 嵌入从 ft-024 移除**
+- **索引层（extract + interpret）才是基础**：5 类 material + claims + counter_signals 已实战验证产出可用，是后续视图的真正资产
 - **自用阶段不签名**：跳过 Apple Dev / Windows EV cert（约省 1.5 周 + 钱）；公开分发延后到 v1.x
 - **CUDA / CPU 双轨**：v1.2 ft-025 落两套 PyInstaller spec；自用走 CUDA bundle，CPU bundle 留接口待分发
 

@@ -3,8 +3,8 @@
   "version": "v0.6-plan",
   "updated_at": "2026-04-25",
   "roadmap": "ROADMAP.md",
-  "current_iteration": "iter-006",
-  "current_focus": "iter-006 完成 (ft-021 ✅)；三段中台闭环；iter-007 待启动 ft-022 Electron 基础设施",
+  "current_iteration": "iter-007",
+  "current_focus": "iter-007：ft-022 Electron 基础设施清理 + DRF API（in_progress）；图谱可视化推迟到 v1.x",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -27,7 +27,7 @@
     {"id": "ft-019", "title": "抽取器素材索引层", "status": "done", "milestone": "v0.6"},
     {"id": "ft-020", "title": "解读器 L1+L2 (生产侧)", "status": "done", "milestone": "v0.7"},
     {"id": "ft-021", "title": "图谱抽象层 + Excalidraw renderer", "status": "done", "milestone": "v0.8"},
-    {"id": "ft-022", "title": "Electron 基础设施清理 + DRF API", "status": "planned", "milestone": "v0.9"},
+    {"id": "ft-022", "title": "Electron 基础设施清理 + DRF API", "status": "in_progress", "milestone": "v0.9"},
     {"id": "ft-023", "title": "Electron shell + Python sidecar + PyInstaller", "status": "planned", "milestone": "v1.0"},
     {"id": "ft-024", "title": "前端 MVP 4 页（Vite+React+TS+Tailwind+shadcn/ui+Excalidraw）", "status": "planned", "milestone": "v1.1"},
     {"id": "ft-025", "title": "自动更新 + CUDA/CPU 双轨打包", "status": "planned", "milestone": "v1.2"}
@@ -38,6 +38,7 @@
     {"id": "iter-003", "status": "done"},
     {"id": "iter-004", "status": "done", "scope": ["ft-019", "ft-022", "ft-015"]},
     {"id": "iter-005", "status": "done", "scope": ["ft-020"]},
-    {"id": "iter-006", "status": "done", "scope": ["ft-021"]}
+    {"id": "iter-006", "status": "done", "scope": ["ft-021"]},
+    {"id": "iter-007", "status": "in_progress", "scope": ["ft-022"]}
   ]
 }
