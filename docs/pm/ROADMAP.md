@@ -85,7 +85,8 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [iter-004](iterations/iter-004.md) — Sprint 4：三段中台（ft-019 + ft-022 + ft-015 ✅）
 - [iter-005](iterations/iter-005.md) — Sprint 5：解读器 L1+L2 生产侧（ft-020 ✅）
 - [iter-006](iterations/iter-006.md) — Sprint 6：渲染层（ft-021 ✅ freeze；图谱可视化推迟到 v1.x，索引层数据建立完成）
-- [iter-007](iterations/iter-007.md) — Sprint 7：Electron 基础设施 + DRF API（ft-022）
+- [iter-007](iterations/iter-007.md) — Sprint 7：Electron 基础设施 + DRF API（ft-022 ✅）
+- [iter-008](iterations/iter-008.md) — Sprint 8：Electron shell + Python sidecar（ft-023）
 
 ## 战略转向（2026-04-25）
 
