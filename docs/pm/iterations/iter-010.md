@@ -3,9 +3,9 @@ pm_id: iter-010
 pm_type: iteration
 title: Sprint 10 — 前端编辑/杂志重设计
 milestone: v1.1
-status: in_progress
+status: done
 start_at: 2026-04-27
-end_at: 2026-04-30
+end_at: 2026-04-27
 ---
 
 # iter-010 Sprint 10：前端编辑/杂志重设计
