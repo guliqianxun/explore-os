@@ -3,3 +3,11 @@ dist/
 .vite/
 *.log
 .DS_Store
+
+# tsc / vite build 产物（编译 .ts 配置时溢出）
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+tailwind.config.js
+tailwind.config.d.ts
+postcss.config.d.ts
