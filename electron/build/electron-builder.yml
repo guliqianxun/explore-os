@@ -21,6 +21,7 @@ directories:
 files:
   - dist-electron/**/*
   - resources/**/*
+  - ../frontend/dist/**/*
   - package.json
 
 # PyInstaller bundle — copied verbatim under <app>/resources/sidecar/.

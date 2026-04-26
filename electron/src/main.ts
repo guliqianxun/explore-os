@@ -30,14 +30,28 @@ async function createWindow(): Promise<void> {
   });
 
   // Dev: load the Vite dev server (set by ft-024 dev script).
-  // Prod (and dev without UI): load the placeholder shipped under resources/.
+  // Prod: load the built Vite SPA from frontend/dist/index.html. The path
+  // resolves relative to dist-electron/main.js — the layout is:
+  //
+  //   <repo>/electron/dist-electron/main.js   (running file in dev)
+  //   <repo>/frontend/dist/index.html         (Vite build output)
+  //
+  // In a packaged build, electron-builder is configured (build/electron-builder.yml)
+  // to copy `frontend/dist/**/*` into the asar so the same relative layout
+  // (`../../frontend/dist/index.html` from `dist-electron/main.js`) keeps working.
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
     await mainWindow.loadURL(devUrl);
   } else {
-    await mainWindow.loadFile(
-      path.join(__dirname, "..", "resources", "placeholder.html"),
+    const indexHtml = path.join(
+      __dirname,
+      "..",
+      "..",
+      "frontend",
+      "dist",
+      "index.html",
     );
+    await mainWindow.loadFile(indexHtml);
   }
 
   mainWindow.on("closed", () => {
@@ -66,6 +80,13 @@ async function bootstrap(): Promise<void> {
   }
   await createWindow();
 }
+
+// ft-024 follow-up: name the app "explore-os" so userData lives at
+// %APPDATA%/explore-os (Windows) / ~/Library/Application Support/explore-os
+// (macOS) / ~/.config/explore-os (Linux), instead of the default "Electron".
+// Must run before app.requestSingleInstanceLock / app.whenReady so the lock
+// file lives in the right directory too.
+app.setName("explore-os");
 
 // Single-instance guard — second launch should focus the existing window.
 const gotLock = app.requestSingleInstanceLock();

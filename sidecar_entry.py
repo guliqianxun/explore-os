@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 
 
 def main() -> int:
@@ -57,6 +58,12 @@ def main() -> int:
 
     # Must be set before Django imports apps.core.paths (HF_HOME side effect).
     os.environ["EXPLORE_OS_DATA_DIR"] = args.data_dir
+    # ft-024 follow-up: explicitly override DATABASE_URL so any value baked into
+    # the dev .env (which may point at the in-repo sqlite) cannot leak into the
+    # desktop sidecar. Desktop must always store data under DATA_DIR.
+    os.environ["DATABASE_URL"] = (
+        f"sqlite:///{Path(args.data_dir) / 'explore_os.sqlite3'}"
+    )
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     # PyInstaller-frozen exe should always run unbuffered so the
     # "listening on" line surfaces to the parent immediately.
