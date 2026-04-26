@@ -22,7 +22,7 @@ end_at: 2026-05-09
 |---|---|---|---|---|
 | 1 | ft-019 抽取器素材索引层 | P0 | done | 接口契约 + 启发式 baseline |
 | 2 | ft-022 单机 app packaging 调研 | P1 | done | 文档已交付 |
-| 3 | ft-015 Docling 学术 PDF 解析升级 | P0 | in_progress | ft-019 启发式 baseline 实战不可用，启动 Docling 替换 |
+| 3 | ft-015 Docling 学术 PDF 解析升级 | P0 | done | 实战 LeWorldModel: 33/19/9/31/54 |
 
 ft-020 / ft-021 **不在本 sprint 范围**，等 ft-015 合并后再开 iter-005。
 
