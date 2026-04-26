@@ -176,14 +176,30 @@ class SvgRenderer:
             )
             ev_y += 18
 
+        # equation evidence（monospace LaTeX 原文）
+        eq_ev = n.attrs.get("equation_evidences", []) or []
+        for ev in eq_ev[:3]:
+            if ev_y >= max_ev_y:
+                break
+            latex = _truncate(ev.get("label", "") or "", 70)
+            line = f"∑ Eq {ev.get('ref_id', '').split(':')[-1]}: {latex}"
+            out.append(
+                f'<text x="{ev_x}" y="{ev_y + 12}" fill="#495057" font-size="11" '
+                f'font-family="ui-monospace,Cascadia Code,Menlo,monospace">'
+                f'{escape(line)}</text>'
+            )
+            ev_y += 18
+
         css = n.attrs.get("counter_signals", []) or []
         if css:
-            cs_y = y + CARD_H - 50
+            n_lines = min(len(css), 3)
+            cs_h = 24 + n_lines * 30
+            cs_y = y + CARD_H - cs_h
             out.append(
-                f'<rect x="{x}" y="{cs_y}" width="{CARD_W}" height="50" '
+                f'<rect x="{x}" y="{cs_y}" width="{CARD_W}" height="{cs_h}" '
                 f'rx="6" fill="#fff0f0" stroke="#e03131"/>'
             )
-            ty = cs_y + 16
+            ty = cs_y + 18
             for cs in css[:3]:
                 t = _truncate(cs.get("text", "") or "", 60)
                 line = f"⚠ [{cs.get('signal_type', '')}] {t}"
@@ -191,7 +207,7 @@ class SvgRenderer:
                     f'<text x="{x + PAD + 4}" y="{ty}" fill="#c92a2a" font-size="11">'
                     f'{escape(line)}</text>'
                 )
-                ty += 14
+                ty += 28
         return out
 
     def _render_chip(self, n, x: int, y: int) -> list[str]:

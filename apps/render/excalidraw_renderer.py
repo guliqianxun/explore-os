@@ -273,11 +273,28 @@ class ExcalidrawRenderer:
             ))
             ev_y += 22
 
-        # 5. counter_signal 红条（card 底部）
+        # equation evidence（LaTeX 单行 monospace，cite 的公式直接展示原文）
+        eq_ev = n.attrs.get("equation_evidences", []) or []
+        for ev in eq_ev[:3]:   # 最多 3 条避免溢出
+            if ev_y >= max_ev_y:
+                break
+            latex = self._truncate(ev.get("label", "") or "", 70)
+            line = f"∑ Eq {ev.get('ref_id', '').split(':')[-1]}: {latex}"
+            elt = _text_element(
+                x=ev_x, y=ev_y,
+                w=CARD_W - 2 * PAD, h=20,
+                text=line, font_size=11,
+            )
+            elt["fontFamily"] = 3   # Excalidraw monospace（Cascadia）
+            elements.append(elt)
+            ev_y += 22
+
+        # 5. counter_signal 红条（card 底部，按数量自适应高度）
         css = n.attrs.get("counter_signals", []) or []
         if css:
-            cs_y = y + CARD_H - 50
-            cs_h = 50
+            n_lines = min(len(css), 3)
+            cs_h = 24 + n_lines * 30   # 1 条 ≈ 54，3 条 ≈ 114
+            cs_y = y + CARD_H - cs_h
             cs_bg = _base_element(etype="rectangle", eid=_nanoid(),
                                   x=x, y=cs_y, w=CARD_W, h=cs_h)
             cs_bg.update({
@@ -298,8 +315,8 @@ class ExcalidrawRenderer:
                 "strokeWidth": 0,
             })
             cs_lines = []
-            for cs in css[:3]:   # 最多展示 3 条
-                t = self._truncate(cs.get("text", "") or "", 110)
+            for cs in css[:3]:
+                t = self._truncate(cs.get("text", "") or "", 80)
                 cs_lines.append(f"⚠ [{cs.get('signal_type', '')}] {t}")
             cs_text = _text_element(
                 x=x + PAD + 4, y=cs_y + 6,

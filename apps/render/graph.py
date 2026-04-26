@@ -36,6 +36,7 @@ def build_graph(arxiv_id: str) -> PaperGraphModel:
     fig_cache: dict[str, dict] = {}
     tbl_cache: dict[str, dict] = {}
     cit_cache: dict[str, dict] = {}
+    eq_cache: dict[str, dict] = {}
 
     def _resolve_evidence(material_id: str) -> dict | None:
         """material_id → 反规范化字典（kind/label/image_path/page/etc）。
@@ -91,9 +92,22 @@ def build_graph(arxiv_id: str) -> PaperGraphModel:
                 )
             return cit_cache[material_id]
         if kind == "section":
-            # 引用某 section 时，作为内嵌 reference（无图）
             return {"kind": "section", "ref_id": ref_id, "label": ""}
-        # equation / 其他不入卡片
+        if kind == "equation":
+            if material_id not in eq_cache:
+                from apps.extract.models import Equation
+                eq = Equation.objects.filter(material_id=material_id).first()
+                eq_cache[material_id] = (
+                    {
+                        "kind": "equation",
+                        "ref_id": ref_id,
+                        "label": (eq.latex_or_text or "")[:300],
+                        "page": eq.page,
+                    }
+                    if eq
+                    else None
+                )
+            return eq_cache[material_id]
         return None
 
     for c in claims:
@@ -102,6 +116,7 @@ def build_graph(arxiv_id: str) -> PaperGraphModel:
 
         evidences: list[dict] = []
         section_evidences: list[dict] = []
+        equation_evidences: list[dict] = []
         citations_in_claim: list[dict] = []
         for e in c.evidences.all():
             ev = _resolve_evidence(e.material_id)
@@ -110,6 +125,8 @@ def build_graph(arxiv_id: str) -> PaperGraphModel:
             ev["relation"] = e.relation
             if ev["kind"] == "section":
                 section_evidences.append(ev)
+            elif ev["kind"] == "equation":
+                equation_evidences.append(ev)
             elif ev["kind"] == "citation":
                 citations_in_claim.append(ev)
                 # 同时累积到全局 chip 行
@@ -146,6 +163,7 @@ def build_graph(arxiv_id: str) -> PaperGraphModel:
                     "claim_id": c.claim_id,
                     "evidences": evidences,
                     "section_evidences": section_evidences,
+                    "equation_evidences": equation_evidences,
                     "counter_signals": counter_signals,
                     "citations": citations_in_claim,
                 },
