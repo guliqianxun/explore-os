@@ -3,9 +3,9 @@ pm_id: iter-005
 pm_type: iteration
 title: Sprint 5 — 解读器 L1+L2 生产侧
 milestone: v0.7
-status: in_progress
+status: done
 start_at: 2026-04-26
-end_at: 2026-05-10
+end_at: 2026-04-26
 ---
 
 # iter-005 Sprint 5：解读器 L1+L2（生产侧）
