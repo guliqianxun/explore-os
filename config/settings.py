@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "corsheaders",  # ft-026: cross-origin (5173 → sidecar) for dev + Electron loadFile
     # Local apps
     "apps.core",
     "apps.api",
@@ -43,6 +44,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # ft-026: CORS middleware must be at the very top to set headers before
+    # CommonMiddleware can short-circuit responses.
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -87,6 +91,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ft-026: single-machine app — allow any origin so Vite dev (5173) and
+# Electron loadFile (file://) can hit the sidecar without preflight pain.
+CORS_ALLOW_ALL_ORIGINS = True
 
 # ---- LLM ----
 LLM_API_BASE = env("LLM_API_BASE", default="https://api.openai.com/v1")

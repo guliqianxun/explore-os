@@ -15,6 +15,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: "127.0.0.1",   // 明确 IPv4，避免 Windows localhost 解析到 ::1 而 Electron 走 127.0.0.1
     port: 5173,
     strictPort: true,
   },

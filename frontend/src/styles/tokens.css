@@ -1,0 +1,54 @@
+/* ft-026 Editorial / Magazine design tokens.
+   Imported once by globals.css; consumed by tailwind.config.ts theme.extend
+   and ad-hoc components via var(--token). */
+
+:root {
+  /* ---------- font stacks ---------- */
+  --font-serif: "Source Serif 4", "Source Serif Pro", "Iowan Old Style",
+    Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+  --font-sans: "Inter", "IBM Plex Sans", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "PingFang SC", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, monospace;
+
+  /* ---------- warm neutrals (light mode) ---------- */
+  --bg: #fdfcf8;        /* cream paper */
+  --bg-soft: #f6f3ec;
+  --bg-muted: #ebe6db;
+  --fg: #1c1a16;        /* warm near-black */
+  --fg-soft: #4a4640;
+  --fg-muted: #8a847a;
+  --rule: #d9d4c7;      /* hairline rule */
+
+  /* ---------- accents ---------- */
+  --accent: #1f6e54;        /* deep evergreen */
+  --accent-soft: #d8eae0;
+  --accent-fg: #ffffff;
+
+  /* ---------- semantic / claim_type ---------- */
+  --counter-bg: #fef0ee;
+  --counter-fg: #a83422;
+  --proposal: #1f6e54;
+  --proposal-soft: #e3efe8;
+  --result: #b16100;        /* warm caramel */
+  --result-soft: #f6ebd8;
+  --ablation: #5c4dab;
+  --ablation-soft: #ece7f5;
+  --theoretical: #6b5e2d;
+  --theoretical-soft: #efebd8;
+
+  /* ---------- spacing / typography ---------- */
+  --reading-line-height: 1.75;
+  --reading-paragraph-gap: 1.5em;
+  --reading-max-w: 720px;
+  --drawer-w: 540px;
+
+  /* ---------- radii / shadows ---------- */
+  --radius-card: 6px;
+  --radius-chip: 9999px;
+  --radius-drawer: 0;
+
+  /* editorial avoids skeuomorphism — keep shadows whisper-light */
+  --shadow-soft: 0 1px 2px rgba(28, 26, 22, 0.04),
+    0 1px 1px rgba(28, 26, 22, 0.03);
+  --shadow-lift: 0 4px 16px rgba(28, 26, 22, 0.06);
+}

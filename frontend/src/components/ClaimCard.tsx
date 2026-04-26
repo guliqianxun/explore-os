@@ -1,5 +1,3 @@
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { CounterSignalBadge } from "./CounterSignalBadge";
 import { EquationBlock } from "./EquationBlock";
 import type { ClaimDTO, EquationDTO } from "@/api/papers";
@@ -11,32 +9,37 @@ export interface ClaimCardProps {
   onCiteClick: (materialId: string) => void;
 }
 
-const TYPE_BADGE: Record<string, string> = {
-  proposal: "bg-blue-100 text-blue-800 border-blue-200",
-  result: "bg-green-100 text-green-800 border-green-200",
-  ablation: "bg-orange-100 text-orange-800 border-orange-200",
-  theoretical: "bg-purple-100 text-purple-800 border-purple-200",
+/* ft-026 editorial palette — soft pastel chips, not saturated SaaS chips. */
+const TYPE_BADGE: Record<string, { fg: string; bg: string }> = {
+  proposal: { fg: "var(--proposal)", bg: "var(--proposal-soft)" },
+  result: { fg: "var(--result)", bg: "var(--result-soft)" },
+  ablation: { fg: "var(--ablation)", bg: "var(--ablation-soft)" },
+  theoretical: { fg: "var(--theoretical)", bg: "var(--theoretical-soft)" },
 };
 
 function evidenceIcon(materialId: string): string {
-  if (materialId.includes(":fig:") || materialId.includes(":figure:")) return "📊";
-  if (materialId.includes(":tbl:") || materialId.includes(":table:")) return "📋";
-  if (materialId.includes(":eq:") || materialId.includes(":equation:")) return "∑";
+  if (materialId.includes(":fig:") || materialId.includes(":figure:")) return "Fig";
+  if (materialId.includes(":tbl:") || materialId.includes(":table:")) return "Tbl";
+  if (materialId.includes(":eq:") || materialId.includes(":equation:")) return "Eq";
   if (materialId.includes(":sec:") || materialId.includes(":section:")) return "§";
   return "•";
 }
 
 function shortRef(materialId: string): string {
-  // <arxiv>:fig:3 → fig:3
   const idx = materialId.indexOf(":");
   return idx >= 0 ? materialId.slice(idx + 1) : materialId;
 }
 
+/**
+ * ft-026 ClaimCard — drawer-version layout. max-width 540, generous padding,
+ * serif body 0.95rem leading-1.65. counter_signal: red left rail.
+ *
+ * Data structure unchanged.
+ */
 export function ClaimCard({ claim, equationsById, onCiteClick }: ClaimCardProps) {
-  const typeClass =
-    TYPE_BADGE[claim.claim_type] ?? "bg-slate-100 text-slate-700 border-slate-200";
+  const typeColors =
+    TYPE_BADGE[claim.claim_type] ?? { fg: "var(--fg-soft)", bg: "var(--bg-muted)" };
 
-  // Split evidences: equations rendered inline as KaTeX, others as cite badges.
   const equationEvidences = claim.evidences.filter(
     (e) => e.material_id.includes(":eq:") || e.material_id.includes(":equation:"),
   );
@@ -46,34 +49,49 @@ export function ClaimCard({ claim, equationsById, onCiteClick }: ClaimCardProps)
   );
 
   return (
-    <Card className="p-4 space-y-3 border-blue-200/60">
-      <div className="flex items-center gap-2 text-xs">
+    <article
+      className="max-w-[540px] bg-[var(--bg)] border border-[var(--rule)]
+                 rounded-card shadow-soft p-5 space-y-4"
+    >
+      {/* Header chips */}
+      <div className="flex items-center gap-2 text-[11px] font-sans">
         <span
-          className={`px-2 py-0.5 rounded border ${typeClass} font-medium`}
+          className="px-2 py-0.5 rounded-chip font-medium uppercase tracking-[0.08em]"
+          style={{ color: typeColors.fg, backgroundColor: typeColors.bg }}
         >
           {claim.claim_type}
         </span>
-        <span className="text-muted-foreground">
+        <span className="text-[var(--fg-muted)]">
           conf {claim.confidence.toFixed(2)}
         </span>
         {claim.source_section_path ? (
-          <Badge variant="outline" className="font-normal">
+          <span
+            className="px-2 py-0.5 rounded-chip border border-[var(--rule)]
+                       text-[var(--fg-muted)] font-normal truncate max-w-[260px]"
+            title={claim.source_section_path}
+          >
             {claim.source_section_path}
-          </Badge>
+          </span>
         ) : null}
       </div>
 
-      <p className="text-sm leading-relaxed text-slate-900">{claim.text}</p>
+      {/* Body */}
+      <p className="font-serif text-[0.95rem] leading-[1.65] text-[var(--fg)]">
+        {claim.text}
+      </p>
 
+      {/* Equations — editorial soft card */}
       {equationEvidences.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {equationEvidences.map((ev) => {
             const eq = equationsById?.[ev.material_id];
             const latex = eq?.latex_or_text ?? ev.material_id;
             return (
               <div
                 key={ev.material_id}
-                className="bg-slate-50 rounded p-2 overflow-x-auto"
+                className="bg-[var(--bg-soft)] rounded-card px-4 py-3 overflow-x-auto
+                           border border-[var(--rule)] cursor-pointer
+                           hover:border-[var(--accent)] transition-colors"
                 onClick={() => onCiteClick(ev.material_id)}
                 role="button"
                 tabIndex={0}
@@ -88,29 +106,38 @@ export function ClaimCard({ claim, equationsById, onCiteClick }: ClaimCardProps)
         </div>
       ) : null}
 
+      {/* Cite chips */}
       {otherEvidences.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {otherEvidences.map((ev) => (
             <button
               key={ev.material_id}
               type="button"
               onClick={() => onCiteClick(ev.material_id)}
-              className="text-xs px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 transition"
+              className="text-[11px] font-sans px-2 py-1 rounded-chip
+                         bg-[var(--bg-soft)] hover:bg-[var(--accent-soft)]
+                         text-[var(--fg-soft)] hover:text-[var(--accent)]
+                         border border-[var(--rule)] hover:border-[var(--accent)]
+                         transition-colors"
               title={ev.material_id}
             >
-              {evidenceIcon(ev.material_id)} {shortRef(ev.material_id)}
+              <span className="font-medium mr-1 uppercase tracking-[0.06em]">
+                {evidenceIcon(ev.material_id)}
+              </span>
+              {shortRef(ev.material_id)}
             </button>
           ))}
         </div>
       ) : null}
 
+      {/* Counter signals — each badge brings its own editorial red rail */}
       {claim.counter_signals.length > 0 ? (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {claim.counter_signals.map((cs) => (
             <CounterSignalBadge key={cs.signal_id} signal={cs} />
           ))}
         </div>
       ) : null}
-    </Card>
+    </article>
   );
 }

@@ -2,8 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ft-026: editorial tokens (warm neutrals, serif/sans stacks, claim colors). */
+@import "./tokens.css";
+
 @layer base {
   :root {
+    /* shadcn HSL system kept for existing components */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -32,36 +36,138 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family:
-      ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-      "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 
-/* Markdown view tweaks. */
+/* ---------------------------------------------------------------------------
+   .prose-paper — markdown rendering for PaperDetailPage.
+   ft-026 redesign: serif body, line-height 1.75, paragraph gap 1.5em.
+   --------------------------------------------------------------------------- */
+.prose-paper {
+  font-family: var(--font-serif);
+  color: var(--fg);
+  font-size: 1.0625rem; /* ~17px */
+  line-height: var(--reading-line-height);
+}
 .prose-paper h1,
 .prose-paper h2,
-.prose-paper h3 {
-  @apply font-semibold mt-4 mb-2;
+.prose-paper h3,
+.prose-paper h4,
+.prose-paper h5,
+.prose-paper h6 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.3;
 }
-.prose-paper h1 { @apply text-2xl; }
-.prose-paper h2 { @apply text-xl; }
-.prose-paper h3 { @apply text-lg; }
-.prose-paper p { @apply my-2 leading-relaxed; }
+.prose-paper h1 { font-size: 1.85rem; }
+.prose-paper h2 { font-size: 1.45rem; }
+.prose-paper h3 { font-size: 1.2rem; }
+.prose-paper h4 { font-size: 1.05rem; }
+.prose-paper p {
+  margin-top: 0;
+  margin-bottom: var(--reading-paragraph-gap);
+}
+.prose-paper a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-soft);
+  transition: border-color 120ms ease;
+}
+.prose-paper a:hover { border-bottom-color: var(--accent); }
 .prose-paper code {
-  @apply bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-sm;
+  font-family: var(--font-mono);
+  background: var(--bg-soft);
+  color: var(--fg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.92em;
 }
 .prose-paper pre {
-  @apply bg-slate-100 p-3 rounded text-sm overflow-x-auto;
+  font-family: var(--font-mono);
+  background: var(--bg-soft);
+  color: var(--fg);
+  padding: 1em 1.1em;
+  border-radius: var(--radius-card);
+  overflow-x: auto;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 1.5em 0;
+}
+.prose-paper pre code {
+  background: transparent;
+  padding: 0;
 }
 .prose-paper img {
-  @apply my-3 max-w-full rounded border;
+  display: block;
+  max-width: 100%;
+  margin: 1.75em auto;
+  border-radius: var(--radius-card);
+}
+.prose-paper figure {
+  margin: 1.75em 0;
+}
+.prose-paper figcaption,
+.prose-paper em.caption {
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--fg-muted);
+  text-align: center;
+  margin-top: 0.5em;
+}
+.prose-paper blockquote {
+  border-left: 3px solid var(--rule);
+  padding-left: 1em;
+  color: var(--fg-soft);
+  font-style: italic;
+  margin: 1.5em 0;
 }
 .prose-paper table {
-  @apply border-collapse my-3 text-sm;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.95rem;
+  width: 100%;
 }
 .prose-paper th,
 .prose-paper td {
-  @apply border border-slate-300 px-2 py-1;
+  border: 1px solid var(--rule);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.prose-paper th {
+  background: var(--bg-soft);
+  font-weight: 600;
+}
+.prose-paper hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2.5em 0;
+}
+.prose-paper ul,
+.prose-paper ol {
+  margin: 0 0 var(--reading-paragraph-gap) 0;
+  padding-left: 1.5em;
+}
+.prose-paper li {
+  margin-bottom: 0.4em;
+}
+.prose-paper .katex-display {
+  margin: 1.5em 0;
+}
+
+/* Reading mode: hide auxiliary chrome, widen reading column slightly. */
+.reading-mode .reading-mode-hide { display: none !important; }
+.reading-mode .prose-paper { font-size: 1.125rem; }
+
+/* Drawer slide-in transition helper. */
+.drawer-panel {
+  transition: transform 240ms cubic-bezier(0.32, 0.72, 0.35, 1);
 }

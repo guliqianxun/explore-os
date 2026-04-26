@@ -8,19 +8,32 @@ interface MarkdownViewProps {
   markdown: string;
   arxivId: string;
   apiBase: string;
+  /** Optional className appended to the article wrapper. */
+  className?: string;
 }
 
-export function MarkdownView({ markdown, arxivId, apiBase }: MarkdownViewProps) {
+/**
+ * ft-026 MarkdownView. Same data path as before (rewrites figure URLs);
+ * styling moves to .prose-paper which now goes serif + line-height 1.75.
+ * Width is controlled by the parent (PaperDetailPage uses max-w-reading).
+ */
+export function MarkdownView({
+  markdown,
+  arxivId,
+  apiBase,
+  className = "",
+}: MarkdownViewProps) {
   // Rewrite relative figure refs `figures/<seq>.png` → API URL.
   const rewritten = useMemo(() => {
     return markdown.replace(
       /(!\[[^\]]*\]\()([^)]*?(?:figures?|imgs?)\/(\d+)\.png)(\))/gi,
-      (_m, p1, _p2, seq, p4) => `${p1}${apiBase}/papers/${arxivId}/figure/${seq}.png${p4}`,
+      (_m, p1, _p2, seq, p4) =>
+        `${p1}${apiBase}/papers/${arxivId}/figure/${seq}.png${p4}`,
     );
   }, [markdown, arxivId, apiBase]);
 
   return (
-    <article className="prose-paper px-6 py-4 max-w-none">
+    <article className={`prose-paper ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
@@ -30,13 +43,7 @@ export function MarkdownView({ markdown, arxivId, apiBase }: MarkdownViewProps) 
             <img loading="lazy" {...props} />
           ),
           a: ({ children, href, ...rest }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="text-blue-600 hover:underline"
-              {...rest}
-            >
+            <a href={href} target="_blank" rel="noreferrer" {...rest}>
               {children}
             </a>
           ),
