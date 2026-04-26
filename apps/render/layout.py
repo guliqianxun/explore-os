@@ -14,7 +14,7 @@ from apps.render.base import PaperGraphModel
 
 # claim 卡片
 CARD_W = 480
-CARD_H = 480
+CARD_H = 560
 CARD_GAP_X = 60
 CARD_GAP_Y = 80
 CARDS_PER_ROW = 2

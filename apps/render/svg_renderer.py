@@ -176,19 +176,43 @@ class SvgRenderer:
             )
             ev_y += 18
 
-        # equation evidence（monospace LaTeX 原文）
+        # equation evidence：优先嵌入 mathtext PNG（按原始宽高比缩放）
         eq_ev = n.attrs.get("equation_evidences", []) or []
+        EQ_AREA_W = CARD_W - 2 * PAD - 64
+        EQ_MAX_H = 56
         for ev in eq_ev[:3]:
             if ev_y >= max_ev_y:
                 break
-            latex = _truncate(ev.get("label", "") or "", 70)
-            line = f"∑ Eq {ev.get('ref_id', '').split(':')[-1]}: {latex}"
-            out.append(
-                f'<text x="{ev_x}" y="{ev_y + 12}" fill="#495057" font-size="11" '
-                f'font-family="ui-monospace,Cascadia Code,Menlo,monospace">'
-                f'{escape(line)}</text>'
-            )
-            ev_y += 18
+            ref_seq = ev.get("ref_id", "").split(":")[-1]
+            href = self._image_data_url(ev.get("image_path", "") or "")
+            iw = int(ev.get("image_w") or 0)
+            ih = int(ev.get("image_h") or 0)
+            if href and iw and ih:
+                disp_h = EQ_MAX_H
+                disp_w = int(iw * disp_h / ih)
+                if disp_w > EQ_AREA_W:
+                    disp_w = EQ_AREA_W
+                    disp_h = max(20, int(ih * disp_w / iw))
+                label_y = ev_y + max(16, disp_h // 2 + 4)
+                out.append(
+                    f'<text x="{ev_x}" y="{label_y}" fill="#495057" font-size="12">'
+                    f'∑ Eq {escape(ref_seq)}</text>'
+                )
+                out.append(
+                    f'<image x="{ev_x + 64}" y="{ev_y}" width="{disp_w}" '
+                    f'height="{disp_h}" href="{href}" '
+                    f'preserveAspectRatio="xMidYMid meet"/>'
+                )
+                ev_y += disp_h + 6
+            else:
+                latex = _truncate(ev.get("label", "") or "", 70)
+                line = f"∑ Eq {ref_seq}: {latex}"
+                out.append(
+                    f'<text x="{ev_x}" y="{ev_y + 12}" fill="#495057" font-size="11" '
+                    f'font-family="ui-monospace,Cascadia Code,Menlo,monospace">'
+                    f'{escape(line)}</text>'
+                )
+                ev_y += 18
 
         css = n.attrs.get("counter_signals", []) or []
         if css:

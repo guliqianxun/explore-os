@@ -273,21 +273,53 @@ class ExcalidrawRenderer:
             ))
             ev_y += 22
 
-        # equation evidence（LaTeX 单行 monospace，cite 的公式直接展示原文）
+        # equation evidence：优先嵌入 mathtext 渲染的 PNG；失败时退回 monospace 文本
         eq_ev = n.attrs.get("equation_evidences", []) or []
-        for ev in eq_ev[:3]:   # 最多 3 条避免溢出
+        EQ_AREA_W = CARD_W - 2 * PAD - 64       # 留 64 给行首「∑ Eq N」标签
+        EQ_MAX_H = 56                            # 单条公式最大高度
+        for ev in eq_ev[:3]:
             if ev_y >= max_ev_y:
                 break
-            latex = self._truncate(ev.get("label", "") or "", 70)
-            line = f"∑ Eq {ev.get('ref_id', '').split(':')[-1]}: {latex}"
-            elt = _text_element(
-                x=ev_x, y=ev_y,
-                w=CARD_W - 2 * PAD, h=20,
-                text=line, font_size=11,
-            )
-            elt["fontFamily"] = 3   # Excalidraw monospace（Cascadia）
-            elements.append(elt)
-            ev_y += 22
+            ref_seq = ev.get("ref_id", "").split(":")[-1]
+            img_path = ev.get("image_path", "") or ""
+            iw = int(ev.get("image_w") or 0)
+            ih = int(ev.get("image_h") or 0)
+            file_id = self._embed_image(img_path, files, path_to_file_id) if (iw and ih) else ""
+            if file_id and iw and ih:
+                # 按比例缩放：以 EQ_MAX_H 为高度上限，按比例算宽；若宽度超限再按宽缩
+                disp_h = EQ_MAX_H
+                disp_w = int(iw * disp_h / ih)
+                if disp_w > EQ_AREA_W:
+                    disp_w = EQ_AREA_W
+                    disp_h = max(20, int(ih * disp_w / iw))
+                # 行首标签竖向居中
+                elements.append(_text_element(
+                    x=ev_x, y=ev_y + max(0, (disp_h - 16) // 2),
+                    w=60, h=20,
+                    text=f"∑ Eq {ref_seq}",
+                    font_size=12,
+                ))
+                img_eid = _nanoid()
+                img = _base_element(
+                    etype="image", eid=img_eid,
+                    x=ev_x + 64, y=ev_y, w=disp_w, h=disp_h,
+                )
+                img["fileId"] = file_id
+                img["status"] = "saved"
+                img["scale"] = [1, 1]
+                elements.append(img)
+                ev_y += disp_h + 6
+            else:
+                latex = self._truncate(ev.get("label", "") or "", 70)
+                line = f"∑ Eq {ref_seq}: {latex}"
+                elt = _text_element(
+                    x=ev_x, y=ev_y,
+                    w=CARD_W - 2 * PAD, h=20,
+                    text=line, font_size=11,
+                )
+                elt["fontFamily"] = 3
+                elements.append(elt)
+                ev_y += 22
 
         # 5. counter_signal 红条（card 底部，按数量自适应高度）
         css = n.attrs.get("counter_signals", []) or []

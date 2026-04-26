@@ -1,4 +1,6 @@
 """ft-021: 从 interpret_* + extract_* 表构建 ``PaperGraphModel``.
+（含 LaTeX → PNG 即时渲染：equation evidence 通过 matplotlib.mathtext 转图。）
+
 
 **Cluster Cards 模板（2026-04-26 重写）**：
 
@@ -14,7 +16,17 @@
 """
 from __future__ import annotations
 
+from pathlib import Path
+
+from django.conf import settings
+
 from apps.render.base import GraphNode, PaperGraphModel
+from apps.render.equation_render import png_size, render_latex_to_png
+
+
+def _equation_image_path(arxiv_id: str, seq: str) -> Path:
+    base = Path(getattr(settings, "BASE_DIR", Path.cwd())) / "media" / "equations" / arxiv_id
+    return base / f"eq_{seq}.png"
 
 
 def build_graph(arxiv_id: str) -> PaperGraphModel:
@@ -97,16 +109,22 @@ def build_graph(arxiv_id: str) -> PaperGraphModel:
             if material_id not in eq_cache:
                 from apps.extract.models import Equation
                 eq = Equation.objects.filter(material_id=material_id).first()
-                eq_cache[material_id] = (
-                    {
+                if eq:
+                    latex = (eq.latex_or_text or "").strip()
+                    img_path = _equation_image_path(arxiv_id, seq)
+                    rendered = render_latex_to_png(latex, img_path) if latex else False
+                    dims = png_size(img_path) if rendered else None
+                    eq_cache[material_id] = {
                         "kind": "equation",
                         "ref_id": ref_id,
-                        "label": (eq.latex_or_text or "")[:300],
+                        "label": latex[:300],
                         "page": eq.page,
+                        "image_path": str(img_path) if rendered else "",
+                        "image_w": dims[0] if dims else 0,
+                        "image_h": dims[1] if dims else 0,
                     }
-                    if eq
-                    else None
-                )
+                else:
+                    eq_cache[material_id] = None
             return eq_cache[material_id]
         return None
 
