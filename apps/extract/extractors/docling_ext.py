@@ -109,6 +109,30 @@ _TBL_LABEL_RE = re.compile(r"\b(Table|Tab\.?)\s*(\d+)", re.IGNORECASE)
 _YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
 _FIRST_AUTHOR_RE = re.compile(r"^([A-Z][A-Za-z\-']+)")
 
+# ---- 清洁层（ConvNeXt V2 双栏实测后加，2026-04-26）----
+# Docling 在多栏 / figure-table 共存页面上有已知短板：偶发把 logo 当 picture、
+# 表格碎片当 formula、algorithm 标题当 section_header。这里在 mapper 出口做最
+# 小过滤，保住接口契约不变，下游消费者免去自行过滤。
+
+# Figure：image 文件 < 此阈值且无 caption → 丢
+_FIGURE_MIN_BYTES_NO_CAPTION = 5 * 1024  # 5KB
+
+# Equation：LaTeX 长度 < 此阈值 或 含明显 OCR 渣 → 丢
+_EQUATION_MIN_LEN = 20
+_EQUATION_GARBAGE_RE = re.compile(r"\\V\s*\{|\\\s*[A-Z]\s*\{[^}]*\d+\s*\+\s*\w")
+
+# Section：白名单（命中即保留 level=1；其他保留但降为 level=2 弱化）
+_SECTION_NUMBERED_RE = re.compile(r"^\s*\d+(\.\d+)*\.?\s+\S")
+_SECTION_WHITELIST = {
+    "abstract", "introduction", "related work", "background", "method", "methods",
+    "approach", "model", "framework", "experiments", "evaluation", "results",
+    "discussion", "limitations", "conclusion", "conclusions", "references",
+    "acknowledgements", "acknowledgments", "appendix", "future work",
+}
+
+# Table：无 caption 且 markdown 行数 ≤ 此阈值 → 丢
+_TABLE_MIN_ROWS_NO_CAPTION = 2
+
 
 def _label_of(item: Any) -> str:
     return str(getattr(item, "label", "") or "")
@@ -146,6 +170,18 @@ def _resolve_caption(item: Any, doc: Any) -> str:
         return ""
 
 
+def _section_is_canonical(title: str) -> bool:
+    """Whitelist 命中或带数字章节号则视为「正章节」，否则弱化到 level=2."""
+    t = (title or "").strip().lower()
+    if not t:
+        return False
+    if _SECTION_NUMBERED_RE.match(title):
+        return True
+    # 去掉前缀编号后再匹配 whitelist（"1. Introduction" → "introduction"）
+    head = re.sub(r"^\s*\d+(\.\d+)*\.?\s+", "", t).strip()
+    return head in _SECTION_WHITELIST or t in _SECTION_WHITELIST
+
+
 def _map_sections(doc: Any, arxiv_id: str) -> list[SectionMaterial]:
     out: list[SectionMaterial] = []
     seq = 0
@@ -154,13 +190,16 @@ def _map_sections(doc: Any, arxiv_id: str) -> list[SectionMaterial]:
             continue
         seq += 1
         title = getattr(t, "text", "") or ""
+        # 清洁：noise heading（algorithm 头、figure 内 block 标签等）降级到 level=2
+        raw_level = int(getattr(t, "level", 1) or 1)
+        level = raw_level if _section_is_canonical(title) else max(raw_level, 2)
         out.append(SectionMaterial(
             material_id=make_material_id(arxiv_id, "section", seq),
             paper_arxiv_id=arxiv_id,
             type="section",
-            raw_payload={"parser": "docling"},
+            raw_payload={"parser": "docling", "canonical": _section_is_canonical(title)},
             path=title,
-            level=int(getattr(t, "level", 1) or 1),
+            level=level,
             char_offset_start=0,
             char_offset_end=0,
             raw_text="",
@@ -193,6 +232,15 @@ def _map_figures(doc: Any, arxiv_id: str) -> list[FigureMaterial]:
                 log.warning("[docling] picture save failed: %r", exc)
                 image_path = ""
         caption = _resolve_caption(p, doc)
+        # 清洁：无 caption 且 image 极小 → 出版社 logo / 装饰图，丢
+        if not caption and image_path:
+            try:
+                if Path(image_path).stat().st_size < _FIGURE_MIN_BYTES_NO_CAPTION:
+                    Path(image_path).unlink(missing_ok=True)
+                    seq -= 1  # 回退序号
+                    continue
+            except OSError:
+                pass
         m = _FIG_LABEL_RE.search(caption)
         fig_label = m.group(0) if m else ""
         out.append(FigureMaterial(
@@ -230,8 +278,14 @@ def _map_tables(doc: Any, arxiv_id: str) -> list[TableMaterial]:
     out: list[TableMaterial] = []
     seq = 0
     for t in getattr(doc, "tables", None) or []:
-        seq += 1
         caption = _resolve_caption(t, doc)
+        raw_md = _table_to_markdown(t, doc)
+        # 清洁：无 caption 且 markdown 行数过少 → 多半是误识别的小布局碎片，丢
+        if not caption:
+            n_rows = raw_md.count("\n") if raw_md else 0
+            if n_rows <= _TABLE_MIN_ROWS_NO_CAPTION:
+                continue
+        seq += 1
         m = _TBL_LABEL_RE.search(caption)
         tbl_label = m.group(0) if m else ""
         out.append(TableMaterial(
@@ -243,7 +297,7 @@ def _map_tables(doc: Any, arxiv_id: str) -> list[TableMaterial]:
             page=_prov_page(t),
             bbox=_prov_bbox(t),
             caption=caption,
-            raw_text=_table_to_markdown(t, doc),
+            raw_text=raw_md,
         ))
     return out
 
@@ -253,6 +307,12 @@ def _map_equations(doc: Any, arxiv_id: str) -> list[EquationMaterial]:
     seq = 0
     for t in getattr(doc, "texts", None) or []:
         if _label_of(t) != "formula":
+            continue
+        latex = getattr(t, "text", "") or ""
+        # 清洁：太短 / OCR 渣（含 \V {... 这类双栏表格碎片渗漏）→ 丢
+        if len(latex.strip()) < _EQUATION_MIN_LEN:
+            continue
+        if _EQUATION_GARBAGE_RE.search(latex):
             continue
         seq += 1
         out.append(EquationMaterial(

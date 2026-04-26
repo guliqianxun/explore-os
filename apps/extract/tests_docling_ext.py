@@ -287,6 +287,127 @@ def test_doc_cache_avoids_reconvert(tmp_path, settings):
     assert call_count["n"] == 1
 
 
+# ---------------- 清洁层测试（ConvNeXt V2 双栏实测后加） ----------------
+
+def test_section_noise_demoted_to_level2(tmp_path, settings):
+    """非数字章节号且不在白名单（如 "Algorithm 1 Pseudocode" / 图内 block 标签）
+    应保留但 level 弱化到 2，避免污染主章节流。"""
+    settings.BASE_DIR = tmp_path
+    canonical = SimpleNamespace(
+        label="section_header", text="3. Method", level=1, prov=_prov(2),
+    )
+    noise = SimpleNamespace(
+        label="section_header",
+        text="Algorithm 1 Pseudocode of GRN in a PyTorch-like style.",
+        level=1, prov=_prov(5),
+    )
+    block_label = SimpleNamespace(
+        label="section_header",
+        text="ConvNeXtV1Block ConvNeXtV2Block",
+        level=1, prov=_prov(6),
+    )
+    abstract = SimpleNamespace(
+        label="section_header", text="Abstract", level=1, prov=_prov(1),
+    )
+    fake_doc = SimpleNamespace(
+        texts=[abstract, canonical, noise, block_label], pictures=[], tables=[],
+    )
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"")
+    with patch.object(dx, "_convert", return_value=fake_doc):
+        result = DoclingExtractor().extract(pdf, "2401.00003")
+    by_path = {s.path: s for s in result.sections}
+    assert by_path["Abstract"].level == 1            # 白名单
+    assert by_path["3. Method"].level == 1           # 数字章节号
+    assert by_path["Algorithm 1 Pseudocode of GRN in a PyTorch-like style."].level == 2
+    assert by_path["ConvNeXtV1Block ConvNeXtV2Block"].level == 2
+
+
+def test_figure_dropped_when_no_caption_and_tiny(tmp_path, settings):
+    """无 caption + 小图（< 5KB）被识别为出版社 logo / 装饰图，丢。"""
+    settings.BASE_DIR = tmp_path
+    # picture: no caption, tiny image
+    tiny_img = _FakeImage()
+    pic_logo = SimpleNamespace(
+        prov=_prov(1), captions=[], get_image=lambda doc: tiny_img,
+    )
+    # 正常 figure 作对照（与 make_fake_doc 一致）
+    cap_text = SimpleNamespace(text="Figure 1: real figure.")
+    cap_ref = SimpleNamespace(resolve=lambda doc: cap_text)
+    pic_real = SimpleNamespace(
+        prov=_prov(2), captions=[cap_ref], get_image=lambda doc: _FakeImage(),
+    )
+    fake_doc = SimpleNamespace(texts=[], pictures=[pic_logo, pic_real], tables=[])
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"")
+    with patch.object(dx, "_convert", return_value=fake_doc):
+        result = DoclingExtractor().extract(pdf, "2401.00004")
+    assert len(result.figures) == 1
+    assert result.figures[0].caption.startswith("Figure 1:")
+
+
+def test_equation_dropped_when_too_short(tmp_path, settings):
+    """LaTeX 长度 < 20 字符 → OCR 渣，丢。"""
+    settings.BASE_DIR = tmp_path
+    short = SimpleNamespace(label="formula", text="x = 1", prov=_prov(3))
+    real = SimpleNamespace(
+        label="formula",
+        text=r"\mathcal{L} = \sum_i (y_i - \hat{y}_i)^2",
+        prov=_prov(3),
+    )
+    fake_doc = SimpleNamespace(texts=[short, real], pictures=[], tables=[])
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"")
+    with patch.object(dx, "_convert", return_value=fake_doc):
+        result = DoclingExtractor().extract(pdf, "2401.00005")
+    assert len(result.equations) == 1
+    assert result.equations[0].latex_or_text.startswith(r"\mathcal{L}")
+
+
+def test_equation_dropped_when_garbage_pattern(tmp_path, settings):
+    """ConvNeXt V2 实测：双栏表格碎片渗漏成 formula（含 \\V {... 标记）→ 丢。"""
+    settings.BASE_DIR = tmp_path
+    garbage = SimpleNamespace(
+        label="formula",
+        text=r"\frac { \V { 1 + \sup , 3 0 0 e p . } \quad \V { 1 + F C M A E } } { 8 3 . 8 }",
+        prov=_prov(6),
+    )
+    real = SimpleNamespace(
+        label="formula",
+        text=r"X_i = X_i * \mathcal{N}(\mathcal{G}(X)_i)",
+        prov=_prov(5),
+    )
+    fake_doc = SimpleNamespace(texts=[garbage, real], pictures=[], tables=[])
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"")
+    with patch.object(dx, "_convert", return_value=fake_doc):
+        result = DoclingExtractor().extract(pdf, "2401.00006")
+    assert len(result.equations) == 1
+    assert result.equations[0].latex_or_text.startswith("X_i")
+
+
+def test_table_dropped_when_no_caption_and_few_rows(tmp_path, settings):
+    """无 caption 且 markdown 行数 ≤ 2 → 误识别小布局，丢；保留有 caption 的真表。"""
+    settings.BASE_DIR = tmp_path
+    fragment = SimpleNamespace(
+        prov=_prov(3), captions=[],
+        export_to_markdown=lambda doc=None: "| a |\n| 1 |",   # 2 行换行 = 1 row
+    )
+    real_cap = SimpleNamespace(text="Table 3: Real table.")
+    real_ref = SimpleNamespace(resolve=lambda doc: real_cap)
+    real_tbl = SimpleNamespace(
+        prov=_prov(7), captions=[real_ref],
+        export_to_markdown=lambda doc=None: "| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |",
+    )
+    fake_doc = SimpleNamespace(texts=[], pictures=[], tables=[fragment, real_tbl])
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"")
+    with patch.object(dx, "_convert", return_value=fake_doc):
+        result = DoclingExtractor().extract(pdf, "2401.00007")
+    assert len(result.tables) == 1
+    assert result.tables[0].tbl_label == "Table 3"
+
+
 def test_material_ids_follow_format(tmp_path, settings):
     settings.BASE_DIR = tmp_path
     fake_doc = make_fake_doc()
