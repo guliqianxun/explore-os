@@ -76,6 +76,7 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [ft-023](features/ft-023.md) — Electron shell + Python sidecar + PyInstaller Django
 - [ft-024](features/ft-024.md) — 前端 MVP 4 页（Vite+React+TS+Tailwind+shadcn/ui+Excalidraw）
 - [ft-025](features/ft-025.md) — 自动更新 + CUDA/CPU 双轨打包
+- [ft-026](features/ft-026.md) — 前端编辑/杂志重设计（Editorial）+ CORS 修复
 
 ## 当前迭代
 
@@ -87,7 +88,8 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [iter-006](iterations/iter-006.md) — Sprint 6：渲染层（ft-021 ✅ freeze；图谱可视化推迟到 v1.x，索引层数据建立完成）
 - [iter-007](iterations/iter-007.md) — Sprint 7：Electron 基础设施 + DRF API（ft-022 ✅）
 - [iter-008](iterations/iter-008.md) — Sprint 8：Electron shell + Python sidecar（ft-023 ✅）
-- [iter-009](iterations/iter-009.md) — Sprint 9：前端 MVP 4 页（ft-024）
+- [iter-009](iterations/iter-009.md) — Sprint 9：前端 MVP 4 页（ft-024 ✅）
+- [iter-010](iterations/iter-010.md) — Sprint 10：编辑/杂志重设计（ft-026）
 
 ## 战略转向（2026-04-25）
 
