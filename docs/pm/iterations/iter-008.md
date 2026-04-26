@@ -3,9 +3,9 @@ pm_id: iter-008
 pm_type: iteration
 title: Sprint 8 — Electron shell + Python sidecar
 milestone: v1.0
-status: in_progress
+status: done
 start_at: 2026-04-26
-end_at: 2026-05-03
+end_at: 2026-04-26
 ---
 
 # iter-008 Sprint 8：Electron shell + Python sidecar
