@@ -1,0 +1,60 @@
+# ft-023: electron-builder config (CUDA bundle, self-use).
+#
+# Run from the `electron/` directory:
+#
+#     npm run build:all     # build sidecar (PyInstaller) + Electron installer
+#
+# Layout assumptions:
+#   * `electron/dist-electron/`  — tsc output (main.js, preload.js, sidecar.js, …)
+#   * `electron/resources/`      — placeholder.html (replaced by Vite build in ft-024)
+#   * `<repo>/dist/explore-os-sidecar/`  — PyInstaller one-folder bundle,
+#                                          copied to `<app>/resources/sidecar/`.
+
+appId: dev.explore-os.app
+productName: explore-os
+
+directories:
+  output: dist
+  buildResources: build
+
+# Files packed into the asar / app dir.
+files:
+  - dist-electron/**/*
+  - resources/**/*
+  - package.json
+
+# PyInstaller bundle — copied verbatim under <app>/resources/sidecar/.
+extraResources:
+  - from: ../dist/explore-os-sidecar
+    to: sidecar
+    filter:
+      - "**/*"
+
+asar: true
+# Skip native rebuild — we have no native node deps yet.
+nodeGypRebuild: false
+buildDependenciesFromSource: false
+
+mac:
+  target: dmg
+  identity: null            # self-use stage: no signing
+  category: public.app-category.productivity
+  icon: build/icons/icon.icns
+
+win:
+  target:
+    - nsis
+  icon: build/icons/icon.ico
+  signingHashAlgorithms: null  # self-use stage: no signing
+
+linux:
+  target:
+    - AppImage
+  category: Utility
+  icon: build/icons
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false

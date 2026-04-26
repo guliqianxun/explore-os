@@ -1,0 +1,26 @@
+{
+  "name": "explore-os-shell",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron shell for explore-os — boots a PyInstaller-bundled Django sidecar (Waitress) and a BrowserWindow.",
+  "main": "dist-electron/main.js",
+  "author": "explore-os",
+  "license": "MIT",
+  "scripts": {
+    "tsc": "tsc -p tsconfig.json",
+    "build:tsc": "tsc -p tsconfig.json",
+    "dev:sidecar": "cd .. && uv run python sidecar_entry.py --data-dir ./data-dev --port 0",
+    "dev:electron": "npm run tsc && electron dist-electron/main.js",
+    "build:sidecar": "cd .. && uv run pyinstaller build/sidecar-cuda.spec --noconfirm --distpath dist",
+    "build:electron": "npm run build:tsc && electron-builder --config build/electron-builder.yml",
+    "build:all": "npm run build:sidecar && npm run build:electron",
+    "clean": "rimraf dist dist-electron"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "^32.0.0",
+    "electron-builder": "^24.13.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.5.0"
+  }
+}

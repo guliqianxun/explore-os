@@ -55,3 +55,12 @@ media/
 .claude/settings.local.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
+
+# ft-023: Electron shell + PyInstaller artifacts
+electron/dist
+electron/dist-electron
+electron/node_modules
+build/dist
+build/__pycache__
+*.spec.bak
+data-dev/

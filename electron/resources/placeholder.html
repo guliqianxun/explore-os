@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>explore-os</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0f1115;
+        --fg: #e7e9ee;
+        --muted: #8a93a6;
+        --accent: #6aa3ff;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        padding: 32px;
+        text-align: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0.2px;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 520px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(106, 163, 255, 0.12);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: pulse 1.4s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.35;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      code {
+        background: rgba(255, 255, 255, 0.06);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      #status {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <span class="pill"><span class="dot"></span>explore-os sidecar starting…</span>
+      <h1>explore-os</h1>
+      <p>
+        The Python sidecar is booting. The frontend UI ships in ft-024;
+        for now this window is just a placeholder. Probe the API via
+        <code>http://127.0.0.1:&lt;port&gt;/api/health/</code>.
+      </p>
+      <div id="status">backend port: pending…</div>
+    </div>
+    <script>
+      // Poll the bridge for backend port; harmless if `window.explore` is absent
+      // (e.g. opened directly in a browser).
+      (async function poll() {
+        const el = document.getElementById("status");
+        if (!window.explore) {
+          el.textContent = "window.explore bridge not available";
+          return;
+        }
+        for (let i = 0; i < 60; i++) {
+          try {
+            const port = await window.explore.getBackendPort();
+            if (port) {
+              el.textContent = "backend port: " + port;
+              return;
+            }
+          } catch (e) {
+            el.textContent = "bridge error: " + e;
+          }
+          await new Promise((r) => setTimeout(r, 500));
+        }
+        el.textContent = "backend port: timed out waiting";
+      })();
+    </script>
+  </body>
+</html>
