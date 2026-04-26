@@ -1,13 +1,13 @@
-"""ft-021: Excalidraw renderer.
+"""ft-021: Excalidraw renderer —— Cluster Cards 模板（2026-04-26 重写）.
 
-输出标准 Excalidraw JSON（``.excalidraw`` 后缀）。可拖入 excalidraw.com /
-桌面 app 直接打开。schema 5 年稳定（参考 packages/excalidraw/data/types.ts）。
+每个 claim 是自包含卡片：
+- 顶部 header strip：claim_type 徽章 + confidence
+- 中部 body：claim 文本（auto-wrap 到 card 宽度）
+- evidence 区：figure 缩略图（左）+ caption（右），table/section 仅文字
+- 底部 counter_signal 红条（如有）
+- 底部 cite chips（如有）
 
-约束：
-* 不引第三方 nanoid 依赖；用 ``_nanoid()`` 自己生成 16 字符随机 id。
-* figure 节点的 PNG 走 base64 dataURL，写入 ``files`` 字段；rect 用 ``image`` element。
-* 边色固定：supports 蓝 / illustrates 绿 / contradicts 红 dashed / cites 灰。
-* 布局走 ``apps.render.layout._layout``，与 SVG renderer 共享。
+不画跨卡片箭头 —— 视觉关系靠物理包含表达。
 """
 from __future__ import annotations
 
@@ -19,28 +19,52 @@ import time
 from pathlib import Path
 
 from apps.render.base import PaperGraphModel
-from apps.render.layout import _layout
+from apps.render.layout import (
+    CARD_H,
+    CARD_W,
+    CHIP_H,
+    CHIP_W,
+    layout_cluster,
+)
 
 # ---------------- 样式常量 ----------------
 
-NODE_W = 240
-NODE_H = 80
-FIGURE_W = 240
-FIGURE_H = 160
+PAD = 16
 
-NODE_STYLE: dict[str, dict[str, str]] = {
-    "claim":    {"strokeColor": "#1971c2", "backgroundColor": "#e7f5ff"},
-    "table":    {"strokeColor": "#7048e8", "backgroundColor": "#f3f0ff"},
-    "citation": {"strokeColor": "#868e96", "backgroundColor": "#f1f3f5"},
-    # figure 走 image element，不需要 fill；保留占位以避免 KeyError
-    "figure":   {"strokeColor": "#2f9e44", "backgroundColor": "#ebfbee"},
+# header strip
+HEADER_H = 28
+HEADER_BG = "#dee2e6"
+
+# body 文本区域
+BODY_Y = HEADER_H + 8
+BODY_H = 130       # claim 文本最大高度
+
+# evidence 区
+EV_Y = BODY_Y + BODY_H + 8
+EV_THUMB_W = 130
+EV_THUMB_H = 100
+EV_TEXT_PAD = 12
+
+# counter_signal 红条
+CS_BG = "#fff0f0"
+CS_STROKE = "#e03131"
+
+# claim_type → 徽章颜色
+CLAIM_TYPE_COLOR = {
+    "proposal":    "#1971c2",
+    "result":      "#2f9e44",
+    "ablation":    "#e8590c",
+    "theoretical": "#7048e8",
 }
 
-EDGE_STYLE: dict[str, dict[str, str]] = {
-    "supports":     {"strokeColor": "#1971c2", "strokeStyle": "solid"},
-    "illustrates":  {"strokeColor": "#2f9e44", "strokeStyle": "solid"},
-    "contradicts":  {"strokeColor": "#e03131", "strokeStyle": "dashed"},
-    "cites":        {"strokeColor": "#868e96", "strokeStyle": "solid"},
+CARD_STYLE = {
+    "strokeColor": "#1971c2",
+    "backgroundColor": "#f8f9fa",
+}
+
+CHIP_STYLE = {
+    "strokeColor": "#868e96",
+    "backgroundColor": "#f1f3f5",
 }
 
 
@@ -50,7 +74,6 @@ _NANOID_ALPHABET = string.ascii_letters + string.digits + "_-"
 
 
 def _nanoid(n: int = 16) -> str:
-    """16 字符随机 id（不引依赖）。"""
     return "".join(secrets.choice(_NANOID_ALPHABET) for _ in range(n))
 
 
@@ -85,94 +108,43 @@ def _base_element(*, etype: str, eid: str, x: int, y: int, w: int, h: int) -> di
     }
 
 
+def _text_element(*, x: int, y: int, w: int, h: int, text: str, font_size: int = 16,
+                  text_align: str = "left", container_id: str | None = None) -> dict:
+    eid = _nanoid()
+    elt = _base_element(etype="text", eid=eid, x=x, y=y, w=w, h=h)
+    elt["text"] = text
+    elt["fontSize"] = font_size
+    elt["fontFamily"] = 1
+    elt["textAlign"] = text_align
+    elt["verticalAlign"] = "top"
+    elt["baseline"] = font_size - 2
+    elt["containerId"] = container_id
+    elt["originalText"] = text
+    elt["lineHeight"] = 1.25
+    return elt
+
+
 # ---------------- Renderer ----------------
 
 class ExcalidrawRenderer:
-    """实现 ``apps.render.base.GraphRenderer`` Protocol。"""
+    """实现 ``apps.render.base.GraphRenderer`` Protocol。Cluster Cards 模板。"""
 
     def render(self, graph: PaperGraphModel, out_dir: Path) -> Path:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        pos = _layout(graph)
+        pos = layout_cluster(graph)
         elements: list[dict] = []
         files: dict[str, dict] = {}
-        # node_id → element id（rect 或 image），arrow 绑定用
-        node_elt_id: dict[str, str] = {}
+        # 同 image_path 去重 file_id
+        path_to_file_id: dict[str, str] = {}
 
-        # --- 节点 ---
         for n in graph.nodes:
             x, y = pos.get(n.node_id, (0, 0))
-
-            if n.kind == "figure":
-                file_id = _nanoid()
-                self._maybe_embed_file(n.attrs.get("image_path", ""), file_id, files)
-                img_eid = _nanoid()
-                img = _base_element(
-                    etype="image", eid=img_eid, x=x, y=y, w=FIGURE_W, h=FIGURE_H,
-                )
-                img["fileId"] = file_id
-                img["status"] = "saved"
-                img["scale"] = [1, 1]
-                elements.append(img)
-                node_elt_id[n.node_id] = img_eid
-
-                # caption 文字 element（不绑定，独立放在图下方）
-                if n.label:
-                    elements.append(self._text_element(
-                        x=x, y=y + FIGURE_H + 4, w=FIGURE_W, h=20,
-                        text=n.label,
-                    ))
-                continue
-
-            # rectangle 节点（claim / table / citation）
-            style = NODE_STYLE[n.kind]
-            rect_eid = _nanoid()
-            text_eid = _nanoid()
-            rect = _base_element(
-                etype="rectangle", eid=rect_eid, x=x, y=y, w=NODE_W, h=NODE_H,
-            )
-            rect["strokeColor"] = style["strokeColor"]
-            rect["backgroundColor"] = style["backgroundColor"]
-            rect["fillStyle"] = "solid"
-            rect["boundElements"] = [{"type": "text", "id": text_eid}]
-            elements.append(rect)
-
-            text = self._text_element(
-                x=x + 8, y=y + 8, w=NODE_W - 16, h=NODE_H - 16,
-                text=n.label,
-            )
-            text["containerId"] = rect_eid
-            elements.append(text)
-            node_elt_id[n.node_id] = rect_eid
-
-        # --- 边 ---
-        for e in graph.edges:
-            src_eid = node_elt_id.get(e.from_id)
-            dst_eid = node_elt_id.get(e.to_id)
-            if not src_eid or not dst_eid:
-                continue
-            sx, sy = pos.get(e.from_id, (0, 0))
-            tx, ty = pos.get(e.to_id, (0, 0))
-            # 起点：源 rect 底部中点；终点：目标 rect 顶部中点
-            x1, y1 = sx + NODE_W // 2, sy + NODE_H
-            x2, y2 = tx + NODE_W // 2, ty
-            arrow_eid = _nanoid()
-            arrow = _base_element(
-                etype="arrow", eid=arrow_eid, x=x1, y=y1, w=x2 - x1, h=y2 - y1,
-            )
-            style = EDGE_STYLE[e.kind]
-            arrow["strokeColor"] = style["strokeColor"]
-            arrow["strokeStyle"] = style["strokeStyle"]
-            arrow["points"] = [[0, 0], [x2 - x1, y2 - y1]]
-            arrow["lastCommittedPoint"] = None
-            arrow["startBinding"] = {"elementId": src_eid, "focus": 0, "gap": 1}
-            arrow["endBinding"] = {"elementId": dst_eid, "focus": 0, "gap": 1}
-            arrow["startArrowhead"] = None
-            arrow["endArrowhead"] = "arrow"
-            if e.label:
-                arrow["label"] = {"text": e.label}
-            elements.append(arrow)
+            if n.kind == "claim":
+                self._render_claim_card(n, x, y, elements, files, path_to_file_id)
+            elif n.kind == "citation":
+                self._render_citation_chip(n, x, y, elements)
 
         doc = {
             "type": "excalidraw",
@@ -190,34 +162,190 @@ class ExcalidrawRenderer:
         out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
         return out_path
 
+    # ---- claim 卡片（核心） ----
+
+    def _render_claim_card(self, n, x: int, y: int, elements: list[dict],
+                            files: dict, path_to_file_id: dict[str, str]) -> None:
+        # 1. 卡片外框
+        card_id = _nanoid()
+        card = _base_element(etype="rectangle", eid=card_id, x=x, y=y, w=CARD_W, h=CARD_H)
+        card.update({
+            "strokeColor": CARD_STYLE["strokeColor"],
+            "backgroundColor": CARD_STYLE["backgroundColor"],
+            "fillStyle": "solid",
+            "roundness": {"type": 3},   # 圆角
+        })
+        elements.append(card)
+
+        # 2. header strip（claim_type 徽章 + confidence 数字）
+        header_bg = _base_element(etype="rectangle", eid=_nanoid(),
+                                  x=x, y=y, w=CARD_W, h=HEADER_H)
+        ctype = n.attrs.get("claim_type", "result")
+        header_color = CLAIM_TYPE_COLOR.get(ctype, "#868e96")
+        header_bg.update({
+            "strokeColor": header_color,
+            "backgroundColor": header_color,
+            "fillStyle": "solid",
+            "roundness": {"type": 3},
+        })
+        elements.append(header_bg)
+
+        conf = n.attrs.get("confidence", 0.0)
+        header_text = f"  [{ctype}]   conf {conf:.2f}"
+        elements.append(_text_element(
+            x=x + 8, y=y + 5, w=CARD_W - 16, h=HEADER_H - 8,
+            text=header_text, font_size=14, container_id=None,
+        ))
+
+        # 3. body claim text（绑到 invisible inner rect 让 Excalidraw auto-wrap）
+        body_inner_id = _nanoid()
+        body_inner = _base_element(etype="rectangle", eid=body_inner_id,
+                                   x=x + PAD, y=y + BODY_Y, w=CARD_W - 2 * PAD, h=BODY_H)
+        body_inner.update({
+            "strokeColor": "transparent",
+            "backgroundColor": "transparent",
+            "fillStyle": "solid",
+            "strokeWidth": 0,
+        })
+        body_text = _text_element(
+            x=x + PAD + 4, y=y + BODY_Y + 4,
+            w=CARD_W - 2 * PAD - 8, h=BODY_H - 8,
+            text=n.label, font_size=15,
+            container_id=body_inner_id,
+        )
+        body_inner["boundElements"] = [{"type": "text", "id": body_text["id"]}]
+        elements.append(body_inner)
+        elements.append(body_text)
+
+        # 4. evidence 区（figure 缩略 + 文字 / table 仅文字 / section 仅文字）
+        evidences = n.attrs.get("evidences", []) or []
+        section_ev = n.attrs.get("section_evidences", []) or []
+
+        ev_y = y + EV_Y
+        ev_x = x + PAD
+        max_ev_y = y + CARD_H - 60  # 给 counter_signal 留 60px
+
+        # 先画 figure（最显眼）
+        for ev in evidences:
+            if ev_y >= max_ev_y:
+                break
+            if ev.get("kind") == "figure":
+                file_id = self._embed_image(ev.get("image_path", ""), files, path_to_file_id)
+                if file_id:
+                    img_eid = _nanoid()
+                    img = _base_element(
+                        etype="image", eid=img_eid,
+                        x=ev_x, y=ev_y, w=EV_THUMB_W, h=EV_THUMB_H,
+                    )
+                    img["fileId"] = file_id
+                    img["status"] = "saved"
+                    img["scale"] = [1, 1]
+                    elements.append(img)
+                cap = self._truncate(ev.get("label", "") or "", 90)
+                cap_text = f"Fig {ev.get('ref_id', '').split(':')[-1]}: {cap}"
+                elements.append(_text_element(
+                    x=ev_x + EV_THUMB_W + EV_TEXT_PAD,
+                    y=ev_y + 4,
+                    w=CARD_W - 2 * PAD - EV_THUMB_W - EV_TEXT_PAD,
+                    h=EV_THUMB_H - 8,
+                    text=cap_text, font_size=12,
+                ))
+                ev_y += EV_THUMB_H + 8
+            elif ev.get("kind") == "table":
+                cap = self._truncate(ev.get("label", "") or "", 100)
+                line = f"📋 Tbl {ev.get('ref_id', '').split(':')[-1]}: {cap}"
+                elements.append(_text_element(
+                    x=ev_x, y=ev_y,
+                    w=CARD_W - 2 * PAD, h=22,
+                    text=line, font_size=12,
+                ))
+                ev_y += 26
+
+        # 然后是 section evidence（小字）
+        for ev in section_ev:
+            if ev_y >= max_ev_y:
+                break
+            line = f"§ {ev.get('label', ev.get('ref_id', ''))}"
+            elements.append(_text_element(
+                x=ev_x, y=ev_y,
+                w=CARD_W - 2 * PAD, h=20,
+                text=line, font_size=11,
+            ))
+            ev_y += 22
+
+        # 5. counter_signal 红条（card 底部）
+        css = n.attrs.get("counter_signals", []) or []
+        if css:
+            cs_y = y + CARD_H - 50
+            cs_h = 50
+            cs_bg = _base_element(etype="rectangle", eid=_nanoid(),
+                                  x=x, y=cs_y, w=CARD_W, h=cs_h)
+            cs_bg.update({
+                "strokeColor": CS_STROKE,
+                "backgroundColor": CS_BG,
+                "fillStyle": "solid",
+                "roundness": {"type": 3},
+            })
+            elements.append(cs_bg)
+            cs_inner_id = _nanoid()
+            cs_inner = _base_element(etype="rectangle", eid=cs_inner_id,
+                                     x=x + PAD, y=cs_y + 4,
+                                     w=CARD_W - 2 * PAD, h=cs_h - 8)
+            cs_inner.update({
+                "strokeColor": "transparent",
+                "backgroundColor": "transparent",
+                "fillStyle": "solid",
+                "strokeWidth": 0,
+            })
+            cs_lines = []
+            for cs in css[:3]:   # 最多展示 3 条
+                t = self._truncate(cs.get("text", "") or "", 110)
+                cs_lines.append(f"⚠ [{cs.get('signal_type', '')}] {t}")
+            cs_text = _text_element(
+                x=x + PAD + 4, y=cs_y + 6,
+                w=CARD_W - 2 * PAD - 8, h=cs_h - 12,
+                text="\n".join(cs_lines), font_size=11,
+                container_id=cs_inner_id,
+            )
+            cs_inner["boundElements"] = [{"type": "text", "id": cs_text["id"]}]
+            elements.append(cs_inner)
+            elements.append(cs_text)
+
+    # ---- citation chip（底部行） ----
+
+    def _render_citation_chip(self, n, x: int, y: int, elements: list[dict]) -> None:
+        chip_id = _nanoid()
+        chip = _base_element(etype="rectangle", eid=chip_id, x=x, y=y, w=CHIP_W, h=CHIP_H)
+        chip.update({
+            "strokeColor": CHIP_STYLE["strokeColor"],
+            "backgroundColor": CHIP_STYLE["backgroundColor"],
+            "fillStyle": "solid",
+            "roundness": {"type": 3},
+        })
+        elements.append(chip)
+        text = _text_element(
+            x=x + 6, y=y + 8, w=CHIP_W - 12, h=CHIP_H - 16,
+            text=n.label, font_size=11, container_id=chip_id,
+        )
+        chip["boundElements"] = [{"type": "text", "id": text["id"]}]
+        elements.append(text)
+
     # ---- helpers ----
 
-    def _text_element(self, *, x: int, y: int, w: int, h: int, text: str) -> dict:
-        eid = _nanoid()
-        elt = _base_element(etype="text", eid=eid, x=x, y=y, w=w, h=h)
-        elt["text"] = text
-        elt["fontSize"] = 16
-        elt["fontFamily"] = 1
-        elt["textAlign"] = "left"
-        elt["verticalAlign"] = "top"
-        elt["baseline"] = 14
-        elt["containerId"] = None
-        elt["originalText"] = text
-        elt["lineHeight"] = 1.25
-        return elt
-
-    def _maybe_embed_file(self, image_path: str, file_id: str, files: dict) -> None:
-        """读 figure PNG → base64 dataURL → 写入 files 字段。
-        路径不存在 / 读失败时静默跳过，依然产出可打开的 .excalidraw。"""
+    def _embed_image(self, image_path: str, files: dict,
+                     path_to_file_id: dict[str, str]) -> str:
         if not image_path:
-            return
+            return ""
+        if image_path in path_to_file_id:
+            return path_to_file_id[image_path]
         p = Path(image_path)
         if not p.is_file():
-            return
+            return ""
         try:
             data = p.read_bytes()
         except OSError:
-            return
+            return ""
+        file_id = _nanoid()
         b64 = base64.b64encode(data).decode("ascii")
         files[file_id] = {
             "id": file_id,
@@ -225,3 +353,11 @@ class ExcalidrawRenderer:
             "dataURL": f"data:image/png;base64,{b64}",
             "created": _now_ms(),
         }
+        path_to_file_id[image_path] = file_id
+        return file_id
+
+    def _truncate(self, s: str, n: int) -> str:
+        s = (s or "").strip()
+        if len(s) <= n:
+            return s
+        return s[: n - 1] + "…"

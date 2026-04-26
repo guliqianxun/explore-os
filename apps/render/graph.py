@@ -1,110 +1,177 @@
 """ft-021: 从 interpret_* + extract_* 表构建 ``PaperGraphModel``.
 
-规则锁定（与 dsp-005 / ft-021 spec 一致）：
+**Cluster Cards 模板（2026-04-26 重写）**：
 
-* 节点四类：claim / figure / table / citation；equation / section 不入图。
-* counter_signal 简化为 ``contradicts`` 边注解，不作为独立节点。
-* node_id 用短形（``claim:1`` / ``figure:3``），与 ``material_id`` 全形（``<arxiv>:<type>:<seq>``）
-  通过 ``rsplit(':', 1)[1]`` 双向映射。
+每个 claim 是自包含卡片，evidence / counter_signals / citations 全部
+**反规范化挂在 claim 节点的 attrs** 上。这样 renderer 直接迭代 claim 节点
+画卡片即可，**不再需要跨卡片箭头**。
+
+* 节点：`claim`（主卡片）+ `citation`（底部 chip 行，按需）
+* `figure` / `table` 不作为独立节点 —— 嵌在 claim 卡片内部
+* `counter_signal` 不作为独立节点 —— 作为 claim 卡片底部红条
+* `equation` / `section` 不入图（同 spec lock）
+* `edges` 列表保留为空（保留接口，未来 v1.x 可加 inter-claim 关系）
 """
 from __future__ import annotations
 
-from apps.render.base import GraphEdge, GraphNode, PaperGraphModel
+from apps.render.base import GraphNode, PaperGraphModel
 
 
 def build_graph(arxiv_id: str) -> PaperGraphModel:
-    """从 DB 组装 PaperGraphModel。"""
+    """从 DB 组装 cluster-oriented PaperGraphModel。"""
     # 局部 import 避免 app loading 顺序问题。
     from apps.extract.models import Citation, Figure, Table
     from apps.interpret.models import Claim, CounterSignal
 
     nodes: list[GraphNode] = []
-    edges: list[GraphEdge] = []
-    cited_materials: dict[str, str] = {}  # full material_id → short
+    cited_citation_short_ids: dict[str, GraphNode] = {}  # short_id → node（去重）
 
     claims = (
         Claim.objects.filter(paper_arxiv_id=arxiv_id)
-        .prefetch_related("evidences")
+        .prefetch_related("evidences", "counter_signals")
         .order_by("claim_id")
     )
+
+    # 收集所有被 cite 的 figure/table material_id → 详情，避免重复 DB 查询
+    fig_cache: dict[str, dict] = {}
+    tbl_cache: dict[str, dict] = {}
+    cit_cache: dict[str, dict] = {}
+
+    def _resolve_evidence(material_id: str) -> dict | None:
+        """material_id → 反规范化字典（kind/label/image_path/page/etc）。
+        equation / section 返回 None（不入卡片）。"""
+        parts = material_id.split(":")
+        if len(parts) < 3:
+            return None
+        kind = parts[-2]
+        seq = parts[-1]
+        ref_id = f"{kind}:{seq}"
+        if kind == "figure":
+            if material_id not in fig_cache:
+                f = Figure.objects.filter(material_id=material_id).first()
+                fig_cache[material_id] = (
+                    {
+                        "kind": "figure",
+                        "ref_id": ref_id,
+                        "label": (f.caption or "")[:200],
+                        "image_path": f.image_path or "",
+                        "page": f.page,
+                    }
+                    if f
+                    else None
+                )
+            return fig_cache[material_id]
+        if kind == "table":
+            if material_id not in tbl_cache:
+                t = Table.objects.filter(material_id=material_id).first()
+                tbl_cache[material_id] = (
+                    {
+                        "kind": "table",
+                        "ref_id": ref_id,
+                        "label": (t.caption or "")[:200],
+                        "page": t.page,
+                    }
+                    if t
+                    else None
+                )
+            return tbl_cache[material_id]
+        if kind == "citation":
+            if material_id not in cit_cache:
+                c = Citation.objects.filter(material_id=material_id).first()
+                cit_cache[material_id] = (
+                    {
+                        "kind": "citation",
+                        "ref_id": ref_id,
+                        "bibkey": c.bibkey,
+                        "year": c.year,
+                        "label": f"{c.bibkey} ({c.year if c.year is not None else '?'})",
+                    }
+                    if c
+                    else None
+                )
+            return cit_cache[material_id]
+        if kind == "section":
+            # 引用某 section 时，作为内嵌 reference（无图）
+            return {"kind": "section", "ref_id": ref_id, "label": ""}
+        # equation / 其他不入卡片
+        return None
+
     for c in claims:
         seq = c.claim_id.rsplit(":", 1)[1]
         node_id = f"claim:{seq}"
-        nodes.append(GraphNode(
-            node_id=node_id,
-            kind="claim",
-            label=c.text[:40] + ("…" if len(c.text) > 40 else ""),
-            attrs={
-                "claim_type": c.claim_type,
-                "confidence": c.confidence,
-                "claim_id": c.claim_id,
-            },
-        ))
-        for e in c.evidences.all():
-            # material_id: <arxiv_id>:<type>:<seq>
-            parts = e.material_id.split(":")
-            if len(parts) < 3:
-                continue
-            kind = parts[-2]
-            if kind not in ("figure", "table", "citation"):
-                continue  # equation / section 不入图（spec lock）
-            short = f"{kind}:{e.material_id.rsplit(':', 1)[1]}"
-            cited_materials[e.material_id] = short
-            edge_kind = "illustrates" if e.relation == "illustrates" else "supports"
-            edges.append(GraphEdge(from_id=node_id, to_id=short, kind=edge_kind))
 
-    # counter_signal 简化为「contradicts」边
-    signals = (
+        evidences: list[dict] = []
+        section_evidences: list[dict] = []
+        citations_in_claim: list[dict] = []
+        for e in c.evidences.all():
+            ev = _resolve_evidence(e.material_id)
+            if ev is None:
+                continue
+            ev["relation"] = e.relation
+            if ev["kind"] == "section":
+                section_evidences.append(ev)
+            elif ev["kind"] == "citation":
+                citations_in_claim.append(ev)
+                # 同时累积到全局 chip 行
+                if ev["ref_id"] not in cited_citation_short_ids:
+                    cited_citation_short_ids[ev["ref_id"]] = GraphNode(
+                        node_id=ev["ref_id"],
+                        kind="citation",
+                        label=ev["label"],
+                        attrs={"bibkey": ev["bibkey"], "year": ev["year"]},
+                    )
+            else:
+                evidences.append(ev)
+
+        counter_signals: list[dict] = []
+        for cs in c.counter_signals.all().order_by("signal_id"):
+            ev = _resolve_evidence(cs.evidence_material_id)
+            counter_signals.append(
+                {
+                    "text": cs.text,
+                    "signal_type": cs.signal_type,
+                    "evidence_ref_id": ev["ref_id"] if ev else "",
+                    "evidence_label": ev["label"] if ev else "",
+                }
+            )
+
+        nodes.append(
+            GraphNode(
+                node_id=node_id,
+                kind="claim",
+                label=c.text,  # 完整文本，渲染时 wrap，不再 [:40]
+                attrs={
+                    "claim_type": c.claim_type,
+                    "confidence": c.confidence,
+                    "claim_id": c.claim_id,
+                    "evidences": evidences,
+                    "section_evidences": section_evidences,
+                    "counter_signals": counter_signals,
+                    "citations": citations_in_claim,
+                },
+            )
+        )
+
+    # 同时也兜底扫一遍 counter_signal 的 evidence（可能引到没出现在 evidences 里的 material）
+    cs_qs = (
         CounterSignal.objects.filter(claim__paper_arxiv_id=arxiv_id)
         .select_related("claim")
         .order_by("signal_id")
     )
-    for cs in signals:
-        claim_seq = cs.claim.claim_id.rsplit(":", 1)[1]
-        parts = cs.evidence_material_id.split(":")
-        if len(parts) < 3:
-            continue
-        ev_kind = parts[-2]
-        if ev_kind not in ("figure", "table", "citation"):
-            continue
-        short = f"{ev_kind}:{cs.evidence_material_id.rsplit(':', 1)[1]}"
-        cited_materials[cs.evidence_material_id] = short
-        edges.append(GraphEdge(
-            from_id=f"claim:{claim_seq}",
-            to_id=short,
-            kind="contradicts",
-            label=cs.signal_type,
-        ))
-
-    # 把被 cite 的 material 加成节点
-    for full, short in cited_materials.items():
-        kind = full.split(":")[-2]
-        if kind == "figure":
-            f = Figure.objects.filter(material_id=full).first()
-            if f:
-                nodes.append(GraphNode(
-                    node_id=short,
-                    kind="figure",
-                    label=(f.caption or "")[:30],
-                    attrs={"image_path": f.image_path, "page": f.page},
-                ))
-        elif kind == "table":
-            t = Table.objects.filter(material_id=full).first()
-            if t:
-                nodes.append(GraphNode(
-                    node_id=short,
-                    kind="table",
-                    label=(t.caption or "")[:30],
-                    attrs={"page": t.page},
-                ))
-        elif kind == "citation":
-            c = Citation.objects.filter(material_id=full).first()
-            if c:
-                nodes.append(GraphNode(
-                    node_id=short,
+    for cs in cs_qs:
+        ev = _resolve_evidence(cs.evidence_material_id)
+        if ev and ev["kind"] == "citation":
+            if ev["ref_id"] not in cited_citation_short_ids:
+                cited_citation_short_ids[ev["ref_id"]] = GraphNode(
+                    node_id=ev["ref_id"],
                     kind="citation",
-                    label=f"{c.bibkey} ({c.year if c.year is not None else '?'})",
-                    attrs={"raw_text": c.raw_text[:200]},
-                ))
+                    label=ev["label"],
+                    attrs={"bibkey": ev["bibkey"], "year": ev["year"]},
+                )
 
-    return PaperGraphModel(paper_arxiv_id=arxiv_id, nodes=nodes, edges=edges)
+    # citation chip 行（全局去重，按 ref_id 排序）
+    citation_nodes = [cited_citation_short_ids[k] for k in sorted(cited_citation_short_ids)]
+    nodes.extend(citation_nodes)
+
+    # cluster 模式：edges 为空（关系全部内嵌进 claim attrs）
+    return PaperGraphModel(paper_arxiv_id=arxiv_id, nodes=nodes, edges=[])

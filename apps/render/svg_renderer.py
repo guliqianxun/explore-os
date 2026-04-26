@@ -1,145 +1,208 @@
-"""ft-021: SVG fallback renderer.
+"""ft-021: SVG renderer —— Cluster Cards 模板（2026-04-26 重写）.
 
-最简实现，纯静态可嵌邮件 / 浏览器：节点 ``<rect>`` + ``<text>``，figure 用
-``<image href="data:image/png;base64,...">``，边用 ``<line>`` + 居中 ``<text>``。
-布局复用 ``apps.render.layout._layout``（与 ExcalidrawRenderer 同源）。
+跟 ExcalidrawRenderer 同形态，但纯静态 SVG（任意浏览器 / 邮件可看）。
+布局复用 layout_cluster。
 """
 from __future__ import annotations
 
 import base64
 from pathlib import Path
-from xml.sax.saxutils import escape as xml_escape
+from xml.sax.saxutils import escape
 
 from apps.render.base import PaperGraphModel
-from apps.render.layout import _layout
+from apps.render.layout import (
+    CARD_H,
+    CARD_W,
+    CHIP_H,
+    CHIP_W,
+    layout_cluster,
+)
 
-NODE_W = 240
-NODE_H = 80
-FIGURE_W = 240
-FIGURE_H = 160
+HEADER_H = 28
+PAD = 16
+BODY_Y = HEADER_H + 8
+BODY_H = 130
+EV_Y = BODY_Y + BODY_H + 8
+EV_THUMB_W = 130
+EV_THUMB_H = 100
+EV_TEXT_PAD = 12
 
-NODE_STROKE = {
-    "claim":    "#1971c2",
-    "table":    "#7048e8",
-    "citation": "#868e96",
-    "figure":   "#2f9e44",
-}
-NODE_FILL = {
-    "claim":    "#e7f5ff",
-    "table":    "#f3f0ff",
-    "citation": "#f1f3f5",
-    "figure":   "#ebfbee",
+CLAIM_TYPE_COLOR = {
+    "proposal":    "#1971c2",
+    "result":      "#2f9e44",
+    "ablation":    "#e8590c",
+    "theoretical": "#7048e8",
 }
 
-EDGE_STROKE = {
-    "supports":    "#1971c2",
-    "illustrates": "#2f9e44",
-    "contradicts": "#e03131",
-    "cites":       "#868e96",
-}
+
+def _wrap(text: str, max_chars: int) -> list[str]:
+    text = (text or "").strip()
+    if not text:
+        return []
+    out, line = [], ""
+    for ch in text:
+        if ch == "\n":
+            if line:
+                out.append(line)
+                line = ""
+            continue
+        line += ch
+        if len(line) >= max_chars:
+            out.append(line)
+            line = ""
+    if line:
+        out.append(line)
+    return out
+
+
+def _truncate(s: str, n: int) -> str:
+    s = (s or "").strip()
+    return s if len(s) <= n else s[: n - 1] + "…"
 
 
 class SvgRenderer:
-    """实现 ``apps.render.base.GraphRenderer`` Protocol（SVG 兜底）。"""
+    """实现 GraphRenderer Protocol。Cluster Cards SVG 版。"""
 
     def render(self, graph: PaperGraphModel, out_dir: Path) -> Path:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        pos = _layout(graph)
-
-        # 计算 viewBox
-        if pos:
+        pos = layout_cluster(graph)
+        if not pos:
+            view_w, view_h = 800, 600
+        else:
             xs = [p[0] for p in pos.values()]
             ys = [p[1] for p in pos.values()]
-            min_x, max_x = min(xs) - 40, max(xs) + NODE_W + 40
-            min_y, max_y = min(ys) - 40, max(ys) + max(NODE_H, FIGURE_H) + 40
-        else:
-            min_x, min_y, max_x, max_y = 0, 0, 800, 600
-        width = max_x - min_x
-        height = max_y - min_y
+            view_w = max(xs) + CARD_W + 80
+            view_h = max(ys) + CARD_H + 80
 
-        parts: list[str] = []
-        parts.append(
-            f'<svg xmlns="http://www.w3.org/2000/svg" '
-            f'viewBox="{min_x} {min_y} {width} {height}" '
-            f'width="{width}" height="{height}">'
-        )
-        # defs: arrow marker
-        parts.append(
-            '<defs>'
-            '<marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" '
-            'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
-            '<path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>'
-            '</marker>'
-            '</defs>'
-        )
-
-        # --- 边（先画，节点叠在上方） ---
-        for e in graph.edges:
-            sp = pos.get(e.from_id)
-            tp = pos.get(e.to_id)
-            if not sp or not tp:
-                continue
-            x1 = sp[0] + NODE_W // 2
-            y1 = sp[1] + NODE_H
-            x2 = tp[0] + NODE_W // 2
-            y2 = tp[1]
-            stroke = EDGE_STROKE[e.kind]
-            dash = ' stroke-dasharray="6,4"' if e.kind == "contradicts" else ""
-            parts.append(
-                f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
-                f'stroke="{stroke}" stroke-width="2"{dash} '
-                f'marker-end="url(#arrow)"/>'
-            )
-            if e.label:
-                mx, my = (x1 + x2) // 2, (y1 + y2) // 2
-                parts.append(
-                    f'<text x="{mx}" y="{my}" font-size="12" fill="{stroke}" '
-                    f'text-anchor="middle">{xml_escape(e.label)}</text>'
-                )
-
-        # --- 节点 ---
+        body: list[str] = []
         for n in graph.nodes:
             x, y = pos.get(n.node_id, (0, 0))
-            if n.kind == "figure":
-                href = self._figure_href(n.attrs.get("image_path", ""))
-                if href:
-                    parts.append(
-                        f'<image href="{href}" x="{x}" y="{y}" '
-                        f'width="{FIGURE_W}" height="{FIGURE_H}"/>'
-                    )
-                else:
-                    # 占位 rect
-                    parts.append(
-                        f'<rect x="{x}" y="{y}" width="{FIGURE_W}" height="{FIGURE_H}" '
-                        f'fill="{NODE_FILL["figure"]}" stroke="{NODE_STROKE["figure"]}"/>'
-                    )
-                if n.label:
-                    parts.append(
-                        f'<text x="{x}" y="{y + FIGURE_H + 14}" font-size="12" '
-                        f'fill="#212529">{xml_escape(n.label)}</text>'
-                    )
-                continue
+            if n.kind == "claim":
+                body.extend(self._render_claim_card(n, x, y))
+            elif n.kind == "citation":
+                body.extend(self._render_chip(n, x, y))
 
-            stroke = NODE_STROKE[n.kind]
-            fill = NODE_FILL[n.kind]
-            parts.append(
-                f'<rect x="{x}" y="{y}" width="{NODE_W}" height="{NODE_H}" '
-                f'fill="{fill}" stroke="{stroke}" stroke-width="1.5" rx="6"/>'
-            )
-            parts.append(
-                f'<text x="{x + 10}" y="{y + 26}" font-size="14" fill="#212529">'
-                f'{xml_escape(n.label or n.node_id)}</text>'
-            )
-
-        parts.append("</svg>")
-
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" '
+            f'viewBox="0 0 {view_w} {view_h}" '
+            f'width="{view_w}" height="{view_h}" '
+            f'font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">'
+            + "".join(body)
+            + "</svg>"
+        )
         out_path = out_dir / "graph.svg"
-        out_path.write_text("".join(parts), encoding="utf-8")
+        out_path.write_text(svg, encoding="utf-8")
         return out_path
 
-    def _figure_href(self, image_path: str) -> str:
+    def _render_claim_card(self, n, x: int, y: int) -> list[str]:
+        out: list[str] = []
+        out.append(
+            f'<rect x="{x}" y="{y}" width="{CARD_W}" height="{CARD_H}" '
+            f'rx="6" fill="#f8f9fa" stroke="#1971c2" stroke-width="1"/>'
+        )
+        ctype = n.attrs.get("claim_type", "result")
+        color = CLAIM_TYPE_COLOR.get(ctype, "#868e96")
+        out.append(
+            f'<rect x="{x}" y="{y}" width="{CARD_W}" height="{HEADER_H}" '
+            f'rx="6" fill="{color}"/>'
+        )
+        conf = n.attrs.get("confidence", 0.0)
+        out.append(
+            f'<text x="{x + 8}" y="{y + 19}" fill="#ffffff" font-size="13" font-weight="600">'
+            f'[{escape(ctype)}]   conf {conf:.2f}</text>'
+        )
+
+        body_lines = _wrap(n.label or "", 36)
+        ty = y + BODY_Y + 4
+        for line in body_lines[:6]:
+            out.append(
+                f'<text x="{x + PAD + 4}" y="{ty + 16}" '
+                f'fill="#212529" font-size="14">{escape(line)}</text>'
+            )
+            ty += 22
+
+        ev_y = y + EV_Y
+        ev_x = x + PAD
+        evidences = n.attrs.get("evidences", []) or []
+        section_ev = n.attrs.get("section_evidences", []) or []
+        max_ev_y = y + CARD_H - 60
+
+        for ev in evidences:
+            if ev_y >= max_ev_y:
+                break
+            if ev.get("kind") == "figure":
+                img_path = ev.get("image_path", "")
+                href = self._image_data_url(img_path)
+                if href:
+                    out.append(
+                        f'<image x="{ev_x}" y="{ev_y}" width="{EV_THUMB_W}" '
+                        f'height="{EV_THUMB_H}" href="{href}" '
+                        f'preserveAspectRatio="xMidYMid meet"/>'
+                    )
+                else:
+                    out.append(
+                        f'<rect x="{ev_x}" y="{ev_y}" width="{EV_THUMB_W}" '
+                        f'height="{EV_THUMB_H}" fill="#e9ecef" stroke="#adb5bd"/>'
+                    )
+                cap = _truncate(ev.get("label", "") or "", 90)
+                cap_text = f"Fig {ev.get('ref_id', '').split(':')[-1]}: {cap}"
+                cap_lines = _wrap(cap_text, 30)
+                ty = ev_y + 4
+                for line in cap_lines[:5]:
+                    out.append(
+                        f'<text x="{ev_x + EV_THUMB_W + EV_TEXT_PAD}" y="{ty + 12}" '
+                        f'fill="#495057" font-size="11">{escape(line)}</text>'
+                    )
+                    ty += 16
+                ev_y += EV_THUMB_H + 8
+            elif ev.get("kind") == "table":
+                cap = _truncate(ev.get("label", "") or "", 100)
+                line = f"Tbl {ev.get('ref_id', '').split(':')[-1]}: {cap}"
+                out.append(
+                    f'<text x="{ev_x}" y="{ev_y + 14}" fill="#495057" font-size="12">'
+                    f'{escape(line)}</text>'
+                )
+                ev_y += 22
+
+        for ev in section_ev:
+            if ev_y >= max_ev_y:
+                break
+            line = f"§ {ev.get('label', ev.get('ref_id', ''))}"
+            out.append(
+                f'<text x="{ev_x}" y="{ev_y + 12}" fill="#868e96" font-size="11">'
+                f'{escape(line)}</text>'
+            )
+            ev_y += 18
+
+        css = n.attrs.get("counter_signals", []) or []
+        if css:
+            cs_y = y + CARD_H - 50
+            out.append(
+                f'<rect x="{x}" y="{cs_y}" width="{CARD_W}" height="50" '
+                f'rx="6" fill="#fff0f0" stroke="#e03131"/>'
+            )
+            ty = cs_y + 16
+            for cs in css[:3]:
+                t = _truncate(cs.get("text", "") or "", 60)
+                line = f"⚠ [{cs.get('signal_type', '')}] {t}"
+                out.append(
+                    f'<text x="{x + PAD + 4}" y="{ty}" fill="#c92a2a" font-size="11">'
+                    f'{escape(line)}</text>'
+                )
+                ty += 14
+        return out
+
+    def _render_chip(self, n, x: int, y: int) -> list[str]:
+        return [
+            f'<rect x="{x}" y="{y}" width="{CHIP_W}" height="{CHIP_H}" '
+            f'rx="6" fill="#f1f3f5" stroke="#868e96"/>',
+            f'<text x="{x + 8}" y="{y + 24}" fill="#495057" font-size="11">'
+            f'{escape(_truncate(n.label or "", 22))}</text>',
+        ]
+
+    def _image_data_url(self, image_path: str) -> str:
         if not image_path:
             return ""
         p = Path(image_path)

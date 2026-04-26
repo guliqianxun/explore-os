@@ -1,8 +1,9 @@
-"""ft-021: build_graph() 结构化测试.
+"""ft-021: build_graph() 结构化测试 —— Cluster Cards 模型（2026-04-26 重写）.
 
-直接在 SQLite 真写 Claim + ClaimEvidence + CounterSignal + Figure + Table + Citation
-（不需要 mock LLM / docling），断言 build_graph() 输出 nodes / edges 数量、
-kind 正确，且 counter_signal 转 contradicts 边。
+cluster 模式下：
+- 节点 = claim + 全局 citation chip（去重）；figure / table / section 不作独立节点
+- edges 始终为空（关系内嵌进 claim attrs）
+- claim attrs 包含 evidences / section_evidences / counter_signals / citations
 """
 from __future__ import annotations
 
@@ -18,7 +19,6 @@ ARXIV = "2401.99001"
 
 
 def _seed():
-    # extract materials —— 包含 figure / table / citation / equation / section（后两个不入图）
     Figure.objects.create(
         material_id=f"{ARXIV}:figure:1", paper_arxiv_id=ARXIV, seq=1,
         caption="Figure 1: pipeline overview", image_path="", page=2,
@@ -44,7 +44,6 @@ def _seed():
         path="Intro", level=1,
     )
 
-    # 2 claims
     c1 = Claim.objects.create(
         claim_id=f"{ARXIV}:claim:1", paper_arxiv_id=ARXIV,
         text="Our method outperforms SOTA by 3.2%.",
@@ -56,25 +55,12 @@ def _seed():
         claim_type="proposal", confidence=0.85,
     )
 
-    # Evidence: c1 supports table:1 + illustrates figure:1; c2 supports equation:1 (skip!)
-    ClaimEvidence.objects.create(
-        claim=c1, material_id=f"{ARXIV}:table:1", relation="supports",
-    )
-    ClaimEvidence.objects.create(
-        claim=c1, material_id=f"{ARXIV}:figure:1", relation="illustrates",
-    )
-    ClaimEvidence.objects.create(
-        claim=c1, material_id=f"{ARXIV}:citation:1", relation="supports",
-    )
-    # equation / section 不应入图
-    ClaimEvidence.objects.create(
-        claim=c2, material_id=f"{ARXIV}:equation:1", relation="quantifies",
-    )
-    ClaimEvidence.objects.create(
-        claim=c2, material_id=f"{ARXIV}:section:1", relation="supports",
-    )
+    ClaimEvidence.objects.create(claim=c1, material_id=f"{ARXIV}:table:1",    relation="supports")
+    ClaimEvidence.objects.create(claim=c1, material_id=f"{ARXIV}:figure:1",   relation="illustrates")
+    ClaimEvidence.objects.create(claim=c1, material_id=f"{ARXIV}:citation:1", relation="supports")
+    ClaimEvidence.objects.create(claim=c2, material_id=f"{ARXIV}:equation:1", relation="quantifies")
+    ClaimEvidence.objects.create(claim=c2, material_id=f"{ARXIV}:section:1",  relation="supports")
 
-    # counter signal: claim c1 contradicted by figure:2 ablation drop
     CounterSignal.objects.create(
         signal_id=f"{ARXIV}:signal:1", claim=c1,
         text="Ablation drop on small data.",
@@ -84,76 +70,87 @@ def _seed():
     return c1, c2
 
 
-def test_build_graph_node_kinds_only_four():
+def test_cluster_node_kinds_only_claim_and_citation():
     _seed()
     g = build_graph(ARXIV)
     kinds = {n.kind for n in g.nodes}
-    # claim + figure + table + citation；equation/section 严禁入图
-    assert kinds == {"claim", "figure", "table", "citation"}
+    # cluster 模式：figure/table/section 不作独立节点；只剩 claim + citation chip
+    assert kinds == {"claim", "citation"}
 
 
-def test_build_graph_node_counts():
+def test_cluster_node_counts():
     _seed()
     g = build_graph(ARXIV)
-    by_kind = {k: 0 for k in ("claim", "figure", "table", "citation")}
+    by_kind = {k: 0 for k in ("claim", "citation")}
     for n in g.nodes:
         by_kind[n.kind] += 1
-    # 2 claims + figure:1 + figure:2 (from counter) + table:1 + citation:1
-    assert by_kind == {"claim": 2, "figure": 2, "table": 1, "citation": 1}
+    assert by_kind == {"claim": 2, "citation": 1}
 
 
-def test_build_graph_node_id_short_form():
+def test_cluster_edges_always_empty():
     _seed()
     g = build_graph(ARXIV)
-    ids = {n.node_id for n in g.nodes}
-    assert "claim:1" in ids
-    assert "claim:2" in ids
-    assert "figure:1" in ids
-    assert "figure:2" in ids  # from counter signal
-    assert "table:1" in ids
-    assert "citation:1" in ids
-    # 无全形（无 arxiv 前缀）
-    assert all(not nid.startswith(ARXIV) for nid in ids)
+    assert g.edges == []
 
 
-def test_build_graph_edge_kinds():
+def test_claim_attrs_evidences_filter_kinds():
     _seed()
     g = build_graph(ARXIV)
-    # claim:1 → table:1 (supports), figure:1 (illustrates), citation:1 (supports)
-    # claim:1 → figure:2 (contradicts) ← from counter signal
-    edge_tuples = {(e.from_id, e.to_id, e.kind) for e in g.edges}
-    assert ("claim:1", "table:1", "supports") in edge_tuples
-    assert ("claim:1", "figure:1", "illustrates") in edge_tuples
-    assert ("claim:1", "citation:1", "supports") in edge_tuples
-    assert ("claim:1", "figure:2", "contradicts") in edge_tuples
-    # equation / section evidence 不入边
-    assert not any("equation" in e.to_id for e in g.edges)
-    assert not any("section" in e.to_id for e in g.edges)
+    c1 = next(n for n in g.nodes if n.node_id == "claim:1")
+    ev_kinds = [e["kind"] for e in c1.attrs["evidences"]]
+    # claim 1 evidence: table + figure（citation 走 attrs.citations，不在 evidences）
+    assert "table" in ev_kinds
+    assert "figure" in ev_kinds
+    # equation 已被过滤
+    assert "equation" not in ev_kinds
 
 
-def test_build_graph_counter_signal_label_carries_signal_type():
+def test_claim_attrs_citations_separated():
     _seed()
     g = build_graph(ARXIV)
-    contradicts = [e for e in g.edges if e.kind == "contradicts"]
-    assert len(contradicts) == 1
-    assert contradicts[0].label == "ablation_drop"
+    c1 = next(n for n in g.nodes if n.node_id == "claim:1")
+    cit_keys = [c["bibkey"] for c in c1.attrs["citations"]]
+    assert cit_keys == ["vaswani2017"]
 
 
-def test_build_graph_claim_label_truncated():
+def test_claim_attrs_section_evidences():
     _seed()
     g = build_graph(ARXIV)
     c2 = next(n for n in g.nodes if n.node_id == "claim:2")
-    # 长 text 应被截到 40 字 + 省略号
-    assert c2.label.endswith("…")
-    assert len(c2.label) <= 41
+    se = c2.attrs["section_evidences"]
+    assert len(se) == 1
+    assert se[0]["ref_id"] == "section:1"
 
 
-def test_build_graph_citation_label_has_bibkey_and_year():
+def test_claim_attrs_counter_signals_full_text():
     _seed()
     g = build_graph(ARXIV)
-    cit = next(n for n in g.nodes if n.node_id == "citation:1")
-    assert "vaswani2017" in cit.label
-    assert "2017" in cit.label
+    c1 = next(n for n in g.nodes if n.node_id == "claim:1")
+    cs = c1.attrs["counter_signals"]
+    assert len(cs) == 1
+    assert cs[0]["text"] == "Ablation drop on small data."
+    assert cs[0]["signal_type"] == "ablation_drop"
+    assert cs[0]["evidence_ref_id"] == "figure:2"
+
+
+def test_claim_label_full_text_no_truncation():
+    """cluster 模式下保留完整文本，渲染时由 renderer 自行 wrap。"""
+    _seed()
+    g = build_graph(ARXIV)
+    c2 = next(n for n in g.nodes if n.node_id == "claim:2")
+    assert "ConvNets" in c2.label   # 完整保留
+    assert not c2.label.endswith("…")
+
+
+def test_citation_chip_dedup():
+    """同 citation 被多个 claim 引用时，全局 chip 行只出现一次。"""
+    _seed()
+    # 让 claim 2 也 cite citation:1
+    c2 = Claim.objects.get(claim_id=f"{ARXIV}:claim:2")
+    ClaimEvidence.objects.create(claim=c2, material_id=f"{ARXIV}:citation:1", relation="supports")
+    g = build_graph(ARXIV)
+    cits = [n for n in g.nodes if n.kind == "citation"]
+    assert len(cits) == 1
 
 
 def test_build_graph_empty_for_unknown_arxiv():
