@@ -76,7 +76,8 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 - [iter-001](iterations/iter-001.md) — MVP Sprint 1（ft-002/003/004/006/007 已完成；ft-001/005 DB 落库延后）
 - [iter-002](iterations/iter-002.md) — Sprint 2：注意力分层（ft-008/009/010）✅
 - [iter-003](iterations/iter-003.md) — Sprint 3：精读深度化（ft-011/012）✅
-- [iter-004](iterations/iter-004.md) — Sprint 4：三段中台（ft-019 入口；ft-022 调研并行）
+- [iter-004](iterations/iter-004.md) — Sprint 4：三段中台（ft-019 + ft-022 + ft-015 ✅）
+- [iter-005](iterations/iter-005.md) — Sprint 5：解读器 L1+L2 生产侧（ft-020）
 
 ## 战略转向（2026-04-25）
 
