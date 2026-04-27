@@ -211,3 +211,185 @@ def test_job_status_view(client, db):
 def test_job_status_404(client, db):
     r = client.get("/api/jobs/does-not-exist/")
     assert r.status_code == 404
+
+
+# =============================================================================
+# ft-027: subscription CRUD + run + ingest endpoints
+# =============================================================================
+
+@pytest.fixture
+def yaml_path(tmp_path, settings):
+    """临时 subscriptions.yaml 路径，注入 settings 让 view 看到。"""
+    p = tmp_path / "subscriptions.yaml"
+    p.write_text("subscriptions: []\n", encoding="utf-8")
+    settings.SUBSCRIPTIONS_YAML = str(p)
+    return p
+
+
+def _sample_sub(name: str = "demo") -> dict:
+    return {
+        "name": name,
+        "enabled": True,
+        "interests": ["video generation"],
+        "exclude": [],
+        "sources": [{"key": "arxiv", "params": {"since_days": 1}}],
+        "deliveries": [{"channel": "email", "to": "x@y.z",
+                        "depth": "tldr", "schedule": "0 8 * * *",
+                        "max_items": 15}],
+        "perspective": {"preset": "researcher", "custom": ""},
+    }
+
+
+def test_subscription_list_empty(client, yaml_path):
+    r = client.get("/api/subscriptions/")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_subscription_create_then_list(client, yaml_path):
+    r = client.post("/api/subscriptions/", _sample_sub("demo"), format="json")
+    assert r.status_code == 201, r.json()
+    body = r.json()
+    assert body["name"] == "demo"
+    assert body["interests"] == ["video generation"]
+
+    r = client.get("/api/subscriptions/")
+    assert r.status_code == 200
+    items = r.json()
+    assert len(items) == 1 and items[0]["name"] == "demo"
+
+
+def test_subscription_create_conflict(client, yaml_path):
+    client.post("/api/subscriptions/", _sample_sub("demo"), format="json")
+    r = client.post("/api/subscriptions/", _sample_sub("demo"), format="json")
+    assert r.status_code == 409
+
+
+def test_subscription_detail_and_404(client, yaml_path):
+    client.post("/api/subscriptions/", _sample_sub("demo"), format="json")
+    r = client.get("/api/subscriptions/demo/")
+    assert r.status_code == 200
+    assert r.json()["name"] == "demo"
+
+    r = client.get("/api/subscriptions/missing/")
+    assert r.status_code == 404
+
+
+def test_subscription_update(client, yaml_path):
+    client.post("/api/subscriptions/", _sample_sub("demo"), format="json")
+    edited = _sample_sub("demo")
+    edited["interests"] = ["multimodal", "agents"]
+    r = client.put("/api/subscriptions/demo/", edited, format="json")
+    assert r.status_code == 200
+    assert r.json()["interests"] == ["multimodal", "agents"]
+
+
+def test_subscription_delete(client, yaml_path):
+    client.post("/api/subscriptions/", _sample_sub("demo"), format="json")
+    r = client.delete("/api/subscriptions/demo/")
+    assert r.status_code == 204
+    r = client.get("/api/subscriptions/demo/")
+    assert r.status_code == 404
+
+
+def test_subscription_run_returns_queued(client, yaml_path):
+    client.post("/api/subscriptions/", _sample_sub("demo"), format="json")
+    from apps.api import jobs as jobs_mod
+    with patch.object(jobs_mod, "enqueue") as eq:
+        from apps.api.jobs import JobInfo
+        eq.return_value = JobInfo(job_id="run123", name="run-sub:demo")
+        r = client.post("/api/subscriptions/demo/run/", {}, format="json")
+    assert r.status_code == 202
+    assert r.json()["job_id"] == "run123"
+
+
+def test_subscription_run_404(client, yaml_path):
+    r = client.post("/api/subscriptions/missing/run/", {}, format="json")
+    assert r.status_code == 404
+
+
+# ---------------- ingest ----------------
+
+PDF_BYTES = b"%PDF-1.4\n%fake test pdf\n"
+
+
+def test_ingest_upload_happy(client, db):
+    import apps.api.ingest_views as iv
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    with patch.object(iv, "chain_extract_interpret_render") as ch:
+        from apps.api.jobs import JobInfo
+        ch.return_value = JobInfo(job_id="up123", name="ingest:abc")
+        f = SimpleUploadedFile("paper.pdf", PDF_BYTES, content_type="application/pdf")
+        r = client.post("/api/ingest/upload/",
+                        {"file": f, "paper_id": "test-paper"},
+                        format="multipart")
+    assert r.status_code == 202, r.content
+    body = r.json()
+    assert body["job_id"] == "up123"
+    assert body["paper_id"] == "test-paper"
+
+
+def test_ingest_upload_rejects_non_pdf(client, db):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    f = SimpleUploadedFile("notes.txt", b"hello", content_type="text/plain")
+    r = client.post("/api/ingest/upload/", {"file": f}, format="multipart")
+    assert r.status_code == 400
+
+
+def test_ingest_arxiv_happy(client, db, tmp_path):
+    import apps.api.ingest_views as iv
+    from sources import pdf_fetcher as pf
+    # patch _download to skip network — pretend file already cached
+    pdf_path = pf.local_pdf_path("2401.12345")
+    pdf_path.write_bytes(PDF_BYTES)
+    try:
+        with patch.object(iv, "chain_extract_interpret_render") as ch:
+            from apps.api.jobs import JobInfo
+            ch.return_value = JobInfo(job_id="ax123", name="ingest:2401.12345")
+            r = client.post("/api/ingest/arxiv/",
+                            {"arxiv_id": "2401.12345"}, format="json")
+        assert r.status_code == 202, r.content
+        assert r.json()["job_id"] == "ax123"
+    finally:
+        pdf_path.unlink(missing_ok=True)
+
+
+def test_ingest_arxiv_rejects_bad_id(client, db):
+    r = client.post("/api/ingest/arxiv/", {"arxiv_id": "junk"}, format="json")
+    assert r.status_code == 400
+
+
+def test_ingest_url_happy(client, db):
+    """mock httpx.stream + chain。"""
+    from contextlib import contextmanager
+    from unittest.mock import MagicMock
+    import apps.api.ingest_views as iv
+
+    @contextmanager
+    def fake_stream(method, url, **kw):
+        resp = MagicMock()
+        resp.headers = {"content-type": "application/pdf"}
+        resp.raise_for_status = lambda: None
+        resp.iter_bytes = lambda chunk_size=64*1024: iter([PDF_BYTES])
+        yield resp
+
+    with patch.object(iv.httpx, "stream", side_effect=fake_stream), \
+         patch.object(iv, "chain_extract_interpret_render") as ch:
+        from apps.api.jobs import JobInfo
+        ch.return_value = JobInfo(job_id="u123", name="ingest:abc")
+        r = client.post(
+            "/api/ingest/url/",
+            {"url": "https://arxiv.org/pdf/2401.12345.pdf",
+             "paper_id": "from-url"},
+            format="json",
+        )
+    assert r.status_code == 202, r.content
+    body = r.json()
+    assert body["job_id"] == "u123"
+    assert body["paper_id"] == "from-url"
+
+
+def test_ingest_url_rejects_non_http(client, db):
+    r = client.post("/api/ingest/url/", {"url": "ftp://x.com/y.pdf"},
+                    format="json")
+    assert r.status_code == 400

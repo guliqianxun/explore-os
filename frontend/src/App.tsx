@@ -1,10 +1,10 @@
-import { Link, NavLink, Route, Routes } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 import PaperListPage from "@/pages/PaperListPage";
 import PaperDetailPage from "@/pages/PaperDetailPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
-import RunPage from "@/pages/RunPage";
+import IngestPage from "@/pages/IngestPage";
 
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
@@ -35,7 +35,7 @@ export default function App() {
         <nav className="flex gap-1">
           <NavItem to="/" label="Papers" />
           <NavItem to="/subscriptions" label="Subscriptions" />
-          <NavItem to="/run" label="Run" />
+          <NavItem to="/ingest" label="Ingest" />
         </nav>
       </header>
       <main className="flex-1 overflow-hidden bg-slate-50">
@@ -43,7 +43,9 @@ export default function App() {
           <Route path="/" element={<PaperListPage />} />
           <Route path="/papers/:arxivId" element={<PaperDetailPage />} />
           <Route path="/subscriptions" element={<SubscriptionPage />} />
-          <Route path="/run" element={<RunPage />} />
+          <Route path="/ingest" element={<IngestPage />} />
+          {/* ft-027: keep old /run permalinks working. */}
+          <Route path="/run" element={<Navigate to="/ingest" replace />} />
         </Routes>
       </main>
     </div>

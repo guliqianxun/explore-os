@@ -3,6 +3,16 @@ from __future__ import annotations
 
 from django.urls import path
 
+from apps.api.ingest_views import (
+    IngestArxivView,
+    IngestUploadView,
+    IngestUrlView,
+)
+from apps.api.subscriptions_views import (
+    SubscriptionDetailView,
+    SubscriptionListView,
+    SubscriptionRunView,
+)
 from apps.api.views import (
     ClaimsView,
     ExtractTriggerView,
@@ -51,4 +61,17 @@ urlpatterns = [
         name="api-paper-render",
     ),
     path("jobs/<str:job_id>/", JobStatusView.as_view(), name="api-job-status"),
+
+    # ---- ft-027: subscriptions CRUD + run ----
+    path("subscriptions/", SubscriptionListView.as_view(),
+         name="api-subscription-list"),
+    path("subscriptions/<str:name>/", SubscriptionDetailView.as_view(),
+         name="api-subscription-detail"),
+    path("subscriptions/<str:name>/run/", SubscriptionRunView.as_view(),
+         name="api-subscription-run"),
+
+    # ---- ft-027: ingest entrypoints ----
+    path("ingest/upload/", IngestUploadView.as_view(), name="api-ingest-upload"),
+    path("ingest/arxiv/", IngestArxivView.as_view(), name="api-ingest-arxiv"),
+    path("ingest/url/", IngestUrlView.as_view(), name="api-ingest-url"),
 ]

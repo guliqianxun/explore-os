@@ -1,150 +1,162 @@
+// ft-027: card list + form-driven editor modal. YAML editor lives in
+// the Advanced details inside SubscriptionEditor.
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import SubscriptionCard from "@/components/SubscriptionCard";
+import SubscriptionEditor from "@/components/SubscriptionEditor";
 import {
   SubscriptionDTO,
+  createSubscription,
   deleteSubscription,
   listSubscriptions,
-  saveSubscription,
+  runSubscription,
+  updateSubscription,
 } from "@/api/subscriptions";
-
-const EMPTY_DRAFT: SubscriptionDTO = {
-  id: "",
-  name: "",
-  interests: [],
-  sources: [],
-  delivery: [],
-  schedule: "",
-  raw_yaml: "",
-};
+import { useJobsStore } from "@/stores/jobsStore";
 
 export default function SubscriptionPage() {
   const qc = useQueryClient();
-  const subsQ = useQuery({ queryKey: ["subscriptions"], queryFn: listSubscriptions });
+  const subsQ = useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: listSubscriptions,
+  });
 
+  const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<SubscriptionDTO | null>(null);
+  const [originalName, setOriginalName] = useState<string | null>(null);
+
+  const upsertJob = useJobsStore((s) => s.upsert);
 
   const saveMut = useMutation({
-    mutationFn: saveSubscription,
+    mutationFn: async (sub: SubscriptionDTO) => {
+      if (originalName) {
+        return updateSubscription(originalName, sub);
+      }
+      return createSubscription(sub);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["subscriptions"] });
+      setEditorOpen(false);
       setEditing(null);
+      setOriginalName(null);
     },
   });
+
   const deleteMut = useMutation({
     mutationFn: deleteSubscription,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["subscriptions"] }),
   });
 
+  const runMut = useMutation({
+    mutationFn: runSubscription,
+    onSuccess: (r, name) =>
+      upsertJob({
+        job_id: r.job_id,
+        name: `run-sub:${name}`,
+        status: r.status,
+        created_at: new Date().toISOString(),
+        started_at: "",
+        finished_at: "",
+        error: "",
+      }),
+  });
+
+  const openNew = () => {
+    setEditing(null);
+    setOriginalName(null);
+    setEditorOpen(true);
+  };
+  const openEdit = (sub: SubscriptionDTO) => {
+    setEditing(sub);
+    setOriginalName(sub.name);
+    setEditorOpen(true);
+  };
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between border-b bg-white px-4 py-2">
-        <h1 className="text-base font-semibold">Subscriptions</h1>
-        <Button size="sm" onClick={() => setEditing({ ...EMPTY_DRAFT })}>
-          New
-        </Button>
-      </div>
+    <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
+      <header
+        className="flex items-baseline justify-between px-6 py-4 border-b"
+        style={{ borderColor: "var(--rule)", background: "var(--bg)" }}
+      >
+        <div>
+          <h1
+            className="text-2xl"
+            style={{
+              fontFamily: "var(--font-serif)",
+              color: "var(--fg)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Subscriptions
+          </h1>
+          <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
+            interest digests delivered on a schedule
+          </p>
+        </div>
+        <Button onClick={openNew}>+ New subscription</Button>
+      </header>
+
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-2 max-w-3xl mx-auto">
+        <div className="px-6 py-4 max-w-3xl mx-auto">
           {subsQ.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
+              Loading…
+            </p>
           ) : subsQ.data && subsQ.data.length > 0 ? (
             subsQ.data.map((sub) => (
-              <Card key={sub.id} className="p-3 flex justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm truncate">{sub.name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    interests: {sub.interests.join(", ") || "—"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    sources: {sub.sources.join(", ") || "—"} · delivery:{" "}
-                    {sub.delivery.join(", ") || "—"} · schedule: {sub.schedule}
-                  </div>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button size="sm" variant="outline" onClick={() => setEditing({ ...sub })}>
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => {
-                      if (window.confirm(`Delete subscription "${sub.name}"?`)) {
-                        deleteMut.mutate(sub.id);
-                      }
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </Card>
+              <SubscriptionCard
+                key={sub.name}
+                sub={sub}
+                onEdit={() => openEdit(sub)}
+                onRun={() => runMut.mutate(sub.name)}
+                onDelete={() => {
+                  if (window.confirm(`Delete "${sub.name}"?`)) {
+                    deleteMut.mutate(sub.name);
+                  }
+                }}
+                running={runMut.isPending && runMut.variables === sub.name}
+              />
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No subscriptions yet (or the subscriptions API endpoint is not
-              wired in this build — full CRUD lands in a follow-up; for now
-              edit <code>subscriptions.yaml</code> directly).
-            </p>
+            <div
+              className="px-4 py-10 text-center"
+              style={{
+                background: "var(--bg-soft)",
+                border: "1px dashed var(--rule)",
+                borderRadius: "var(--radius-card)",
+                color: "var(--fg-muted)",
+              }}
+            >
+              <p
+                className="text-base mb-1"
+                style={{ fontFamily: "var(--font-serif)", color: "var(--fg)" }}
+              >
+                No subscriptions yet
+              </p>
+              <p className="text-xs">
+                Click <em>+ New subscription</em> above to add one.
+              </p>
+            </div>
           )}
         </div>
       </ScrollArea>
 
-      <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editing?.id ? "Edit subscription" : "New subscription"}
-            </DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium">Name</label>
-                <Input
-                  value={editing.name}
-                  onChange={(e) =>
-                    setEditing({ ...editing, name: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium">YAML body</label>
-                <Textarea
-                  rows={12}
-                  className="font-mono text-xs"
-                  value={editing.raw_yaml ?? ""}
-                  onChange={(e) =>
-                    setEditing({ ...editing, raw_yaml: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => editing && saveMut.mutate(editing)}
-              disabled={saveMut.isPending}
-            >
-              {saveMut.isPending ? "Saving…" : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SubscriptionEditor
+        open={editorOpen}
+        onOpenChange={(o) => {
+          setEditorOpen(o);
+          if (!o) {
+            setEditing(null);
+            setOriginalName(null);
+          }
+        }}
+        initial={editing}
+        onSave={(sub) => saveMut.mutate(sub)}
+        saving={saveMut.isPending}
+      />
     </div>
   );
 }
