@@ -1,7 +1,7 @@
 {
   "project": "explore-os",
-  "version": "v0.6-plan",
-  "updated_at": "2026-04-25",
+  "version": "v1.1-implementing",
+  "updated_at": "2026-04-27",
   "roadmap": "ROADMAP.md",
   "current_iteration": "iter-011",
   "current_focus": "iter-011：ft-027 SubscriptionPage 表单化 + RunPage → Ingest（in_progress）；ft-025 推到 iter-012",
