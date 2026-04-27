@@ -109,6 +109,23 @@ def pdf_legacy_dir() -> Path:
 # ---- 副作用：HF_HOME / TRANSFORMERS_CACHE 重定向 ----
 # 必须在 docling 任何 import 前生效。``config.settings`` 在文件顶部 import
 # 本模块以触发副作用。``setdefault`` 让用户显式 export 优先。
-_HF_CACHE = cache_dir() / "huggingface"
-os.environ.setdefault("HF_HOME", str(_HF_CACHE))
-os.environ.setdefault("TRANSFORMERS_CACHE", str(_HF_CACHE / "transformers"))
+#
+# 优先级（防止重新下载 ~600MB docling 模型）：
+#   1. 用户显式 export HF_HOME/TRANSFORMERS_CACHE → 用之
+#   2. 用户全局 ~/.cache/huggingface 已有缓存（dev 跑过 docling 后）→ 复用
+#   3. 否则用 data_dir/cache/huggingface （单机 app 默认）
+def _resolve_hf_home() -> str:
+    if v := os.environ.get("HF_HOME"):
+        return v
+    user_global = Path.home() / ".cache" / "huggingface"
+    if (user_global / "hub").is_dir():
+        return str(user_global)
+    return str(cache_dir() / "huggingface")
+
+
+_HF_HOME = _resolve_hf_home()
+os.environ.setdefault("HF_HOME", _HF_HOME)
+os.environ.setdefault(
+    "TRANSFORMERS_CACHE",
+    str(Path(_HF_HOME) / "transformers"),
+)

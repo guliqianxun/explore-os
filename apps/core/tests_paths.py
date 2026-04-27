@@ -45,12 +45,29 @@ def test_dirs_exist_after_call(monkeypatch, tmp_path):
 
 
 def test_hf_env_set_on_import(monkeypatch, tmp_path):
+    """无 HF_HOME 显式 + 无全局 ~/.cache/huggingface/hub → 走 data_dir."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setenv("HOME", str(fake_home))
+    monkeypatch.setenv("USERPROFILE", str(fake_home))   # Windows
     m = _reload_paths(monkeypatch, tmp_path)
     import os
     expected = tmp_path / "cache" / "huggingface"
     assert os.environ["HF_HOME"] == str(expected)
     assert os.environ["TRANSFORMERS_CACHE"] == str(expected / "transformers")
-    assert m  # silence unused
+    assert m
+
+
+def test_hf_env_prefers_user_global_when_present(monkeypatch, tmp_path):
+    """用户全局 ~/.cache/huggingface/hub 已存在时，优先复用避免重新下载 ~600MB."""
+    fake_home = tmp_path / "home"
+    (fake_home / ".cache" / "huggingface" / "hub").mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(fake_home))
+    monkeypatch.setenv("USERPROFILE", str(fake_home))
+    m = _reload_paths(monkeypatch, tmp_path)
+    import os
+    assert os.environ["HF_HOME"] == str(fake_home / ".cache" / "huggingface")
+    assert m
 
 
 def test_user_hf_home_not_overridden(monkeypatch, tmp_path):
