@@ -16,6 +16,17 @@ import {
   updateSubscription,
 } from "@/api/subscriptions";
 import { useJobsStore } from "@/stores/jobsStore";
+import { useJobPolling, isTerminal } from "@/hooks/useJobPolling";
+import ActiveRunsBanner from "@/components/ActiveRunsBanner";
+
+function formatLastRun(j: { status: string; finished_at?: string; error?: string }): string {
+  const ts = j.finished_at ? new Date(j.finished_at).toLocaleTimeString() : "just now";
+  if (j.status === "succeeded") return `✓ ${ts}`;
+  if (j.status === "failed" || j.status === "cancelled") {
+    return `✗ ${ts}${j.error ? ` · ${j.error.slice(0, 40)}` : ""}`;
+  }
+  return ts;
+}
 
 export default function SubscriptionPage() {
   const qc = useQueryClient();
@@ -29,6 +40,27 @@ export default function SubscriptionPage() {
   const [originalName, setOriginalName] = useState<string | null>(null);
 
   const upsertJob = useJobsStore((s) => s.upsert);
+  const jobs = useJobsStore((s) => s.jobs);
+  useJobPolling(2000);
+
+  // 每个 subscription 的活跃 job（最新一个非 terminal，或最新一个 terminal 用于 last-run 显示）
+  const subJobs: Record<string, { running: boolean; lastRun?: string }> = {};
+  Object.values(jobs)
+    .filter((j) => j.name.startsWith("run-sub:"))
+    .forEach((j) => {
+      const name = j.name.replace(/^run-sub:/, "");
+      const term = isTerminal(j.status);
+      const prev = subJobs[name];
+      // 没记录 → 写；已记录但是 terminal 且新的是 active → 覆盖；都 terminal → 取较新的
+      if (!prev) {
+        subJobs[name] = {
+          running: !term,
+          lastRun: term ? formatLastRun(j) : undefined,
+        };
+      } else if (!term && !prev.running) {
+        subJobs[name] = { running: true, lastRun: prev.lastRun };
+      }
+    });
 
   const saveMut = useMutation({
     mutationFn: async (sub: SubscriptionDTO) => {
@@ -99,6 +131,8 @@ export default function SubscriptionPage() {
         <Button onClick={openNew}>+ New subscription</Button>
       </header>
 
+      <ActiveRunsBanner />
+
       <ScrollArea className="flex-1">
         <div className="px-6 py-4 max-w-3xl mx-auto">
           {subsQ.isLoading ? (
@@ -117,7 +151,12 @@ export default function SubscriptionPage() {
                     deleteMut.mutate(sub.name);
                   }
                 }}
-                running={runMut.isPending && runMut.variables === sub.name}
+                running={
+                  (runMut.isPending && runMut.variables === sub.name) ||
+                  subJobs[sub.name]?.running ||
+                  false
+                }
+                lastRun={subJobs[sub.name]?.lastRun}
               />
             ))
           ) : (
