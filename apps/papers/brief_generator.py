@@ -46,12 +46,42 @@ def _resolve_perspective() -> PerspectiveSpec:
     return PerspectiveSpec(preset="researcher")
 
 
+def _abstract_from_sections(paper: Paper) -> str:
+    """Fallback：当 ``paper.abstract`` 空时，从 docling Section 实时拉.
+
+    ingest 链落 paper 时不写 paper.abstract（仅 0006 backfill 跑过一次），
+    所以新抽的 paper 会走这条 fallback。匹配 ``path icontains 'abstract'``
+    最低 ``seq`` 的非空 raw_text；找不到再取 ``seq`` 最小的非空段。
+    """
+    from apps.extract.models import Section
+
+    qs = Section.objects.filter(paper_arxiv_id=paper.arxiv_id or "")
+    sec = (
+        qs.filter(path__icontains="abstract")
+        .exclude(raw_text="")
+        .order_by("seq")
+        .first()
+        or qs.exclude(raw_text="").order_by("seq").first()
+    )
+    return (sec.raw_text or "").strip()[:4000] if sec else ""
+
+
 def _build_item(paper: Paper) -> Item:
-    """把 Paper + abstract 组装为 ``sources.base.Item`` 喂给老 pipeline."""
+    """把 Paper + abstract 组装为 ``sources.base.Item`` 喂给老 pipeline.
+
+    ``paper.abstract`` 空时走 ``_abstract_from_sections`` fallback，并把回填
+    结果写回 ``paper.abstract`` 缓存（避免下次 generate_brief 重新查 Section）。
+    """
+    abstract = paper.abstract or ""
+    if not abstract.strip():
+        abstract = _abstract_from_sections(paper)
+        if abstract:
+            paper.abstract = abstract
+            paper.save(update_fields=["abstract"])
     return Item(
         external_id=paper.arxiv_id or paper.key,
         title=paper.title or "",
-        abstract=paper.abstract or "",
+        abstract=abstract,
         url=f"https://arxiv.org/abs/{paper.arxiv_id}" if paper.arxiv_id else "",
         source_key="reuse",
         group="papers",
