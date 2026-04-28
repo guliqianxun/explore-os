@@ -20,9 +20,16 @@ from apps.api.views import (
     HealthView,
     InterpretTriggerView,
     JobStatusView,
+    PaperBacklinkDetailView,
+    PaperBacklinkView,
+    PaperCommentDetailView,
+    PaperCommentListView,
     PaperDetailView,
     PaperListView,
     PaperMarkdownView,
+    PaperStatusView,
+    PaperTagDetailView,
+    PaperTagListView,
     RenderTriggerView,
 )
 
@@ -61,6 +68,45 @@ urlpatterns = [
         name="api-paper-render",
     ),
     path("jobs/<str:job_id>/", JobStatusView.as_view(), name="api-job-status"),
+
+    # ---- ft-028: user_* layer (status / comment / tag / backlink) ----
+    # ``id_or_key`` accepts ``[A-Z2-9]{8}`` paper_key OR arxiv_id; resolver
+    # in views.resolve_paper() picks the right column.
+    path(
+        "papers/<str:id_or_key>/status/",
+        PaperStatusView.as_view(),
+        name="api-paper-status",
+    ),
+    path(
+        "papers/<str:id_or_key>/comments/",
+        PaperCommentListView.as_view(),
+        name="api-paper-comments",
+    ),
+    path(
+        "papers/<str:id_or_key>/comments/<int:cid>/",
+        PaperCommentDetailView.as_view(),
+        name="api-paper-comment-detail",
+    ),
+    path(
+        "papers/<str:id_or_key>/tags/",
+        PaperTagListView.as_view(),
+        name="api-paper-tags",
+    ),
+    path(
+        "papers/<str:id_or_key>/tags/<str:tag>/",
+        PaperTagDetailView.as_view(),
+        name="api-paper-tag-detail",
+    ),
+    path(
+        "papers/<str:id_or_key>/backlinks/",
+        PaperBacklinkView.as_view(),
+        name="api-paper-backlinks",
+    ),
+    path(
+        "papers/<str:id_or_key>/backlinks/<int:bid>/",
+        PaperBacklinkDetailView.as_view(),
+        name="api-paper-backlink-detail",
+    ),
 
     # ---- ft-027: subscriptions CRUD + run ----
     path("subscriptions/", SubscriptionListView.as_view(),

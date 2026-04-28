@@ -80,11 +80,54 @@ class ClaimSerializer(serializers.ModelSerializer):
 
 
 class PaperListItemSerializer(serializers.Serializer):
-    arxiv_id = serializers.CharField()
+    """ft-028 PaperListItem DTO（contracts 已 lock，frontend agent 依赖）.
+
+    arxiv_id 兼容保留；新增 paper_key / title / status / tags / n_comments。
+    """
+    arxiv_id = serializers.CharField(allow_null=True, required=False)
+    paper_key = serializers.CharField()
+    title = serializers.CharField(allow_blank=True)
+    status = serializers.CharField()
+    tags = serializers.ListField(child=serializers.CharField())
+    n_comments = serializers.IntegerField()
     n_sections = serializers.IntegerField()
     n_figures = serializers.IntegerField()
     n_tables = serializers.IntegerField()
     n_claims = serializers.IntegerField()
+
+
+# ---------------- ft-028: user_* layer ----------------
+
+class CommentSerializer(serializers.Serializer):
+    """append-only comment DTO."""
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    hidden = serializers.BooleanField()
+
+
+class _BacklinkOutSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    dst_key = serializers.CharField()
+    dst_title = serializers.CharField(allow_blank=True)
+    relation = serializers.CharField(allow_blank=True)
+    note = serializers.CharField(allow_blank=True)
+    created_at = serializers.DateTimeField()
+
+
+class _BacklinkInSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    src_key = serializers.CharField()
+    src_title = serializers.CharField(allow_blank=True)
+    relation = serializers.CharField(allow_blank=True)
+    note = serializers.CharField(allow_blank=True)
+    created_at = serializers.DateTimeField()
+
+
+class BacklinkSerializer(serializers.Serializer):
+    """ft-028 Backlink 双向 DTO（contracts locked）."""
+    outgoing = _BacklinkOutSerializer(many=True)
+    incoming = _BacklinkInSerializer(many=True)
 
 
 # ---------------- ft-027: Subscription ----------------

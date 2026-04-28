@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "apps.extract",
     "apps.interpret",
     "apps.render",
+    "apps.papers",
 ]
 
 MIDDLEWARE = [
