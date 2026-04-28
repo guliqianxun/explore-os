@@ -9,6 +9,8 @@ interface PaperCardProps {
   apiBase?: string;
   /** Optional lead paragraph (abstract / first claim text). */
   lead?: string;
+  /** ft-033: 领域关键词 chips（最多 4 个）. */
+  keywords?: string[];
 }
 
 /**
@@ -18,7 +20,7 @@ interface PaperCardProps {
  * ft-028 adds a `<VerdictActions />` triplet on the right that mutates
  * `UserPaperStatus` without leaving the list view.
  */
-export function PaperCard({ paper, apiBase, lead }: PaperCardProps) {
+export function PaperCard({ paper, apiBase, lead, keywords }: PaperCardProps) {
   const thumb =
     paper.n_figures > 0 && apiBase
       ? `${apiBase}/papers/${encodeURIComponent(paper.arxiv_id)}/figure/1.png`
@@ -53,6 +55,20 @@ export function PaperCard({ paper, apiBase, lead }: PaperCardProps) {
             >
               {lead}
             </p>
+          ) : null}
+          {keywords && keywords.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {keywords.slice(0, 4).map((k) => (
+                <span
+                  key={k}
+                  className="px-2 py-0.5 rounded-chip border border-[var(--rule)]
+                             text-[10px] font-sans uppercase tracking-[0.12em]
+                             text-[var(--fg-muted)]"
+                >
+                  {k}
+                </span>
+              ))}
+            </div>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-x-4 text-xs font-sans text-[var(--fg-muted)]">
             <span>{paper.n_sections} sec</span>

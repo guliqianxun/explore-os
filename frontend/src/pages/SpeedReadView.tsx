@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { BriefSection } from "@/components/BriefSection";
 import { ClaimCard } from "@/components/ClaimCard";
 import {
   ClaimDTO,
@@ -166,10 +167,17 @@ export default function SpeedReadView({
           </div>
         </header>
 
+        {/* ft-033: brief 顶置（中文摘要 + 关键词 + 视角点评 + 创新点 + 限制） */}
+        <BriefSection
+          paperKey={detail.paper_key ?? ""}
+          arxivId={arxivId}
+          brief={detail.brief ?? null}
+        />
+
         {abstract ? (
           <section>
-            <SectionLabel>Abstract</SectionLabel>
-            <p className="font-serif text-[1.05rem] leading-[1.75] text-[var(--fg)] whitespace-pre-line">
+            <SectionLabel>Abstract (原文)</SectionLabel>
+            <p className="font-serif text-[1.05rem] leading-[1.75] text-[var(--fg-soft)] whitespace-pre-line">
               {abstract.trim()}
             </p>
           </section>

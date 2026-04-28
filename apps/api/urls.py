@@ -27,6 +27,8 @@ from apps.api.views import (
     PaperDetailView,
     PaperListView,
     PaperMarkdownView,
+    PaperBriefRegenerateView,
+    PaperBriefView,
     PaperPdfView,
     PaperStatusView,
     PaperTagDetailView,
@@ -108,6 +110,17 @@ urlpatterns = [
         "papers/<str:id_or_key>/pdf/",
         PaperPdfView.as_view(),
         name="api-paper-pdf",
+    ),
+    # ft-033: brief 内容处理层（GET / POST regenerate）
+    path(
+        "papers/<str:id_or_key>/brief/",
+        PaperBriefView.as_view(),
+        name="api-paper-brief",
+    ),
+    path(
+        "papers/<str:id_or_key>/brief/regenerate/",
+        PaperBriefRegenerateView.as_view(),
+        name="api-paper-brief-regenerate",
     ),
     path(
         "papers/<str:id_or_key>/backlinks/<int:bid>/",

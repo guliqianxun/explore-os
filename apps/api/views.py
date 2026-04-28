@@ -35,6 +35,7 @@ from apps.extract.models import Equation, Figure, Section, Table
 from apps.interpret.models import Claim
 from apps.papers.models import (
     Paper,
+    PaperBrief,
     PaperStatus,
     UserBacklink,
     UserComment,
@@ -171,9 +172,16 @@ class PaperListView(APIView):
             ).values_list("paper_id", "status")
         }
 
+        # ft-033: brief 字段（list 仅取 tldr/keywords 短版，避 N+1 用一次 in 查）
+        briefs_by_paper = {
+            b.paper_id: b
+            for b in PaperBrief.objects.filter(paper_id__in=paper_ids)
+        }
+
         items = []
         for p in paper_list:
             aid = p.arxiv_id or ""
+            brief = briefs_by_paper.get(p.id)
             items.append({
                 "arxiv_id": p.arxiv_id,
                 "paper_key": p.key,
@@ -185,6 +193,11 @@ class PaperListView(APIView):
                 "n_figures": figure_counts.get(aid, 0),
                 "n_tables": table_counts.get(aid, 0),
                 "n_claims": claim_counts.get(aid, 0),
+                # ft-033 brief short fields (None when absent)
+                "tldr_zh": brief.tldr_zh if brief else "",
+                "keywords": list(brief.keywords)[:3] if brief else [],
+                "has_brief": brief is not None and bool(brief.abstract_zh),
+                "abstract_en": p.abstract or "",
             })
         return Response(PaperListItemSerializer(items, many=True).data)
 
@@ -270,11 +283,68 @@ class PaperDetailView(APIView):
             # ft-029: PDF 可用性 + 访问 URL（前端用 paper_key 拼）
             data["has_pdf"] = resolve_pdf_path(paper) is not None
             data["pdf_url"] = f"/api/papers/{paper.key}/pdf/"
+            # ft-033: brief nested（None 表示未生成）+ abstract 原文
+            data["abstract"] = paper.abstract or ""
+            brief_row = PaperBrief.objects.filter(paper=paper).first()
+            data["brief"] = _serialize_brief(brief_row) if brief_row else None
         else:
             # 无 Paper 行（legacy material-only 路径），保底 has_pdf=False
             data["has_pdf"] = False
             data["pdf_url"] = None
+            data["abstract"] = ""
+            data["brief"] = None
         return Response(data)
+
+
+def _serialize_brief(b: "PaperBrief") -> dict:
+    return {
+        "abstract_zh": b.abstract_zh,
+        "keywords": list(b.keywords or []),
+        "method_summary_zh": b.method_summary_zh,
+        "key_innovation": list(b.key_innovation or []),
+        "limitations": list(b.limitations or []),
+        "for_you": b.for_you,
+        "tldr_zh": b.tldr_zh,
+        "perspective_used": b.perspective_used,
+        "model_used": b.model_used,
+        "generated_at": b.generated_at.isoformat() if b.generated_at else None,
+    }
+
+
+class PaperBriefView(APIView):
+    """ft-033: ``GET /api/papers/<id>/brief/`` + ``POST .../brief/regenerate/``.
+
+    GET 返回当前 brief（无则 404）；POST 同步触发 LLM 跑老 pipeline 生成。
+    LLM 失败仍落空行（abstract_zh="")，前端按 ``has_brief`` 区分。
+    """
+
+    def get(self, request, id_or_key: str):
+        paper = resolve_paper(id_or_key)
+        b = PaperBrief.objects.filter(paper=paper).first()
+        if b is None:
+            return Response({"detail": "no brief"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(_serialize_brief(b))
+
+
+class PaperBriefRegenerateView(APIView):
+    """``POST /api/papers/<id>/brief/regenerate/`` — 同步阻塞触发生成."""
+
+    def post(self, request, id_or_key: str):
+        paper = resolve_paper(id_or_key)
+        # 惰性 import 避开 settings/migration 阶段拉 LLM client
+        from apps.papers.brief_generator import generate_brief
+
+        try:
+            brief = generate_brief(paper, regenerate=True)
+        except Exception as exc:  # noqa: BLE001
+            logging.getLogger(__name__).warning(
+                "regenerate brief failed for %s: %r", paper.key, exc,
+            )
+            return Response(
+                {"detail": f"generation failed: {exc}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response(_serialize_brief(brief))
 
 
 _TOKEN_RE = re.compile(r"[a-zA-Z]{3,}")

@@ -9,6 +9,8 @@ interface HeroPaperCardProps {
   apiBase?: string;
   /** Optional lead paragraph (abstract / first claim text). */
   lead?: string;
+  /** ft-033: 领域关键词 chips（来自 PaperBrief.keywords，最多 5 个）. */
+  keywords?: string[];
 }
 
 /**
@@ -18,7 +20,9 @@ interface HeroPaperCardProps {
  * ft-028 embeds `<VerdictActions />` directly under the meta row so the
  * top-of-feed paper can be triaged without leaving the list view.
  */
-export function HeroPaperCard({ paper, apiBase, lead }: HeroPaperCardProps) {
+export function HeroPaperCard({
+  paper, apiBase, lead, keywords,
+}: HeroPaperCardProps) {
   const thumb =
     paper.n_figures > 0 && apiBase
       ? `${apiBase}/papers/${encodeURIComponent(paper.arxiv_id)}/figure/1.png`
@@ -64,6 +68,20 @@ export function HeroPaperCard({ paper, apiBase, lead }: HeroPaperCardProps) {
             >
               {lead}
             </p>
+          ) : null}
+          {keywords && keywords.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {keywords.slice(0, 5).map((k) => (
+                <span
+                  key={k}
+                  className="px-2 py-0.5 rounded-chip border border-[var(--rule)]
+                             text-[10px] font-sans uppercase tracking-[0.12em]
+                             text-[var(--fg-muted)]"
+                >
+                  {k}
+                </span>
+              ))}
+            </div>
           ) : null}
           <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-xs font-sans text-[var(--fg-muted)]">
             <span>{paper.n_sections} sections</span>

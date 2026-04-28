@@ -94,6 +94,13 @@ class PaperListItemSerializer(serializers.Serializer):
     n_figures = serializers.IntegerField()
     n_tables = serializers.IntegerField()
     n_claims = serializers.IntegerField()
+    # ft-033: brief 短字段（list 视图用 — 不展开完整 PaperBrief，避 N+1）
+    tldr_zh = serializers.CharField(allow_blank=True, default="")
+    keywords = serializers.ListField(
+        child=serializers.CharField(), default=list,
+    )
+    has_brief = serializers.BooleanField(default=False)
+    abstract_en = serializers.CharField(allow_blank=True, default="")
 
 
 # ---------------- ft-028: user_* layer ----------------

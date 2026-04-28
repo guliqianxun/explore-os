@@ -103,6 +103,9 @@ class Paper(models.Model):
     # ft-029: 落盘 PDF 的绝对路径（由 ingest 链路写入；空表示未持有）。
     # 走 TextField 避开 Path 长度上限；SQLite-friendly。
     pdf_path = models.TextField(null=True, blank=True)
+    # ft-033: 原文 abstract（从 docling 第一个 abstract section 回填 / ingest 时写入）。
+    # 是 brief_generator 喂给 skim_interpret 的输入；空时 brief 仅显示 title。
+    abstract = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -216,3 +219,40 @@ class UserBacklink(models.Model):
         db_table = "papers_user_backlink"
         unique_together = [("src", "dst", "relation")]
         ordering = ["created_at"]
+
+
+class PaperBrief(models.Model):
+    """ft-033: 复用老邮件 pipeline (interpret/interpretation.py) 的内容缓存壳.
+
+    skim_interpret + deep_interpret 现是内存 dataclass，本表把它们落 SQLite，
+    让 BriefView / PaperDetail / 其它 UI 视图都能吃同一份缓存。生成走
+    ``brief_generator.generate_brief(paper)``。OneToOne 决定一篇 paper 一份
+    brief；regenerate 是覆盖式更新（updated_at 跟 auto_now）。
+
+    Out-of-Scope（v1.2）：历史版本 / 跨用户共享 / per-paper perspective override。
+    """
+
+    paper = models.OneToOneField(
+        Paper, on_delete=models.CASCADE,
+        related_name="brief", primary_key=True,
+    )
+    # skim_interpret 产出
+    abstract_zh = models.TextField(blank=True, default="")
+    keywords = models.JSONField(default=list, blank=True)
+    # deep_interpret 产出（iter-002 占位的字段也透传，前端按需展示）
+    method_summary_zh = models.TextField(blank=True, default="")
+    key_innovation = models.JSONField(default=list, blank=True)
+    limitations = models.JSONField(default=list, blank=True)
+    for_you = models.TextField(blank=True, default="")
+    # 一句话 TL;DR（从 abstract_zh 头部按句末截）
+    tldr_zh = models.TextField(blank=True, default="")
+    # meta — 用于审计 / "用什么视角生成的" 提示
+    perspective_used = models.CharField(max_length=128, blank=True, default="")
+    model_used = models.CharField(max_length=64, blank=True, default="")
+    generated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "papers_brief"
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"PaperBrief(paper={self.paper.key}, persp={self.perspective_used})"

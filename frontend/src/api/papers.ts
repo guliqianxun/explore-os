@@ -29,6 +29,15 @@ export interface PaperListItem {
   n_figures: number;
   n_tables: number;
   n_claims: number;
+  // ft-033 brief 短字段（list 视图用）
+  /** 一句话精炼（中文）；空则前端 fallback abstract_en 截断。 */
+  tldr_zh: string;
+  /** 顶 3 个领域关键词（chip 显示用）。 */
+  keywords: string[];
+  /** brief 是否已生成（abstract_zh 非空才算）。 */
+  has_brief: boolean;
+  /** 原文 abstract（fallback；brief 缺失时前端截断显示）。 */
+  abstract_en: string;
 }
 
 /** Wire shape — every ft-028 field is optional during rollout. */
@@ -50,6 +59,10 @@ function normalizePaperListItem(raw: PaperListItemWire): PaperListItem {
     n_figures: raw.n_figures,
     n_tables: raw.n_tables,
     n_claims: raw.n_claims,
+    tldr_zh: raw.tldr_zh ?? "",
+    keywords: raw.keywords ?? [],
+    has_brief: raw.has_brief ?? false,
+    abstract_en: raw.abstract_en ?? "",
   };
 }
 
@@ -118,6 +131,19 @@ export interface ClaimDTO {
   counter_signals: CounterSignalDTO[];
 }
 
+export interface PaperBriefDTO {
+  abstract_zh: string;
+  keywords: string[];
+  method_summary_zh: string;
+  key_innovation: string[];
+  limitations: string[];
+  for_you: string;
+  tldr_zh: string;
+  perspective_used: string;
+  model_used: string;
+  generated_at: string | null;
+}
+
 export interface PaperDetail {
   arxiv_id: string;
   /** ft-028 stable key, may be missing in legacy responses. */
@@ -130,6 +156,10 @@ export interface PaperDetail {
   has_pdf?: boolean;
   /** ft-029: relative path string; may be null for legacy material-only paths. */
   pdf_url?: string | null;
+  /** ft-033: 原文 abstract（detail 暴露完整文本）。 */
+  abstract?: string;
+  /** ft-033: 完整 PaperBrief（未生成 → null）。 */
+  brief?: PaperBriefDTO | null;
   sections: SectionDTO[];
   figures: FigureDTO[];
   tables: TableDTO[];
@@ -307,4 +337,13 @@ export async function searchPapersTypeahead(
   const params: Record<string, string> = { q, limit: String(limit) };
   const r = await api.get<PaperListItemWire[]>("/papers/", { params });
   return r.data.map(normalizePaperListItem);
+}
+
+/** ft-033: POST /api/papers/<id>/brief/regenerate/ — 同步 LLM 生成. */
+export async function regeneratePaperBrief(id: string): Promise<PaperBriefDTO> {
+  const api = await getApi();
+  const r = await api.post<PaperBriefDTO>(
+    `/papers/${encodeURIComponent(id)}/brief/regenerate/`,
+  );
+  return r.data;
 }
