@@ -23,5 +23,23 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     sourcemap: false,
+    // ft-029: manualChunks ensures the pdf.js + react-pdf bundles end up in a
+    // dedicated chunk so the main app shell doesn't pay their ~600KB cost
+    // until the user opens a paper with a PDF. The dynamic `import()` in
+    // ReadingStation already triggers a split, but this tightens the cut.
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/pdfjs-dist")) return "pdfjs";
+          if (id.includes("node_modules/react-pdf")) return "pdfjs";
+          return undefined;
+        },
+      },
+    },
+  },
+  // pdfjs-dist 4.x ships ESM workers with `import.meta.url` — Vite needs to
+  // know to optimize-include them so dev-mode prebundle doesn't trip.
+  optimizeDeps: {
+    include: ["react-pdf", "pdfjs-dist"],
   },
 });

@@ -41,3 +41,25 @@ export interface BacklinkDTO {
   outgoing: BacklinkEdge[];
   incoming: BacklinkEdge[];
 }
+
+// ---------------------------------------------------------------------------
+// ft-029: PDF + evidence + counter_signal additions
+//
+// `has_pdf` / `pdf_url` come from PaperDetailView (rpt-013). `pdf_url` may be
+// null for legacy detail responses without a Paper row — frontend should drive
+// off `has_pdf` and not assume `pdf_url` is non-null.
+// ---------------------------------------------------------------------------
+
+/** `material_id` of an evidence target — points into sections/figures/tables/equations. */
+export interface ClaimEvidence {
+  material_id: string;
+  /** "supports" | "qualifies" | etc. — string-typed, not enum-locked. */
+  relation: string;
+}
+
+export interface CounterSignal {
+  signal_id: string;
+  text: string;
+  signal_type: string;
+  evidence_material_id: string;
+}

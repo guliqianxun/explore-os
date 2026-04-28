@@ -120,6 +120,16 @@ export interface ClaimDTO {
 
 export interface PaperDetail {
   arxiv_id: string;
+  /** ft-028 stable key, may be missing in legacy responses. */
+  paper_key?: string;
+  title?: string;
+  status?: PaperStatus;
+  tags?: string[];
+  n_comments?: number;
+  /** ft-029: present from backend rpt-013. */
+  has_pdf?: boolean;
+  /** ft-029: relative path string; may be null for legacy material-only paths. */
+  pdf_url?: string | null;
   sections: SectionDTO[];
   figures: FigureDTO[];
   tables: TableDTO[];
@@ -254,4 +264,47 @@ export async function removePaperBacklink(
 ): Promise<void> {
   const api = await getApi();
   await api.delete(`/papers/${encodeURIComponent(id)}/backlinks/${bid}/`);
+}
+
+// ---------------------------------------------------------------------------
+// ft-029: PDF presence + absolute URL helpers + typeahead search
+// ---------------------------------------------------------------------------
+
+/**
+ * HEAD /api/papers/<id>/pdf/ — returns 200 when a PDF is on disk, 404 otherwise.
+ * Used by `useHasPdf` to decide between station and speed mode when the detail
+ * payload predates rpt-013 (no `has_pdf`).
+ */
+export async function headPaperPdf(id: string): Promise<boolean> {
+  const api = await getApi();
+  try {
+    const r = await api.head(`/papers/${encodeURIComponent(id)}/pdf/`, {
+      // Don't throw on 404 — that's the negative answer we want.
+      validateStatus: (s) => s === 200 || s === 404,
+    });
+    return r.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Returns the absolute URL the PDF can be fetched from. Awaits the axios
+ * client only to learn its baseURL — the URL itself contains no auth, so it's
+ * safe to feed straight into `<Document file={url}>`.
+ */
+export async function pdfFileUrl(id: string): Promise<string> {
+  const api = await getApi();
+  return `${api.defaults.baseURL}/papers/${encodeURIComponent(id)}/pdf/`;
+}
+
+/** Typeahead for BacklinkEditor — `?q=<term>&limit=5` icontains. */
+export async function searchPapersTypeahead(
+  q: string,
+  limit = 5,
+): Promise<PaperListItem[]> {
+  const api = await getApi();
+  const params: Record<string, string> = { q, limit: String(limit) };
+  const r = await api.get<PaperListItemWire[]>("/papers/", { params });
+  return r.data.map(normalizePaperListItem);
 }
