@@ -60,10 +60,18 @@ def _get_converter() -> Any:
         )
         from docling.document_converter import DocumentConverter, PdfFormatOption
 
+        # `EXPLORE_OS_DOCLING_FORMULA=0` disables CodeFormulaV2 enrichment
+        # (~611MB model, runs once per equation and is the dominant cost on
+        # CPU torch — a math-heavy paper takes 30+ minutes). Default on.
+        import os as _os
+        do_formula = _os.environ.get(
+            "EXPLORE_OS_DOCLING_FORMULA", "1",
+        ).strip().lower() not in ("0", "false", "no", "off")
+
         opts = PdfPipelineOptions()
         opts.images_scale = 2.0
         opts.generate_picture_images = True
-        opts.do_formula_enrichment = True
+        opts.do_formula_enrichment = do_formula
         opts.accelerator_options = AcceleratorOptions(
             num_threads=8,
             device=(
@@ -179,19 +187,40 @@ def _section_is_canonical(title: str) -> bool:
     return head in _SECTION_WHITELIST or t in _SECTION_WHITELIST
 
 
+# Labels that count as section body text (paragraphs, list items).
+# Excludes captions (belong to figures/tables), formulas, footnotes —
+# those are mapped separately or are not paper-body.
+_SECTION_BODY_LABELS = {"text", "paragraph", "list_item"}
+
+
 def _map_sections(doc: Any, arxiv_id: str) -> list[SectionMaterial]:
-    out: list[SectionMaterial] = []
-    seq = 0
+    """Walk doc.texts in order. Each `section_header` opens a section; any
+    body-labeled item between this header and the next is appended to the
+    section's `raw_text`. Without this, downstream consumers (markdown view,
+    figure ↔ section similarity) only see headings and can't make decisions.
+    """
+    pending: list[dict] = []
+    cur: dict | None = None
     for t in getattr(doc, "texts", []) or []:
-        if _label_of(t) != "section_header":
-            continue
-        seq += 1
-        title = getattr(t, "text", "") or ""
-        # 清洁：noise heading（algorithm 头、figure 内 block 标签等）降级到 level=2
-        raw_level = int(getattr(t, "level", 1) or 1)
+        label = _label_of(t)
+        text = (getattr(t, "text", "") or "").strip()
+        if label == "section_header":
+            cur = {
+                "title": getattr(t, "text", "") or "",
+                "level": int(getattr(t, "level", 1) or 1),
+                "body": [],
+            }
+            pending.append(cur)
+        elif label in _SECTION_BODY_LABELS and cur is not None and text:
+            cur["body"].append(text)
+
+    out: list[SectionMaterial] = []
+    for i, p in enumerate(pending, start=1):
+        title = p["title"]
+        raw_level = p["level"]
         level = raw_level if _section_is_canonical(title) else max(raw_level, 2)
         out.append(SectionMaterial(
-            material_id=make_material_id(arxiv_id, "section", seq),
+            material_id=make_material_id(arxiv_id, "section", i),
             paper_arxiv_id=arxiv_id,
             type="section",
             raw_payload={"parser": "docling", "canonical": _section_is_canonical(title)},
@@ -199,7 +228,7 @@ def _map_sections(doc: Any, arxiv_id: str) -> list[SectionMaterial]:
             level=level,
             char_offset_start=0,
             char_offset_end=0,
-            raw_text="",
+            raw_text="\n\n".join(p["body"]),
         ))
     return out
 

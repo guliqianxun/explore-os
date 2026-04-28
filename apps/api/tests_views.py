@@ -120,6 +120,99 @@ def test_paper_markdown(client, sample_paper):
     assert sample_paper in body
     assert "Introduction" in body
     assert "model X improves Y" in body
+    # sample_paper's section has no raw_text → figure 1 falls into the
+    # trailing ## Figures bucket and still renders.
+    assert "## Figures" in body
+    assert "figures/1.png" in body
+
+
+def test_paper_markdown_interleaves_figures_by_caption_similarity(client, db):
+    """Figures land under the section whose raw_text shares the most caption words."""
+    arxiv_id = "2402.55555"
+    Section.objects.create(
+        material_id=f"{arxiv_id}:section:1",
+        paper_arxiv_id=arxiv_id, seq=1, path="Methodology", level=1,
+        raw_text=(
+            "We propose a novel transformer architecture with sparse attention "
+            "and rotary position embedding for efficient long context modeling."
+        ),
+    )
+    Section.objects.create(
+        material_id=f"{arxiv_id}:section:2",
+        paper_arxiv_id=arxiv_id, seq=2, path="Experiments", level=1,
+        raw_text=(
+            "We evaluate on benchmark datasets reporting BLEU and accuracy "
+            "across multiple seeds. Ablation removes rotary embedding."
+        ),
+    )
+    # caption matches Methodology (transformer / sparse / attention)
+    Figure.objects.create(
+        material_id=f"{arxiv_id}:figure:1",
+        paper_arxiv_id=arxiv_id, seq=1, fig_label="Figure 1",
+        page=2, caption="Sparse transformer attention architecture overview",
+        image_path="",
+    )
+    # caption matches Experiments (benchmark / accuracy / ablation)
+    Figure.objects.create(
+        material_id=f"{arxiv_id}:figure:2",
+        paper_arxiv_id=arxiv_id, seq=2, fig_label="Figure 2",
+        page=4, caption="Benchmark accuracy curves and ablation results",
+        image_path="",
+    )
+    # caption shares no content words with either section → orphan
+    Figure.objects.create(
+        material_id=f"{arxiv_id}:figure:3",
+        paper_arxiv_id=arxiv_id, seq=3, fig_label="Figure 3",
+        page=6, caption="qualitative samples cherry picked outputs",
+        image_path="",
+    )
+
+    r = client.get(f"/api/papers/{arxiv_id}/markdown/")
+    assert r.status_code == 200
+    body = r.content.decode("utf-8")
+
+    # Figure 1 must appear after Methodology and before Experiments.
+    methodology = body.index("Methodology")
+    experiments = body.index("Experiments")
+    fig1 = body.index("figures/1.png")
+    fig2 = body.index("figures/2.png")
+    assert methodology < fig1 < experiments, (
+        "figure 1 should be interleaved into Methodology section"
+    )
+    # Figure 2 must appear after Experiments.
+    assert experiments < fig2, "figure 2 should be interleaved into Experiments section"
+
+    # Figure 3 falls into trailing ## Figures bucket.
+    figures_bucket = body.index("## Figures")
+    fig3 = body.index("figures/3.png")
+    assert figures_bucket < fig3, "figure 3 with no overlap should fall into orphan bucket"
+
+    # The orphan bucket must NOT contain figures 1 or 2 (they were interleaved).
+    orphan_segment = body[figures_bucket:]
+    assert "figures/1.png" not in orphan_segment
+    assert "figures/2.png" not in orphan_segment
+
+
+def test_paper_markdown_no_figures_bucket_when_all_matched(client, db):
+    """When every figure matches, no orphan ## Figures section is emitted."""
+    arxiv_id = "2403.66666"
+    Section.objects.create(
+        material_id=f"{arxiv_id}:section:1",
+        paper_arxiv_id=arxiv_id, seq=1, path="Method", level=1,
+        raw_text="We design a novel diffusion model for video generation tasks.",
+    )
+    Figure.objects.create(
+        material_id=f"{arxiv_id}:figure:1",
+        paper_arxiv_id=arxiv_id, seq=1, fig_label="Figure 1",
+        page=1, caption="Diffusion model video generation pipeline",
+        image_path="",
+    )
+
+    r = client.get(f"/api/papers/{arxiv_id}/markdown/")
+    assert r.status_code == 200
+    body = r.content.decode("utf-8")
+    assert "figures/1.png" in body
+    assert "## Figures" not in body
 
 
 def test_claims_view(client, sample_paper):
