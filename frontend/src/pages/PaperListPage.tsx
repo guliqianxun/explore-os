@@ -6,6 +6,7 @@ import { listPapers, type PaperListItem } from "@/api/papers";
 import { getApi } from "@/api/client";
 import { HeroPaperCard } from "@/components/HeroPaperCard";
 import { PaperCard } from "@/components/PaperCard";
+import { SkimCard } from "@/components/SkimCard";
 import { StatusFilterBar } from "@/components/StatusFilterBar";
 import type { PaperStatus, StatusFilter } from "@/types/paper";
 
@@ -24,6 +25,7 @@ import type { PaperStatus, StatusFilter } from "@/types/paper";
  */
 
 const FILTER_VALUES: StatusFilter[] = [
+  "brief",
   "all",
   "new",
   "queued",
@@ -35,10 +37,10 @@ const FILTER_VALUES: StatusFilter[] = [
 ];
 
 function parseStatusParam(raw: string | null): StatusFilter {
-  if (!raw) return "new";
+  if (!raw) return "brief";
   return (FILTER_VALUES as string[]).includes(raw)
     ? (raw as StatusFilter)
-    : "new";
+    : "brief";
 }
 
 /** Fetcher that handles the `read` aggregate by issuing two requests. */
@@ -52,7 +54,8 @@ async function fetchPapersForFilter(
     ]);
     return [...kept, ...dropped];
   }
-  if (filter === "all") {
+  if (filter === "all" || filter === "brief") {
+    // Brief view filters client-side to [new, queued, reading].
     return listPapers({ status: "all" });
   }
   return listPapers({ status: filter });
@@ -132,6 +135,21 @@ export default function PaperListPage() {
     [],
   );
 
+  const isBrief = filter === "brief";
+
+  // Brief view: split into two groups by status.
+  // 主要 = reading|queued (user has signaled intent)
+  // 速读 = new (undecided)
+  // archived/read_* are hidden in brief.
+  const briefGroups = useMemo(() => {
+    if (!isBrief || !data) return null;
+    const primary = data.filter(
+      (p) => p.status === "reading" || p.status === "queued",
+    );
+    const skim = data.filter((p) => p.status === "new");
+    return { primary, skim };
+  }, [isBrief, data]);
+
   const [hero, ...rest] = data ?? [];
 
   return (
@@ -196,6 +214,14 @@ export default function PaperListPage() {
           </p>
         ) : !data || data.length === 0 ? (
           <EmptyState filter={filter} onViewAll={() => handleFilterChange("all")} />
+        ) : isBrief && briefGroups ? (
+          <BriefView
+            primary={briefGroups.primary}
+            skim={briefGroups.skim}
+            apiBase={apiBase}
+            today={today}
+            onViewAll={() => handleFilterChange("all")}
+          />
         ) : (
           <>
             {/* Date marker */}
@@ -222,6 +248,101 @@ export default function PaperListPage() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+interface BriefViewProps {
+  primary: PaperListItem[];
+  skim: PaperListItem[];
+  apiBase: string;
+  today: string;
+  onViewAll: () => void;
+}
+
+/**
+ * Email-style two-section brief: 主要论文 (status in [reading, queued],
+ * full editorial cards) + 速读 (status=new, compact rows). archived/read_*
+ * are omitted; user can switch to the corresponding chip to see them.
+ */
+function BriefView({
+  primary,
+  skim,
+  apiBase,
+  today,
+  onViewAll,
+}: BriefViewProps) {
+  if (primary.length === 0 && skim.length === 0) {
+    return (
+      <div className="font-serif text-[var(--fg-muted)] py-16 text-center">
+        <p className="text-lg italic">No papers in your brief.</p>
+        <p className="mt-2 text-sm">
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="underline decoration-[var(--rule)] underline-offset-4
+                       hover:text-[var(--accent)] hover:decoration-[var(--accent)]
+                       transition-colors"
+          >
+            View all papers &rarr;
+          </button>
+        </p>
+      </div>
+    );
+  }
+  return (
+    <>
+      {/* Date marker */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="h-px flex-1 bg-[var(--rule)]" />
+        <span
+          className="font-mono text-[11px] uppercase tracking-[0.16em]
+                     text-[var(--fg-muted)]"
+        >
+          {today}
+        </span>
+        <div className="h-px flex-1 bg-[var(--rule)]" />
+      </div>
+
+      {/* 主要论文 — full editorial cards */}
+      {primary.length > 0 ? (
+        <section className="mb-12">
+          <SectionHeader label="主要论文" count={primary.length} />
+          {primary.map((p, i) =>
+            i === 0 ? (
+              <HeroPaperCard key={p.arxiv_id} paper={p} apiBase={apiBase} />
+            ) : (
+              <PaperCard key={p.arxiv_id} paper={p} apiBase={apiBase} />
+            ),
+          )}
+        </section>
+      ) : null}
+
+      {/* 速读 — compact one-liner rows */}
+      {skim.length > 0 ? (
+        <section>
+          <SectionHeader label="速读" count={skim.length} />
+          <div>
+            {skim.map((p) => (
+              <SkimCard key={p.arxiv_id} paper={p} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </>
+  );
+}
+
+function SectionHeader({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-baseline gap-3 mb-5">
+      <h2 className="font-serif text-[1.6rem] font-semibold text-[var(--fg)]">
+        {label}
+      </h2>
+      <span className="font-mono text-[12px] text-[var(--fg-muted)]">
+        ({count})
+      </span>
+      <div className="flex-1 h-px bg-[var(--rule)] ml-2" />
     </div>
   );
 }

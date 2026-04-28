@@ -61,8 +61,9 @@ export function StatusPill({ paperKey, status }: StatusPillProps) {
       {open ? (
         <div
           className="absolute right-0 top-full mt-1 w-40 z-30
-                     bg-[var(--bg)] border border-[var(--rule)] rounded
-                     shadow-lift py-1"
+                     bg-[var(--bg)]/85 backdrop-blur-xl
+                     border border-white/15 rounded
+                     shadow-2xl py-1"
         >
           {PAPER_STATUSES.map((s) => {
             const allowed = s === status || canTransition(status, s);

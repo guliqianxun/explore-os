@@ -17,6 +17,7 @@ interface ChipDef {
 }
 
 const CHIPS: ChipDef[] = [
+  { value: "brief", label: "Brief" },
   { value: "new", label: "New" },
   { value: "queued", label: "Queued" },
   { value: "reading", label: "Reading" },

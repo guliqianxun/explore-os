@@ -13,8 +13,12 @@ export type PaperStatus =
   | "read_dropped"
   | "archived";
 
-/** All meaningful filter values used by the UI (StatusFilterBar). */
-export type StatusFilter = PaperStatus | "all" | "read";
+/** All meaningful filter values used by the UI (StatusFilterBar).
+ *
+ * `brief` is the email-style two-section grouped view (主要 = reading|queued,
+ * 速读 = new); other values are single-status feeds.
+ */
+export type StatusFilter = PaperStatus | "all" | "read" | "brief";
 
 export interface CommentDTO {
   id: number;
