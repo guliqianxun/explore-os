@@ -35,9 +35,10 @@ LLM 是「填补 / 扩充」边界的，不是「替代规则」的
 
 ## 技术栈
 
-- Python 3.12 + Django 5（管理命令为主，REST 端点占位）
-- uv 依赖管理 / docker compose（Postgres 已起但 MVP 走 YAML + jsonl 不入库）
-- httpx + tenacity（fetcher）/ pymupdf + pymupdf4llm（PDF / caption）
+- Python 3.12 + Django 5 + DRF（CLI + REST API 双面）
+- uv 依赖管理 / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）
+- React 18 + TS strict + Tailwind + shadcn/ui + Electron（v1.1 起前端 + 桌面壳）
+- httpx + tenacity（fetcher）/ pymupdf + pymupdf4llm（PDF / caption）/ docling（结构化抽取）
 - 阿里云百炼（DashScope OpenAI 兼容）
   - 文本：`deepseek-v4-flash`（rewriter / skim 翻译 / deep interpret / narrative）
   - embedding：`text-embedding-v3`（综合分相关性）
@@ -50,12 +51,11 @@ git clone <repo> && cd explore-os
 cp .env.example .env             # 填 LLM_API_KEY / SMTP / 收件箱
 cp subscriptions.example.yaml subscriptions.yaml   # 改成你的兴趣
 uv sync
-docker compose up -d postgres    # 可选，MVP 不依赖 DB
-uv run python manage.py migrate  # 同上，可选
+uv run python manage.py migrate  # SQLite 自动建库（EXPLORE_OS_DATA_DIR/explore_os.sqlite3）
 uv run python manage.py run_subscription <name>   # 默认拉昨日（Asia/Shanghai）
 ```
 
-调度：用系统 cron / Windows 任务计划早 8 点跑一次即可。
+调度：v1.1 起 APScheduler in-process（Electron sidecar 内置）。CLI 模式仍可用系统 cron / Windows 任务计划早 8 点跑一次。
 
 ### CLI 常用参数
 

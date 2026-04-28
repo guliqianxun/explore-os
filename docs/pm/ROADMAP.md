@@ -17,7 +17,7 @@ Interest Rewrite → 多源抓取 → 去重过滤 → LLM 解读 → 分组渲�
 
 ## 技术栈
 
-Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + Postman 测试。详见 `/CLAUDE.md`。
+Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React + Vite + TS + Tailwind + shadcn/ui / Electron + PyInstaller。详见 `/CLAUDE.md`。
 
 ## 目标用户
 
@@ -28,7 +28,7 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 
 1. **Sources / Channels / Renderers 三解耦**，均为接口化插件。
 2. **分组渲染**：订阅可挂多个来源；论文组 / 代码组 / 模型组等在推送里分区展示。MVP 虽只有论文组，渲染器从一开始按分组设计。
-3. **状态全部落 Postgres**（订阅、推送历史、解读缓存、成本账本），不走 SQLite 过渡。
+3. **状态全部落 SQLite**（订阅、推送历史、解读缓存、成本账本）。同库不同前缀（`extract_*` / `interpret_*` / `render_*` / `papers_*` / `papers_user_*`），桌面 app 单文件 DB 不依赖外部服务。~~原计划用 Postgres + docker compose，2026-04-28 决策切 SQLite~~
 4. **成本受控**：每日预算上限，分档解读，命中缓存不重算。
 
 ## 里程碑
@@ -38,7 +38,7 @@ Django + uv / Postgres / docker compose / React+Vite（MVP 不做）/ Navicat + 
 | **v0.1 MVP (M1)** | 自用论文日报端到端 | arXiv + HF Papers / 最简 rewriter / TL;DR / 邮件 / Django CLI | 2026-05 |
 | **v0.2 (M2)** | 注意力分层 | 综合分 rerank / 精读+略读分档 / 视角注入 / Daily Narrative | 2026-05 |
 | **v0.3 (M3)** | 精读深度化 | arXiv PDF 拉取 / 图表提取+分类+多模态解读 / 精读档框架图 | 2026-05/06 |
-| **v0.4 (M3.5)** | 时间线与回溯 | HF 历史回填 / Postgres 落库 / 月报+半年报 / 热度信号多源 | 2026-06/07 |
+| **v0.4 (M3.5)** | 时间线与回溯 | HF 历史回填 / DB 落库（PG → 后切 SQLite）/ 月报+半年报 / 热度信号多源 | 2026-06/07 |
 | **v0.5 (M4)** | DeliveryAdapter（多渠道**降级为可选**） | DeliveryAdapter 抽象 ✅ / 飞书 / 微信订阅号（按需） | 2026-05 |
 | **v0.6 (M5)** | **抽取器素材索引层**（三段中台主线） | 五类 material（section/figure/table/equation/citation）/ 同库前缀 `extract_*` / 稳定 material_id | 2026-05/06 |
 | **v0.7 (M6)** | **解读器 L1+L2** | claim 抽取 + evidence 映射（L1）/ 论文内反向信号扫描（L2）/ 强制 cite material_id | 2026-06/07 |

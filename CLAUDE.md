@@ -5,16 +5,20 @@
 ## 技术栈与环境
 
 - **后端**：Django (Python) + uv 管理依赖
-- **前端**：React + Vite（**MVP 阶段不做**，后端 + DB 跑通为先）
-- **数据库**：由 docker compose 起（具体选型见 ROADMAP / ft 文档；MVP 倾向 Postgres）
-- **部署**：docker compose
-- **本地测试工具**：Navicat（看库）、Postman（打接口）
+- **前端**：React + Vite + TypeScript + Tailwind + shadcn/ui（v1.1 已落地）
+- **数据库**：**SQLite**（桌面 app 长期形态；2026-04-28 砍掉 PG 依赖）。文件位于
+  `EXPLORE_OS_DATA_DIR/explore_os.sqlite3`。Schema 严守 SQLite-friendly（避 PG-only
+  特性，所有 ORM 抽象 + JSONField，不写 raw SQL 迁移）。
+- **桌面端**：Electron + Python sidecar（PyInstaller 打包，CUDA / CPU 双轨）
+- **本地测试工具**：DB Browser for SQLite（看库）、Postman（打接口）
 
-## MVP 开发边界
+## MVP 历史心智（已超越，仅记账）
 
-- 不写前端。所有能力以 Django management command（CLI）+ REST API 暴露，便于 Postman 手测。
-- 订阅配置 MVP 阶段可先用 YAML，但数据模型（订阅状态、推送历史、解读缓存、成本账本）从一开始就落 DB，不走 SQLite 临时方案——既然有 Postgres + docker compose，直接用。
-- 调度 MVP 外部 cron 触发 CLI / HTTP，不内置 scheduler。
+- ~~订阅配置 MVP 阶段可先用 YAML，但数据模型从一开始就落 DB，不走 SQLite 临时方案~~
+  → 2026-04-28 锁定：subscription 仍 YAML（ruamel.yaml 保注释），其它全部 SQLite，
+  桌面 app 不依赖外部 DB
+- ~~docker compose 起 Postgres~~ → 已删除（commit 见 git log，psycopg 同步从依赖移除）
+- 调度：APScheduler in-process（v1.1 起，不依赖外部 cron）
 
 ## 参考项目
 
