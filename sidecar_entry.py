@@ -22,6 +22,26 @@ import sys
 from pathlib import Path
 
 
+def _sanitize_no_proxy() -> None:
+    """Drop bracketed IPv6 entries (e.g. ``[::1]``) from ``NO_PROXY``.
+
+    httpx parses each ``NO_PROXY`` entry as a host[:port] via ``urllib``,
+    which mis-extracts the trailing ``]:1]`` from ``[::1]`` and raises
+    ``ValueError: Invalid port: ':1]'`` on the first request that consults
+    proxy rules. Strip just the bracketed entries — the other rules
+    (``localhost``, ``127.0.0.1``, CIDR blocks, …) stay intact.
+    """
+    for key in ("NO_PROXY", "no_proxy"):
+        raw = os.environ.get(key)
+        if not raw:
+            continue
+        kept = [
+            p.strip() for p in raw.split(",")
+            if p.strip() and not (p.strip().startswith("[") and "]" in p)
+        ]
+        os.environ[key] = ",".join(kept)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="explore-os Django sidecar (Waitress)",
@@ -58,6 +78,9 @@ def main() -> int:
 
     # Must be set before Django imports apps.core.paths (HF_HOME side effect).
     os.environ["EXPLORE_OS_DATA_DIR"] = args.data_dir
+    # Strip httpx-incompatible NO_PROXY entries before any module builds an
+    # httpx client (docling / pdf_fetcher both consult proxy env on import).
+    _sanitize_no_proxy()
     # ft-024 follow-up: explicitly override DATABASE_URL so any value baked into
     # the dev .env (which may point at the in-repo sqlite) cannot leak into the
     # desktop sidecar. Desktop must always store data under DATA_DIR.

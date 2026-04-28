@@ -53,16 +53,31 @@ export async function startSidecar(): Promise<number> {
   if (isDev) {
     // Project root is two dirs up from compiled `dist-electron/sidecar.js`.
     const projectRoot = path.resolve(__dirname, "..", "..");
-    cmd = "uv";
-    args = [
-      "run",
-      "python",
-      "sidecar_entry.py",
-      "--data-dir",
-      dataDir,
-      "--port",
-      "0",
-    ];
+    // Prefer the in-repo venv python so we don't trigger a uv re-sync on
+    // every dev launch (uv would otherwise try to re-resolve packages on
+    // restricted networks, e.g. behind a SOCKS proxy where the CUDA torch
+    // mirror times out). Fall back to `uv run python` only if the venv
+    // is missing.
+    const venvPy =
+      process.platform === "win32"
+        ? path.join(projectRoot, ".venv", "Scripts", "python.exe")
+        : path.join(projectRoot, ".venv", "bin", "python");
+    const fs = require("fs") as typeof import("fs");
+    if (fs.existsSync(venvPy)) {
+      cmd = venvPy;
+      args = ["sidecar_entry.py", "--data-dir", dataDir, "--port", "0"];
+    } else {
+      cmd = "uv";
+      args = [
+        "run",
+        "python",
+        "sidecar_entry.py",
+        "--data-dir",
+        dataDir,
+        "--port",
+        "0",
+      ];
+    }
     cwd = projectRoot;
   } else {
     const exe =

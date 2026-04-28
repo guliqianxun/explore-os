@@ -8,7 +8,7 @@
 //   explore:get-backend-port    -> number | null
 //   explore:get-sidecar-status  -> SidecarInfo
 
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, Menu, dialog, ipcMain } from "electron";
 import * as path from "path";
 
 import { getSidecarInfo, startSidecar, stopSidecar } from "./sidecar";
@@ -17,10 +17,26 @@ let mainWindow: BrowserWindow | null = null;
 let sidecarPort: number | null = null;
 
 async function createWindow(): Promise<void> {
+  // No application menu — the React header is the only chrome.
+  Menu.setApplicationMenu(null);
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     show: true,
+    // Hide native title bar; OS still draws min/max/close as overlay buttons
+    // on the right (Windows 11+). React header doubles as the drag region
+    // via -webkit-app-region: drag (see App.tsx).
+    titleBarStyle: "hidden",
+    titleBarOverlay: {
+      // Match the React header's bg-white so the overlay region blends in.
+      color: "#ffffff",
+      symbolColor: "#1c1a16",
+      height: 40,
+    },
+    // Prevent flash of transparent content during boot — backstop with the
+    // editorial cream paper bg from tokens.css (--bg).
+    backgroundColor: "#fdfcf8",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
