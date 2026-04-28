@@ -2,6 +2,60 @@
 
 ## [Unreleased]
 
+### 2026-04-28 — v1.2 启动：ft-028 + 砍 PG + ft-029 spec 立项
+
+**产品决策（4/28 lock）**：
+- A 进 B 出 product shape：subscription brief 入口 + 论文沉淀层（status / comment(history) / tag / paper 级双链）
+- Paper-centric schema：`[A-Z2-9]{8}` Zotero 风格 stable_key；arxiv_id/doi 降元数据列
+- 5 态状态机 + comment append-only + 内嵌 pdf.js"对照型" + Zotero/readest 是逃生口
+- **砍 Postgres**：桌面 app 单进 SQLite；psycopg / docker-compose / .env DATABASE_URL 全删
+
+**ft-028 Paper-centric schema + user_* + Inbox verdict UI 完成（25)**：
+- backend `apps/papers/`：Paper + UserPaperStatus + UserComment + UserTag + UserBacklink + STATUS_TRANSITIONS + `gen_key()` retry-3
+- 9 个迁移：3 papers + 3 extract + 3 interpret；`pre_save` signal 自动 wire `paper_arxiv_id → paper_id` 让 docling 抽取链不动
+- 11 DRF endpoints：POST status / GET+POST comments / PATCH comment(hidden only) / GET+POST tags / DELETE tag / GET+POST backlinks / DELETE backlink；list/detail 加 `?status=&tag=&q=` filter + `paper_key/title/status/tags/n_comments` DTO
+- `<id>` 双解析：`[A-Z2-9]{8}` → Paper.key；其它 → arxiv_id（regex 不重合）
+- frontend：types/paper.ts（DTO 集中）+ VerdictActions.tsx（[Skip][Queue][Read now]）+ StatusFilterBar.tsx（5 chip + counts 旁标）
+- PaperList sticky filter + url 化 + 跨缓存乐观更新 + 空状态 empty-state
+- 双 backend agent 接力（一个 socket 中断后续派一个收尾）+ 主会话补 2 bug（`gen_key` 字符表含 I/O / `POST tag` IntegrityError 没 transaction.atomic 隔离）
+- 测试：**306 passed**（基线 262 + 44 新；走 SQLite override + 默认 SQLite 双跑都过）
+
+**ft-026 follow-up（用户实测发现）**：
+- **figure 排版 root-cause fix**：`docling._map_sections` 累积 `text/paragraph/list_item` 节点为 section.raw_text；views.py 相似度纳入 `s.path + s.raw_text` → 6/6 figures 全部归属（之前全沉底）
+- **Electron 标题栏冲突**：原生 menu/title 与 React header 双层；改 frameless + titleBarOverlay (40px) + WebkitAppRegion drag/no-drag
+- **PaperDetail 形态级 pivot**：从 markdown 重渲全文 → 速读卡片（title + abstract + ClaimCard 排序 + figure 画廊）；删 4 组件（MarkdownView/FloatingTOC/ClaimDrawer/ReadingModeToggle）+ 移 getPaperMarkdown API
+- sidecar `--data-dir`：dev 模式优先 in-repo `.venv/Scripts/python.exe`，避开 uv re-sync 受限网络挂
+
+**砍 PG**：
+- pyproject.toml `psycopg[binary]` 移除；uv sync 卸 4 包
+- `docker-compose.yml` 删除（PG-only 文件无其它服务）
+- `.env` `DATABASE_URL=postgres://...` 注释掉，settings.py 默认 `sqlite:///<DATA_DIR>/explore_os.sqlite3` 接管
+- CLAUDE.md / README.md / docs/pm/ROADMAP.md：技术栈 / MVP 心智 / 部署条目同步改 SQLite
+
+**ft-029 Reading Station spec 立项**（v1.2 第二个特性，待派发）：
+- 3 栏布局（speed-card / pdf.js / notes pane），`react-pdf` + `react-resizable-panels`
+- claim:fig → 跳页 + bbox overlay 高亮；claim:sec → pdf.js textLayer 文本搜索
+- NotesPane Tabs：Comments（append-only chrono）/ Tags（ChipInput 复用）/ Backlinks（`?q=` typeahead）
+- 自动 status bump：detail mount 时 new/queued → reading
+- 底部 action bar：`[Mark kept ✓][Mark dropped ✗][Archive]` → 修今天发现的 verdict 出口 gap
+- PDF 不可用降级 2 栏；status='archived' 退回 speed 模式；可手动 toggle
+
+### 2026-04-27 — ft-027 Subscription 表单化 + Ingest（代码完成）
+
+- 5 subscription CRUD/run + 3 ingest endpoints (PDF upload / arxiv id / URL) + chain extract→interpret→render
+- frontend SubscriptionPage 卡片+modal + ChipInput 复用 / IngestPage 三入口 + IngestProgressItem
+- ruamel.yaml 替 PyYAML 保留 subscription YAML 注释
+- HF_HOME 优先复用 `~/.cache/huggingface` 全局缓存避免 sidecar 首次拉 600MB docling 模型
+- 用户最终 ingest 三阶段链路实测待最终确认
+
+### 2026-04-26 — ft-026 编辑/杂志重设计 + CORS 修复
+
+- `frontend/src/styles/tokens.css`：暖中性色板 + 衬线/无衬线/等宽字体栈 + claim_type 软色 + counter 红
+- 6 新组件：HeroPaperCard / ClaimDrawer / FloatingTOC / ReadingModeToggle / lib/fonts.ts
+- 10 改造：PaperList feed / PaperDetail 单栏沉浸 / PaperCard editorial / ClaimCard 抽屉宽松 / globals.css prose-paper / tailwind theme.extend / index.html web fonts / MarkdownView
+- CORS：`django-cors-headers 4.9.0` + CORS_ALLOW_ALL_ORIGINS=True
+- 触发用户反馈：PaperList 形态满意；SubscriptionPage YAML editor 不友好（→ ft-027）；RunPage 定位不清（→ ft-027）
+
 ### 2026-04-25 (latest+4) — ft-016 DeliveryAdapter 抽象层
 - **方向调整**：工具核心 = 内容生产；推送渠道作为可插拔 adapter。
   后续主推 微信订阅号 + 飞书 + 邮件 三渠道并存。
