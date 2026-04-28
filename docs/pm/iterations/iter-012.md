@@ -3,7 +3,7 @@ pm_id: iter-012
 pm_type: iteration
 title: Sprint 12 — Paper-centric schema + Inbox verdict（v1.2 地基）
 milestone: v1.2
-status: in_progress
+status: done
 start_at: 2026-04-28
 end_at: 2026-05-04
 ---

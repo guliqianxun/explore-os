@@ -3,8 +3,8 @@
   "version": "v1.2-planning",
   "updated_at": "2026-04-28",
   "roadmap": "ROADMAP.md",
-  "current_iteration": "iter-012",
-  "current_focus": "iter-012：ft-028 Paper-centric schema + user_* 层 + Inbox verdict（地基）；ft-027 待用户实测验收",
+  "current_iteration": "iter-013",
+  "current_focus": "iter-013：ft-029 Reading Station（pdf.js 内嵌 + 3 栏 + notes pane）；ft-028 已完工待用户实测",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -33,7 +33,7 @@
     {"id": "ft-025", "title": "自动更新 + CUDA/CPU 双轨打包", "status": "planned", "milestone": "v1.3"},
     {"id": "ft-026", "title": "前端编辑/杂志重设计（Editorial）", "status": "done", "milestone": "v1.1"},
     {"id": "ft-027", "title": "Subscription 表单化 + RunPage → Ingest（PDF/arxiv/URL）", "status": "in_progress", "milestone": "v1.1"},
-    {"id": "ft-028", "title": "Paper-centric schema + user_* 层 + Inbox verdict UI", "status": "planned", "milestone": "v1.2"},
+    {"id": "ft-028", "title": "Paper-centric schema + user_* 层 + Inbox verdict UI", "status": "done", "milestone": "v1.2"},
     {"id": "ft-029", "title": "Reading Station：3 栏 + pdf.js 内嵌 + notes/tag/backlink", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-030", "title": "Library：filter + FTS5 全文搜索 + Zotero export", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "planned", "milestone": "v1.2"}
@@ -50,7 +50,7 @@
     {"id": "iter-009", "status": "done", "scope": ["ft-024"]},
     {"id": "iter-010", "status": "done", "scope": ["ft-026"]},
     {"id": "iter-011", "status": "in_progress", "scope": ["ft-027"]},
-    {"id": "iter-012", "status": "planned", "scope": ["ft-028"]},
+    {"id": "iter-012", "status": "done", "scope": ["ft-028"]},
     {"id": "iter-013", "status": "planned", "scope": ["ft-029"]},
     {"id": "iter-014", "status": "planned", "scope": ["ft-030"]},
     {"id": "iter-015", "status": "planned", "scope": ["ft-031"]},
