@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import type { PaperListItem } from "@/api/papers";
+import { VerdictActions } from "@/components/VerdictActions";
 
 interface HeroPaperCardProps {
   paper: PaperListItem;
@@ -13,6 +14,9 @@ interface HeroPaperCardProps {
 /**
  * ft-026 PaperListPage hero card. Wide editorial banner: headline title,
  * lead paragraph, author hint (TBD when API exposes), thumbnail (figure 1).
+ *
+ * ft-028 embeds `<VerdictActions />` directly under the meta row so the
+ * top-of-feed paper can be triaged without leaving the list view.
  */
 export function HeroPaperCard({ paper, apiBase, lead }: HeroPaperCardProps) {
   const thumb =
@@ -23,19 +27,23 @@ export function HeroPaperCard({ paper, apiBase, lead }: HeroPaperCardProps) {
   const ablationHint =
     paper.n_claims > 0 ? `${paper.n_claims} claims` : "claims pending";
 
+  const displayTitle = paper.title || paper.arxiv_id;
+
   return (
-    <Link
-      to={`/papers/${encodeURIComponent(paper.arxiv_id)}`}
-      className="group block"
+    <article
+      className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-6 md:gap-8
+                 border-b border-[var(--rule)] pb-10 mb-10
+                 transition-colors"
     >
-      <article
-        className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-6 md:gap-8
-                   border-b border-[var(--rule)] pb-10 mb-10
-                   transition-colors"
-      >
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]
-                          font-sans font-medium text-[var(--accent)] mb-3">
+      <div className="min-w-0">
+        <Link
+          to={`/papers/${encodeURIComponent(paper.arxiv_id)}`}
+          className="group block"
+        >
+          <div
+            className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em]
+                       font-sans font-medium text-[var(--accent)] mb-3"
+          >
             <span>Featured</span>
             <span className="text-[var(--fg-muted)]">·</span>
             <span className="text-[var(--fg-muted)] normal-case tracking-normal font-mono">
@@ -47,11 +55,13 @@ export function HeroPaperCard({ paper, apiBase, lead }: HeroPaperCardProps) {
                        font-semibold text-[var(--fg)]
                        group-hover:text-[var(--accent)] transition-colors"
           >
-            {paper.arxiv_id}
+            {displayTitle}
           </h2>
           {lead ? (
-            <p className="mt-4 font-serif text-[1.05rem] leading-[1.7] text-[var(--fg-soft)]
-                          line-clamp-4">
+            <p
+              className="mt-4 font-serif text-[1.05rem] leading-[1.7] text-[var(--fg-soft)]
+                         line-clamp-4"
+            >
               {lead}
             </p>
           ) : null}
@@ -60,26 +70,37 @@ export function HeroPaperCard({ paper, apiBase, lead }: HeroPaperCardProps) {
             <span>{paper.n_figures} figures</span>
             <span>{paper.n_tables} tables</span>
             <span className="text-[var(--accent)]">{ablationHint}</span>
+            {paper.n_comments > 0 ? <span>{paper.n_comments} notes</span> : null}
           </div>
+        </Link>
+        <div className="mt-5">
+          <VerdictActions paper={paper} />
         </div>
-        {thumb ? (
-          <div className="order-first md:order-last">
-            <div className="aspect-[4/3] overflow-hidden rounded-card bg-[var(--bg-soft)]
-                            border border-[var(--rule)]">
-              <img
-                src={thumb}
-                alt=""
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500
-                           group-hover:scale-[1.02]"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-              />
-            </div>
+      </div>
+      {thumb ? (
+        <Link
+          to={`/papers/${encodeURIComponent(paper.arxiv_id)}`}
+          className="order-first md:order-last group"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <div
+            className="aspect-[4/3] overflow-hidden rounded-card bg-[var(--bg-soft)]
+                       border border-[var(--rule)]"
+          >
+            <img
+              src={thumb}
+              alt=""
+              loading="lazy"
+              className="w-full h-full object-cover transition-transform duration-500
+                         group-hover:scale-[1.02]"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
           </div>
-        ) : null}
-      </article>
-    </Link>
+        </Link>
+      ) : null}
+    </article>
   );
 }
