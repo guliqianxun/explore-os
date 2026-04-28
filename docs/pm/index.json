@@ -4,7 +4,7 @@
   "updated_at": "2026-04-28",
   "roadmap": "ROADMAP.md",
   "current_iteration": "iter-013",
-  "current_focus": "iter-013：ft-029 Reading Station（pdf.js 内嵌 + 3 栏 + ClaimCard 引文展开 + notes pane）；ft-028 已完工；4/28 竞品分析锁定 Out of Scope + 新增 ft-032 ClaimCard 修订层",
+  "current_focus": "iter-013 ft-029 ✅ 落地（backend + frontend 6 phases）；用户实测发现毛玻璃需求 + brief 内容处理需求；4/29 立项 ft-033 Brief 内容处理层（PaperBrief 复用老邮件 pipeline）",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -37,7 +37,8 @@
     {"id": "ft-029", "title": "Reading Station：3 栏 + pdf.js 内嵌 + ClaimCard 引文展开 + notes/tag/backlink", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-030", "title": "Library：filter + FTS5 全文搜索 + Zotero export", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "planned", "milestone": "v1.2"},
-    {"id": "ft-032", "title": "ClaimCard 用户修订层（user_claim_edit override + hide）", "status": "planned", "milestone": "v1.2"}
+    {"id": "ft-032", "title": "ClaimCard 用户修订层（user_claim_edit override + hide）", "status": "planned", "milestone": "v1.2"},
+    {"id": "ft-033", "title": "Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）", "status": "planned", "milestone": "v1.2"}
   ],
   "iterations": [
     {"id": "iter-001", "status": "done"},
@@ -56,6 +57,7 @@
     {"id": "iter-014", "status": "planned", "scope": ["ft-030"]},
     {"id": "iter-015", "status": "planned", "scope": ["ft-031"]},
     {"id": "iter-016", "status": "planned", "scope": ["ft-025"]},
-    {"id": "iter-017", "status": "planned", "scope": ["ft-032"]}
+    {"id": "iter-017", "status": "planned", "scope": ["ft-032"]},
+    {"id": "iter-018", "status": "planned", "scope": ["ft-033"]}
   ]
 }

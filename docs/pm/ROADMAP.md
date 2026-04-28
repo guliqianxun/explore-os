@@ -84,6 +84,7 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [ft-030](features/ft-030.md) — Library + FTS5 全文搜索 + Zotero export
 - [ft-031](features/ft-031.md) — 桌面通知 + brief 未决分组
 - [ft-032](features/ft-032.md) — ClaimCard 用户修订层（user_claim_edit override）
+- [ft-033](features/ft-033.md) — Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）
 
 ## 当前迭代
 
@@ -104,6 +105,7 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [iter-015](iterations/iter-015.md) — Sprint 15：桌面通知 + brief 未决分组（ft-031）
 - [iter-016](iterations/iter-016.md) — Sprint 16：自动更新 + CUDA/CPU 双轨（ft-025）
 - [iter-017](iterations/iter-017.md) — Sprint 17：ClaimCard 用户修订层（ft-032，紧跟 ft-029 实测后启动）
+- [iter-018](iterations/iter-018.md) — Sprint 18：Brief 内容处理层（ft-033，复用老邮件 pipeline）
 
 ## 战略转向（2026-04-25）
 

@@ -2,6 +2,38 @@
 
 ## [Unreleased]
 
+### 2026-04-29 — ft-029 落地 + 用户实测反馈 + 毛玻璃 + 邮件双组 + ft-033 立项
+
+**ft-029 全套落地（dsp-013 + dsp-014）**：
+- backend rpt-013：Paper.pdf_path + 0004 migration + paths.resolve_pdf_path() + PaperPdfView GET/HEAD + DTO has_pdf/pdf_url + evidences nested 已有；pytest 315 passed (+9)
+- frontend rpt-014：6 phases 全套（3 栏响应式 + ClaimCard 三态 + PdfViewer 联动 + NotesPane + ActionBar 状态机 + StatusPill 双入口）；tsc 0 error；主 chunk 627KB ↓7KB（vs ft-028 基线，因 lazy split）
+- frontend agent socket 中断后主会话接手收尾（rpt-014 由主会话写，不影响成果）
+
+**用户视觉实测反馈（4/29 浏览器/Electron 实测）**：
+
+1. **毛玻璃弹窗（macOS Big Sur 风）已落地**：
+   - `ui/dialog.tsx` Overlay `bg-black/30 backdrop-blur-md` + Content `bg-[var(--bg)]/85 backdrop-blur-xl border-white/15 shadow-2xl`
+   - `reading/StatusPill.tsx` 浮层同款
+   - 全局只这两处 floating（已 grep 确认无其它 Sheet/Popover 浮层）
+
+2. **Today's brief 邮件版双组（拍板 macOS 风 + b 按 status + A 默认两组并列）**：
+   - types/paper.ts StatusFilter 加 'brief'
+   - StatusFilterBar 最左加 [Brief] chip；默认 filter 改 'brief'
+   - 切到 brief 调 status=all 数据 → 前端按 status 切组：
+     - 主要论文 = status in [reading, queued]，HeroPaperCard + PaperCard 大版面
+     - 速读 = status=new，新建 SkimCard 紧凑单行
+     - read_*/archived 在 brief 隐藏（切对应 chip 可看）
+   - 新增 BriefView 内部组件 + SectionHeader（"主要论文 (N)"/"速读 (N)" 分隔条）
+   - 新增 SkimCard.tsx
+   - 主 chunk 627KB → 631KB (+3.4KB)
+
+3. **Brief 内容处理需求 → ft-033 立项**：
+   - 用户反馈"论文内容也应该和老邮件一样，各种翻译、缩略，完全相同的内容处理方案"
+   - 4/29 调查根因：`apps/papers/Paper` 只有 title/arxiv_id/doi/pdf_path/created_at，**没有 abstract / tldr / abstract_zh 字段**；老邮件 pipeline (`interpret/interpretation.py` 的 `skim_interpret + deep_interpret`) 完全没接到新 ingest 链
+   - 立项 ft-033 Brief 内容处理层：复用老 pipeline + 新增 PaperBrief OneToOne 表 (abstract_zh / keywords / tldr_zh / for_you / method_summary 等) + 2 endpoints + ~2.5 天
+   - 决策：默认手动触发避 LLM 失控；perspective 从 active subscription yaml 读 fallback researcher；ingest 链同步加 abstract 字段
+   - iter-018 立项
+
 ### 2026-04-28 (晚) — 竞品分析 + ft-029 增强 + ft-032 立项 + ROADMAP § Out of Scope
 
 **PM 竞品分析**（B 象限地图：A1 推送 / A2 检索 / A3 引文图谱 / B1 archival / B2 PDF 标注 / B3 chat / B4 双链 / B5 综述）：
