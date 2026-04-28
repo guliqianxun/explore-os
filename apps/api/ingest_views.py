@@ -36,9 +36,25 @@ def _sha256_short(data: bytes) -> str:
 
 
 def _save_pdf(content: bytes, paper_id: str) -> Path:
-    """落盘到 papers_dir() / <paper_id>.pdf。"""
+    """落盘到 papers_dir() / <paper_id>.pdf 并同步 Paper.pdf_path（ft-029）.
+
+    Paper 行可能尚不存在（extract signal 后才建），所以 update_or_create
+    by arxiv_id；title 兜底 "arxiv:<id>"，与 signals._ensure_paper_fk 同语义。
+    后续 extract pre_save signal 会 get_or_create 命中同一行。
+    """
     dst = paths.papers_dir() / f"{paper_id}.pdf"
     dst.write_bytes(content)
+    # ft-029: 写入 pdf_path（避免循环 import，延迟到函数内 import）。
+    # Paper 行可能尚未创建（extract signal 后才落）。get_or_create + 显式
+    # update 防止覆盖 extract 后回填的 title（defaults 只在 create 时生效）。
+    from apps.papers.models import Paper
+    paper, _ = Paper.objects.get_or_create(
+        arxiv_id=paper_id,
+        defaults={"title": f"arxiv:{paper_id}", "pdf_path": str(dst)},
+    )
+    if paper.pdf_path != str(dst):
+        paper.pdf_path = str(dst)
+        paper.save(update_fields=["pdf_path"])
     return dst
 
 

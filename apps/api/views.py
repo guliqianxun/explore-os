@@ -42,6 +42,7 @@ from apps.papers.models import (
     UserTag,
     is_legal_transition,
 )
+from apps.papers.paths import resolve_pdf_path
 
 
 # ---------------- ft-028 paper id resolver ----------------
@@ -266,6 +267,13 @@ class PaperDetailView(APIView):
                 paper.tags.order_by("created_at").values_list("tag", flat=True),
             )
             data["n_comments"] = paper.comments.count()
+            # ft-029: PDF 可用性 + 访问 URL（前端用 paper_key 拼）
+            data["has_pdf"] = resolve_pdf_path(paper) is not None
+            data["pdf_url"] = f"/api/papers/{paper.key}/pdf/"
+        else:
+            # 无 Paper 行（legacy material-only 路径），保底 has_pdf=False
+            data["has_pdf"] = False
+            data["pdf_url"] = None
         return Response(data)
 
 
@@ -737,6 +745,30 @@ class PaperBacklinkView(APIView):
             _serialize_backlink_out(bl),
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+
+class PaperPdfView(APIView):
+    """ft-029: ``GET / HEAD /api/papers/<id_or_key>/pdf/``.
+
+    GET 返回 ``application/pdf`` 全文（无 Range 支持，论文 < 10MB 全量可接受；
+    Range 留 ft-030 优化）。HEAD 仅探测 200/404（前端 ``useHasPdf`` 用）。
+    解析顺序见 :func:`resolve_pdf_path`。
+    """
+
+    def get(self, request, id_or_key: str):
+        paper = resolve_paper(id_or_key)
+        path = resolve_pdf_path(paper)
+        if path is None:
+            return Response(
+                {"detail": "pdf not available"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return FileResponse(open(path, "rb"), content_type="application/pdf")
+
+    def head(self, request, id_or_key: str):
+        paper = resolve_paper(id_or_key)
+        path = resolve_pdf_path(paper)
+        return HttpResponse(status=200 if path else 404)
 
 
 class PaperBacklinkDetailView(APIView):

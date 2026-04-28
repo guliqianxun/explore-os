@@ -338,3 +338,162 @@ def test_backlink_unknown_dst_returns_404(client, paper):
         {"dst": "ZZZZZZZZ"}, format="json",
     )
     assert r.status_code == 404
+
+
+# ====================================================================
+# ft-029: PDF serve + has_pdf/pdf_url DTO + evidences nested
+# ====================================================================
+
+@pytest.fixture
+def pdf_bytes() -> bytes:
+    """Minimal PDF magic + EOF — enough for serve tests, not a real PDF."""
+    return b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n%%EOF\n"
+
+
+def test_pdf_serve_get_happy(client, paper, pdf_bytes, tmp_path, settings):
+    """落盘 PDF + 写 pdf_path → GET 200 application/pdf."""
+    pdf_file = tmp_path / f"{paper.arxiv_id}.pdf"
+    pdf_file.write_bytes(pdf_bytes)
+    paper.pdf_path = str(pdf_file)
+    paper.save(update_fields=["pdf_path"])
+    r = client.get(f"/api/papers/{paper.key}/pdf/")
+    assert r.status_code == 200
+    assert r["Content-Type"] == "application/pdf"
+    body = b"".join(r.streaming_content)
+    assert body == pdf_bytes
+
+
+def test_pdf_serve_404_when_missing(client, paper, monkeypatch, tmp_path):
+    """pdf_path 空且 legacy 路径都不存在 → 404."""
+    # Redirect papers/legacy dirs to empty tmp dirs to avoid host pollution.
+    from apps.papers import paths as ppaths
+    monkeypatch.setattr(ppaths, "papers_dir", lambda: tmp_path / "p")
+    monkeypatch.setattr(ppaths, "pdf_legacy_dir", lambda: tmp_path / "l")
+    (tmp_path / "p").mkdir()
+    (tmp_path / "l").mkdir()
+    r = client.get(f"/api/papers/{paper.key}/pdf/")
+    assert r.status_code == 404
+    assert r.json()["detail"] == "pdf not available"
+
+
+def test_pdf_serve_head_200_and_404(client, paper, pdf_bytes, tmp_path, monkeypatch):
+    """HEAD 仅探测：有 PDF → 200 / 无 PDF → 404；body 都为空."""
+    from apps.papers import paths as ppaths
+    monkeypatch.setattr(ppaths, "papers_dir", lambda: tmp_path / "p")
+    monkeypatch.setattr(ppaths, "pdf_legacy_dir", lambda: tmp_path / "l")
+    (tmp_path / "p").mkdir()
+    (tmp_path / "l").mkdir()
+    # 404 first
+    r = client.head(f"/api/papers/{paper.key}/pdf/")
+    assert r.status_code == 404
+    # then 200
+    pdf_file = tmp_path / "served.pdf"
+    pdf_file.write_bytes(pdf_bytes)
+    paper.pdf_path = str(pdf_file)
+    paper.save(update_fields=["pdf_path"])
+    r = client.head(f"/api/papers/{paper.key}/pdf/")
+    assert r.status_code == 200
+
+
+def test_pdf_serve_legacy_fallback(client, paper, pdf_bytes, tmp_path, monkeypatch):
+    """pdf_path 空但 ``pdf_legacy_dir/<arxiv>.pdf`` 存在 → 200."""
+    from apps.papers import paths as ppaths
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    papers_d = tmp_path / "papers"
+    papers_d.mkdir()
+    monkeypatch.setattr(ppaths, "papers_dir", lambda: papers_d)
+    monkeypatch.setattr(ppaths, "pdf_legacy_dir", lambda: legacy)
+    (legacy / f"{paper.arxiv_id}.pdf").write_bytes(pdf_bytes)
+    # paper.pdf_path 留空：strict legacy fallback 测试
+    assert paper.pdf_path is None or paper.pdf_path == ""
+    r = client.get(f"/api/papers/{paper.key}/pdf/")
+    assert r.status_code == 200
+    body = b"".join(r.streaming_content)
+    assert body == pdf_bytes
+
+
+def test_pdf_serve_404_for_unknown_paper(client, db):
+    r = client.get("/api/papers/ZZZZZZZZ/pdf/")
+    assert r.status_code == 404
+
+
+def test_paper_detail_includes_has_pdf_and_pdf_url(
+    client, paper, pdf_bytes, tmp_path,
+):
+    """detail DTO 含 has_pdf=True + pdf_url=/api/papers/<key>/pdf/."""
+    pdf_file = tmp_path / f"{paper.arxiv_id}.pdf"
+    pdf_file.write_bytes(pdf_bytes)
+    paper.pdf_path = str(pdf_file)
+    paper.save(update_fields=["pdf_path"])
+    r = client.get(f"/api/papers/{paper.key}/")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["has_pdf"] is True
+    assert data["pdf_url"] == f"/api/papers/{paper.key}/pdf/"
+
+
+def test_paper_detail_has_pdf_false_when_no_file(
+    client, paper, monkeypatch, tmp_path,
+):
+    from apps.papers import paths as ppaths
+    monkeypatch.setattr(ppaths, "papers_dir", lambda: tmp_path / "p")
+    monkeypatch.setattr(ppaths, "pdf_legacy_dir", lambda: tmp_path / "l")
+    (tmp_path / "p").mkdir()
+    (tmp_path / "l").mkdir()
+    r = client.get(f"/api/papers/{paper.key}/")
+    assert r.status_code == 200
+    assert r.json()["has_pdf"] is False
+
+
+def test_paper_detail_claims_include_evidences_array(client, paper):
+    """ft-029 D2: claim 含 evidences[] (material_id + relation)."""
+    from apps.interpret.models import Claim, ClaimEvidence
+    claim = Claim.objects.create(
+        claim_id=f"{paper.arxiv_id}:claim:1",
+        paper_arxiv_id=paper.arxiv_id,
+        text="self-rewarding via DPO outperforms baseline",
+        text_en="self-rewarding via DPO outperforms baseline",
+        claim_type="finding",
+        source_section_path="Methods / 3.2 Training",
+        confidence=0.87,
+    )
+    ClaimEvidence.objects.create(
+        claim=claim,
+        material_id=f"{paper.arxiv_id}:sec:Methods/3.2",
+        relation="supports",
+    )
+    ClaimEvidence.objects.create(
+        claim=claim,
+        material_id=f"{paper.arxiv_id}:fig:4",
+        relation="supports",
+    )
+    r = client.get(f"/api/papers/{paper.key}/")
+    assert r.status_code == 200
+    claims = r.json()["claims"]
+    assert len(claims) == 1
+    evs = claims[0]["evidences"]
+    assert len(evs) == 2
+    mids = {e["material_id"] for e in evs}
+    assert f"{paper.arxiv_id}:sec:Methods/3.2" in mids
+    assert f"{paper.arxiv_id}:fig:4" in mids
+    assert all(e["relation"] == "supports" for e in evs)
+
+
+def test_paper_detail_claim_with_no_evidences_returns_empty_array(client, paper):
+    """ft-029 D2: empty evidences → ``[]`` (not null)."""
+    from apps.interpret.models import Claim
+    Claim.objects.create(
+        claim_id=f"{paper.arxiv_id}:claim:99",
+        paper_arxiv_id=paper.arxiv_id,
+        text="naked claim",
+        text_en="naked claim",
+        claim_type="finding",
+        source_section_path="",
+        confidence=0.5,
+    )
+    r = client.get(f"/api/papers/{paper.key}/")
+    assert r.status_code == 200
+    claims = r.json()["claims"]
+    assert any(c["evidences"] == [] for c in claims)
+

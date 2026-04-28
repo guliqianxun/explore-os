@@ -27,6 +27,7 @@ from apps.api.views import (
     PaperDetailView,
     PaperListView,
     PaperMarkdownView,
+    PaperPdfView,
     PaperStatusView,
     PaperTagDetailView,
     PaperTagListView,
@@ -101,6 +102,12 @@ urlpatterns = [
         "papers/<str:id_or_key>/backlinks/",
         PaperBacklinkView.as_view(),
         name="api-paper-backlinks",
+    ),
+    # ft-029: PDF serve (GET / HEAD)
+    path(
+        "papers/<str:id_or_key>/pdf/",
+        PaperPdfView.as_view(),
+        name="api-paper-pdf",
     ),
     path(
         "papers/<str:id_or_key>/backlinks/<int:bid>/",

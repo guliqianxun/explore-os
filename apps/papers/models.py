@@ -100,6 +100,9 @@ class Paper(models.Model):
         max_length=64, null=True, blank=True, unique=True, db_index=True,
     )
     doi = models.CharField(max_length=128, null=True, blank=True, db_index=True)
+    # ft-029: 落盘 PDF 的绝对路径（由 ingest 链路写入；空表示未持有）。
+    # 走 TextField 避开 Path 长度上限；SQLite-friendly。
+    pdf_path = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
