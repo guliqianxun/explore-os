@@ -94,15 +94,6 @@ export async function getPaperDetail(arxivId: string): Promise<PaperDetail> {
   return r.data;
 }
 
-export async function getPaperMarkdown(arxivId: string): Promise<string> {
-  const api = await getApi();
-  const r = await api.get<string>(
-    `/papers/${encodeURIComponent(arxivId)}/markdown/`,
-    { responseType: "text", transformResponse: (v) => v },
-  );
-  return r.data;
-}
-
 export async function getPaperClaims(arxivId: string): Promise<ClaimDTO[]> {
   const api = await getApi();
   const r = await api.get<ClaimDTO[]>(
