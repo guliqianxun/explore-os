@@ -2,6 +2,46 @@
 
 ## [Unreleased]
 
+### 2026-04-28 (晚) — 竞品分析 + ft-029 增强 + ft-032 立项 + ROADMAP § Out of Scope
+
+**PM 竞品分析**（B 象限地图：A1 推送 / A2 检索 / A3 引文图谱 / B1 archival / B2 PDF 标注 / B3 chat / B4 双链 / B5 综述）：
+- 强差异化 = 该做：A→B 单一闭环、claim/figure 颗粒度沉淀、本地单机数据自有、结构化速读卡片
+- 弱差异化 = 砍 / 借 / 延后：引文图谱（→ Connected Papers）、PDF 高亮（→ readest）、Chat with PDF（红海+范式冲突）、archival 库（→ Zotero）、wiki-link 双链（→ Obsidian）
+
+**4 个 PM 决策点拍板**：
+- Q1 wiki-link：不做，仅 paper 颗粒度 backlink
+- Q2 沉淀库 NL 问答：不做，先看 ft-030 FTS5
+- Q3 Daily Narrative：维持 ft-010 现状
+- Q4 飞书 / 微信 IM Adapter：保留 deferred（"不在电脑前"兜底）
+
+**ROADMAP 更新**：
+- 里程碑表 v1.2 重定义为"用户层（A 进 B 出）"，自动更新顺延 v1.3
+- 新增 § "Out of Scope / Won't Do"：引文图谱 / PDF 标注 / Chat / archival 库 / wiki-link / NL 问答 / 云同步
+- updated_at 2026-04-25 → 2026-04-28；version v0.6-plan → v1.2-plan
+- Features 索引补 ft-028 ~ ft-032；当前迭代补 iter-012 ~ iter-017
+
+**ft-029 spec 增量**（PM review 后追加 D1/D2/D5/D8 + Out of Scope 收紧）：
+- D1 NotesPane 响应式宽度（min 280 / max 420，窄屏 < 1100px 折抽屉），不写死 320px
+- D2 **ClaimCard 三态**：collapsed / expanded with evidence / editing
+  - **引文展开附原文**：claim → `evidences[]` → material_id → fan-out 5 类（section / figure / table / equation / citation 不同模板）
+  - 无 schema 改动；`PaperDetailSerializer` 加 `evidences` nested 即可
+  - editing 态移交 ft-032，本 ft 仅 placeholder
+- D5 底部 action bar 纯文字无图标 + **状态机驱动**：reading 显示 4 键 / read_kept|dropped 仅 [Archive][Reopen] / archived 仅 [Reopen]
+- D8 顶部 status pill 双入口：`[reading ▾]` 下拉直接改 5 态（与底部 bar 冗余但好用）
+- Out of Scope 加 claim 编辑（→ ft-032）/ wiki-link / Chat with PDF
+- frontend 工作量 5–6 → 6–7 天
+
+**ft-032 ClaimCard 用户修订层立项**（v1.2 第五个特性，紧跟 ft-029 实测后）：
+- 方案 A：覆盖层（不直改 Claim，保留 audit + re-interpret 不冲突）
+- `UserClaimEdit(claim_id PK, text_override, hidden, edited_at)` 单表 OneToOne
+- D7：hide 也归此表，不另起表（claim 修订动作归一）
+- PATCH `/api/claims/<id>/edit/` + DELETE 还原；`text_effective` 字段注入 detail DTO
+- ClaimCard 编辑态内联（textarea + 折叠 `ⓘ Original` + `[↶ revert]` + Cmd+Enter 提交）
+- hidden 默认隐藏 + 顶部 `[显示已隐藏 (N)]` toggle；`✎ edited` 徽章
+- 工作量 ~2.5 天（backend 0.5 + frontend 2）；可主会话直接做不必派 subagent
+
+**iter-017 立项**（ft-032，等 ft-029 上线 + 用户实测确认编辑诉求强烈后启动）
+
 ### 2026-04-28 — v1.2 启动：ft-028 + 砍 PG + ft-029 spec 立项
 
 **产品决策（4/28 lock）**：

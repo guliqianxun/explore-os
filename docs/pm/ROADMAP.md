@@ -2,8 +2,8 @@
 pm_id: roadmap
 pm_type: roadmap
 project: explore-os
-version: v0.6-plan
-updated_at: 2026-04-25
+version: v1.2-plan
+updated_at: 2026-04-28
 ---
 
 # explore-os Roadmap
@@ -45,9 +45,10 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 | **v0.8 (M7)** | **索引层闭环（图谱可视化 freeze）** | PaperGraphModel / `.excalidraw` / SVG 已落地，**实测可读性不及 HTML**；交互式可视化推迟到 Electron HTML 视图 | 2026-04/05 ✅ |
 | **v0.9 (M8)** | **Electron 基础设施 + DRF API** | C1/C3/C5/C9 单机化清理 / EXPLORE_OS_DATA_DIR / DRF 包装 CLI / APScheduler in-process | 2026-05 |
 | **v1.0 (M9)** | **Electron shell + Python sidecar** | electron-builder / PyInstaller Django / HTTP localhost / 端口与进程管理 | 2026-05 |
-| **v1.1 (M10)** | **前端 MVP 4 页** | Vite+React+TS+Tailwind+shadcn/ui+Excalidraw 嵌入 / 论文列表 / 精读视图 / 订阅配置 / 抓取触发 | 2026-05/06 |
-| **v1.2 (M11)** | **自动更新 + CUDA/CPU 双轨** | electron-updater / 双 PyInstaller spec（CUDA bundle 自用 + CPU bundle 分发接口）/ 不签名（自用阶段） | 2026-06 |
-| **v1.x (M12+)** | 扩展方向 | 代码签名 / 公开分发 / xingsuo 作为 source / GitHub + HF Models 信源 / 跨篇图谱 | 待评估 |
+| **v1.1 (M10)** | **前端 MVP + Editorial 重设计** | 4 页 → 编辑/杂志重设计 → Subscription 表单化 + Ingest（PDF/arxiv/URL）| 2026-05/06 ✅ ft-024/026，🔄 ft-027 |
+| **v1.2 (M11)** | **用户层（A 进 B 出）** | Paper-centric schema + Inbox verdict + Reading Station + ClaimCard 修订层 + Library + 通知 | 2026-05/06 |
+| **v1.3 (M12)** | **分发：自动更新 + CUDA/CPU 双轨** | electron-updater / 双 PyInstaller spec（CUDA bundle 自用 + CPU bundle 分发接口）/ 不签名（自用阶段）| 2026-06/07 |
+| **v1.x (M13+)** | 扩展方向 | 代码签名 / 公开分发 / xingsuo 作为 source / GitHub + HF Models 信源 / 跨篇图谱 | 待评估 |
 
 ## Features 索引
 
@@ -78,6 +79,11 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [ft-025](features/ft-025.md) — 自动更新 + CUDA/CPU 双轨打包
 - [ft-026](features/ft-026.md) — 前端编辑/杂志重设计（Editorial）+ CORS 修复 ✅
 - [ft-027](features/ft-027.md) — Subscription 表单化 + RunPage → Ingest（PDF/arxiv/URL）
+- [ft-028](features/ft-028.md) — Paper-centric schema + user_* 层 + Inbox verdict UI ✅
+- [ft-029](features/ft-029.md) — Reading Station：3 栏 + pdf.js 内嵌 + ClaimCard 引文展开 + notes/tag/backlink
+- [ft-030](features/ft-030.md) — Library + FTS5 全文搜索 + Zotero export
+- [ft-031](features/ft-031.md) — 桌面通知 + brief 未决分组
+- [ft-032](features/ft-032.md) — ClaimCard 用户修订层（user_claim_edit override）
 
 ## 当前迭代
 
@@ -92,6 +98,12 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [iter-009](iterations/iter-009.md) — Sprint 9：前端 MVP 4 页（ft-024 ✅）
 - [iter-010](iterations/iter-010.md) — Sprint 10：编辑/杂志重设计（ft-026 ✅）
 - [iter-011](iterations/iter-011.md) — Sprint 11：Subscription 表单化 + Ingest（ft-027）
+- [iter-012](iterations/iter-012.md) — Sprint 12：Paper-centric schema + Inbox verdict（ft-028 ✅）
+- [iter-013](iterations/iter-013.md) — Sprint 13：Reading Station + ClaimCard 引文展开（ft-029）
+- [iter-014](iterations/iter-014.md) — Sprint 14：Library + FTS5 + Zotero export（ft-030）
+- [iter-015](iterations/iter-015.md) — Sprint 15：桌面通知 + brief 未决分组（ft-031）
+- [iter-016](iterations/iter-016.md) — Sprint 16：自动更新 + CUDA/CPU 双轨（ft-025）
+- [iter-017](iterations/iter-017.md) — Sprint 17：ClaimCard 用户修订层（ft-032，紧跟 ft-029 实测后启动）
 
 ## 战略转向（2026-04-25）
 
@@ -113,6 +125,23 @@ v0.5 多渠道降级为可选，飞书/微信订阅号按需推进。
 - **索引层（extract + interpret）才是基础**：5 类 material + claims + counter_signals 已实战验证产出可用，是后续视图的真正资产
 - **自用阶段不签名**：跳过 Apple Dev / Windows EV cert（约省 1.5 周 + 钱）；公开分发延后到 v1.x
 - **CUDA / CPU 双轨**：v1.2 ft-025 落两套 PyInstaller spec；自用走 CUDA bundle，CPU bundle 留接口待分发
+
+## Out of Scope / Won't Do（2026-04-28 竞品分析后锁定）
+
+经过竞品象限分析（A1 订阅推送 / A2 探索式检索 / A3 引文图谱 / B1 archival / B2 PDF 标注 / B3 chat / B4 双链 / B5 综述生成），识别出与已有强势竞品高度重叠且**复制无价值**的方向，正式从 backlog 排除：
+
+| 不做 | 替代方案 | 排除理由 |
+|---|---|---|
+| **引文图谱可视化** | Connected Papers / ResearchRabbit / Litmaps（免费）| 竞品成熟，且与 explore-os "深读单篇 + 沉淀" 主线无协同 |
+| **PDF 高亮 / margin note 标注** | readest（一键导出逃生口）/ Hypothesis | 与 ft-028 锁定的"对照型 viewer"范式冲突；标注层走 user_comment / user_tag / user_backlink 挂 paper |
+| **Chat with PDF** | ChatPDF / SciSpace Copilot / Humata | 红海；与 ClaimCard 结构化范式冲突（信息密度高于 chat） |
+| **文献 archival / citation 库** | **Zotero**（一键导出 .bib + pdf 是逃生口） | 不重造 Zotero 的同步 / collections / citation style 体系 |
+| **通用知识管理双链 / wiki-link 语法** | Obsidian / Logseq | ft-029 backlink 仅做 paper 颗粒度，不引入 `[[wiki]]` 语法（claim 级 backlink 也延后/不做）|
+| **沉淀库内自然语言问答** | Elicit（外部）/ 等 ft-030 FTS5 实测 | v1.3+ 观望，先看 FTS5 是否够用 |
+| **跨设备云同步** | （v2.x 再说）| 桌面单机自用优先，不引入云依赖 |
+
+**保留但延后**：
+- ft-017 飞书 / ft-018 微信订阅号 IM Adapter — 状态 deferred 维持，"不在电脑前"场景的兜底。
 
 ## 未决议题
 

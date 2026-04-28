@@ -4,7 +4,7 @@
   "updated_at": "2026-04-28",
   "roadmap": "ROADMAP.md",
   "current_iteration": "iter-013",
-  "current_focus": "iter-013：ft-029 Reading Station（pdf.js 内嵌 + 3 栏 + notes pane）；ft-028 已完工待用户实测",
+  "current_focus": "iter-013：ft-029 Reading Station（pdf.js 内嵌 + 3 栏 + ClaimCard 引文展开 + notes pane）；ft-028 已完工；4/28 竞品分析锁定 Out of Scope + 新增 ft-032 ClaimCard 修订层",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -34,9 +34,10 @@
     {"id": "ft-026", "title": "前端编辑/杂志重设计（Editorial）", "status": "done", "milestone": "v1.1"},
     {"id": "ft-027", "title": "Subscription 表单化 + RunPage → Ingest（PDF/arxiv/URL）", "status": "in_progress", "milestone": "v1.1"},
     {"id": "ft-028", "title": "Paper-centric schema + user_* 层 + Inbox verdict UI", "status": "done", "milestone": "v1.2"},
-    {"id": "ft-029", "title": "Reading Station：3 栏 + pdf.js 内嵌 + notes/tag/backlink", "status": "planned", "milestone": "v1.2"},
+    {"id": "ft-029", "title": "Reading Station：3 栏 + pdf.js 内嵌 + ClaimCard 引文展开 + notes/tag/backlink", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-030", "title": "Library：filter + FTS5 全文搜索 + Zotero export", "status": "planned", "milestone": "v1.2"},
-    {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "planned", "milestone": "v1.2"}
+    {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "planned", "milestone": "v1.2"},
+    {"id": "ft-032", "title": "ClaimCard 用户修订层（user_claim_edit override + hide）", "status": "planned", "milestone": "v1.2"}
   ],
   "iterations": [
     {"id": "iter-001", "status": "done"},
@@ -54,6 +55,7 @@
     {"id": "iter-013", "status": "planned", "scope": ["ft-029"]},
     {"id": "iter-014", "status": "planned", "scope": ["ft-030"]},
     {"id": "iter-015", "status": "planned", "scope": ["ft-031"]},
-    {"id": "iter-016", "status": "planned", "scope": ["ft-025"]}
+    {"id": "iter-016", "status": "planned", "scope": ["ft-025"]},
+    {"id": "iter-017", "status": "planned", "scope": ["ft-032"]}
   ]
 }
