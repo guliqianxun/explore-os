@@ -46,9 +46,11 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 | **v0.9 (M8)** | **Electron 基础设施 + DRF API** | C1/C3/C5/C9 单机化清理 / EXPLORE_OS_DATA_DIR / DRF 包装 CLI / APScheduler in-process | 2026-05 |
 | **v1.0 (M9)** | **Electron shell + Python sidecar** | electron-builder / PyInstaller Django / HTTP localhost / 端口与进程管理 | 2026-05 |
 | **v1.1 (M10)** | **前端 MVP + Editorial 重设计** | 4 页 → 编辑/杂志重设计 → Subscription 表单化 + Ingest（PDF/arxiv/URL）| 2026-05/06 ✅ ft-024/026，🔄 ft-027 |
-| **v1.2 (M11)** | **用户层（A 进 B 出）** | Paper-centric schema + Inbox verdict + Reading Station + ClaimCard 修订层 + Library + 通知 | 2026-05/06 |
-| **v1.3 (M12)** | **分发：自动更新 + CUDA/CPU 双轨** | electron-updater / 双 PyInstaller spec（CUDA bundle 自用 + CPU bundle 分发接口）/ 不签名（自用阶段）| 2026-06/07 |
-| **v1.x (M13+)** | 扩展方向 | 代码签名 / 公开分发 / xingsuo 作为 source / GitHub + HF Models 信源 / 跨篇图谱 | 待评估 |
+| **v1.2 (M11)** | **用户层（A 进 B 出）+ 重构收尾** | Paper-centric schema ✅ / Inbox verdict ✅ / Reading Station ✅ / Brief 内容层 ✅ / **代码 review + 解耦重构（iter-019）+ ft-034 services 接口规整** | 2026-05 |
+| **v1.3 (M12)** | **Library + FTS5 + Zotero export** | ft-030（FTS5 收编 typeahead/Library/backlink 单引擎）+ Zotero `.bib + pdf` 导出 | 2026-05/06 |
+| **v1.4 (M13)** | **chat 分级 + user_profile 蒸馏** | α 蒸馏层（ft-035）/ 按记忆层分级 chat（fresh / sustained / archived）/ with-memory 是系统第一逻辑 | 2026-06/07 |
+| **v1.5 (M14)** | **分发：自动更新 + CUDA/CPU 双轨** | electron-updater / 双 PyInstaller spec / 不签名（自用阶段）| 2026-07/08 |
+| **v1.x (M15+)** | 扩展方向 | 代码签名 / 公开分发 / xingsuo 作为 source / GitHub + HF Models 信源 | 待评估 |
 
 ## Features 索引
 
@@ -105,7 +107,8 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [iter-015](iterations/iter-015.md) — Sprint 15：桌面通知 + brief 未决分组（ft-031）
 - [iter-016](iterations/iter-016.md) — Sprint 16：自动更新 + CUDA/CPU 双轨（ft-025）
 - [iter-017](iterations/iter-017.md) — Sprint 17：ClaimCard 用户修订层（ft-032，紧跟 ft-029 实测后启动）
-- [iter-018](iterations/iter-018.md) — Sprint 18：Brief 内容处理层（ft-033，复用老邮件 pipeline）
+- [iter-018](iterations/iter-018.md) — Sprint 18：Brief 内容处理层（ft-033，复用老邮件 pipeline）✅
+- [iter-019](iterations/iter-019.md) — Sprint 19：代码 review + 解耦重构（v1.2 收尾，6 组并行 review → 修复 → ft-034）🔄
 
 ## 战略转向（2026-04-25）
 
@@ -154,6 +157,24 @@ brief 列表（解读）→ 速读模式（解读 + 解压并列）→ Reading S
 - 已存在：`deep_interpret_rich` 的 prompt 让 LLM 在 method_summary 里写 `[Fig. 1]` 锚点
 - 已存在：BriefSection + ClaimCard 速读 + figure gallery 在 SpeedReadView 同页共存
 - v1.3+ 候选：`key_innovation` bullets 挂 claim_id；brief `[Fig. N]` 锚点点击跳 figure；ReadingStation SpeedCardPane 露 brief 入口
+
+## Chat 分级 + with-memory 第一逻辑（2026-04-29 lock，落地 v1.4）
+
+未来 chat agent 的边界：
+
+- **Chat with single PDF won't do** — ChatPDF / SciSpace 红海，与 ClaimCard 结构化范式冲突
+- **Chat with my memory will do** — 跨库的 user-aware assistant，竞品做不到（无本地全库 + 用户行为）
+- **with-memory 是系统第一逻辑** — 每次 chat 启动第一步永远是检索本地记忆库 + 注入 user_profile，不是直接调用外部 LLM 通用知识
+
+**分级（按记忆层 — 方向乙）**：
+
+| 层 | 范围 | 触发条件 |
+|---|---|---|
+| **L1 fresh** | 最近 N 天 / N 篇 paper + 当前 brief | 用户日常追新 |
+| **L2 sustained** | user_profile 蒸馏出的稳定偏好 | 跨周 / 跨月话题 |
+| **L3 archived** | 全库 + 时间维度 + tag/backlink 网络 | 回溯式提问（"我对 X 的看法演变"）|
+
+**当前阶段（v1.2/v1.3）只保操作历史种子**——既有 `papers_user_*`（status / tag / comment / backlink）+ `papers_brief.for_you`。不新增 user_event 检索日志表（4/29 PM lock）。具体 chat UI / 蒸馏算法 / tool schema 都推到 v1.4，届时再设计。
 
 ## Out of Scope / Won't Do（2026-04-28 竞品分析后锁定）
 
