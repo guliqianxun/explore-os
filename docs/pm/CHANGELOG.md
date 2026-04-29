@@ -2,6 +2,44 @@
 
 ## [Unreleased]
 
+### 2026-04-29 (续) — ft-033 落地 + 5 次用户实测调优 + 解读 vs 解压两条路 lock
+
+**ft-033 Brief 内容处理层完成（done，同日立项 + 同日落地）**：
+
+主体（commit 4f2c010）：
+- `Paper.abstract` TextField + 0005 migration + 0006 backfill 从 docling Section
+- `PaperBrief` OneToOne 表（papers_brief）：abstract_zh / keywords / method_summary_zh / key_innovation / limitations / for_you / tldr_zh / perspective_used / model_used / generated_at
+- `apps/papers/brief_generator.py` 复用 `interpret/interpretation.py` 老 pipeline
+- 2 endpoints：`GET/POST /api/papers/<id>/brief/` + `/brief/regenerate/`（同步阻塞 + 502 兜底）
+- DTO list 加 `tldr_zh / keywords / has_brief / abstract_en`；detail nested `brief`
+- 17 例 brief 测试 → pytest 332 passed
+- Frontend：types 扩 + HeroPaperCard/PaperCard keywords prop + BriefSection 组件 + SpeedReadView 顶置接通
+
+5 轮用户实测调优：
+1. **D10 fix** (commit d007890)：`_build_item` fallback 从 Section 实时拉。根因 0006 backfill 仅 migrate 跑一次 + ingest 链不写 paper.abstract → 新 paper 跑不出 brief
+2. **D11 enhance** (commit 13491fe)：接通 `deep_interpret_rich` 替代占位 `deep_interpret`。新增 `_build_chunks` / `_build_captions` / `_classify_bucket_from_path` 把 docling Section 表归桶（intro/method/experiments/conclusion）；BriefSection 加英文 abstract 折叠按钮。实测 GHQNYSJY 产出 abstract_zh 918 字 + method_summary 744 字 + key_innovation 2 + limitations 2 + for_you 258
+3. **D12 list 信息密度** (commit 5a91c97)：list DTO 加 `abstract_zh` 短字段；BriefView lead 优先级改 `abstract_zh > tldr_zh > abstract_en`；HeroPaperCard line-clamp-4 → 6
+4. **D13 list 卡片自动撑高 + 英文展开** (commit 78156e1)：HeroPaperCard / PaperCard 去 line-clamp + 加 `abstractEn` prop + `▸ Show original abstract` 折叠按钮（与 BriefSection 同款）；图文 grid 280px → 220px / 120px → 100px
+5. **D14 图文比例 fr 自适应** (commit c253f9f)：grid 固定 px 改 fr。HeroPaperCard `1fr_220px` → `2fr_1fr`（图占 33%）；PaperCard `1fr_100px` → `3fr_1fr`（图占 25%）
+
+**4/29 PM lock：解读 vs 解压两条路漏斗架构**：
+- ROADMAP 加 §"两条路：解读 vs 解压" 战略段
+- 信息解压（ft-019/020）= material_id / claim_id 细粒度结构化；解读（ft-033）= paper 级整体叙事
+- 用户旅程漏斗：brief 列表 → 速读模式 → Reading Station + PDF（信息密度递增）
+- 不硬合并理由：LLM 调用风格相反（narrative vs structured）/ 失败可分离 / 缓存策略不同 / 用户编辑层独立（ft-032 vs brief perspective）
+- 接合点 v1.3+ 候选：`key_innovation` 挂 claim_id；brief `[Fig. N]` 锚点点击跳 figure；ReadingStation SpeedCardPane 露 brief 入口
+
+**最终基线**：
+- pytest 332 passed（315 baseline + 17 brief）
+- frontend tsc strict 0 error
+- 主 chunk 636 KB（vs ft-029 631KB +4KB BriefSection）
+
+**已知遗留 / follow-up**：
+- 新 ingest 默认不自动跑 brief（避 LLM 失控）；要"自动"加 `--auto-brief` flag
+- TJCU4BAE 老 paper（ft-029 commit daaf73f 之前抽的）raw_text 全空，brief 跑不出，需 reingest
+- brief 内 `[Fig. N]` 锚点未做可点击跳转
+- ReadingStation SpeedCardPane 没露 brief 入口
+
 ### 2026-04-29 — ft-029 落地 + 用户实测反馈 + 毛玻璃 + 邮件双组 + ft-033 立项
 
 **ft-029 全套落地（dsp-013 + dsp-014）**：

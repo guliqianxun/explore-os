@@ -3,9 +3,9 @@ pm_id: iter-018
 pm_type: iteration
 title: Sprint 18 — Brief 内容处理层（ft-033）
 milestone: v1.2
-status: planned
-start_at: 2026-04-30
-end_at: 2026-05-03
+status: done
+start_at: 2026-04-29
+end_at: 2026-04-29
 ---
 
 # iter-018 Sprint 18：Brief 内容处理层

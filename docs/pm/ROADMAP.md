@@ -3,7 +3,7 @@ pm_id: roadmap
 pm_type: roadmap
 project: explore-os
 version: v1.2-plan
-updated_at: 2026-04-28
+updated_at: 2026-04-29
 ---
 
 # explore-os Roadmap
@@ -127,6 +127,33 @@ v0.5 多渠道降级为可选，飞书/微信订阅号按需推进。
 - **索引层（extract + interpret）才是基础**：5 类 material + claims + counter_signals 已实战验证产出可用，是后续视图的真正资产
 - **自用阶段不签名**：跳过 Apple Dev / Windows EV cert（约省 1.5 周 + 钱）；公开分发延后到 v1.x
 - **CUDA / CPU 双轨**：v1.2 ft-025 落两套 PyInstaller spec；自用走 CUDA bundle，CPU bundle 留接口待分发
+
+## 两条路：解读 vs 解压（2026-04-29 lock）
+
+ft-033 落地后明确：项目内 LLM 调用走两条独立路径，**用户体验上是漏斗，架构上互不阻塞**。
+
+| 维度 | **信息解压**（ft-019/020 抽取层） | **解读**（ft-033 brief 层） |
+|---|---|---|
+| 数据来源 | docling parse PDF | 复用解压层 abstract + sections + figures |
+| LLM 调用风格 | 多次结构化（claim 逐条 + evidence 逐条） | 一锅端（skim_interpret + deep_interpret_rich） |
+| 产出颗粒度 | material_id / claim_id / evidence_id（细） | paper 级整体叙事（粗） |
+| DB 层 | `extract_*` + `interpret_*` 表 | `papers_brief` 表 |
+| 服务于 | PaperDetail ClaimCard 引文展开 / 跳 PDF 锚点 / 跨引联动 / 图谱 | BriefView list 卡片 / SpeedReadView 顶置块 |
+| 用户场景 | "这个 claim 的证据是什么" | "这篇值不值得花时间读" |
+
+**用户旅程漏斗**：
+
+```
+brief 列表（解读）→ 速读模式（解读 + 解压并列）→ Reading Station（解压主导 + PDF 求证）
+"读不读"           "怎么个流程"                     "证据在哪"
+```
+
+**不硬合并的理由**：LLM 调用风格相反（narrative vs structured）；失败可分离；缓存策略不同；用户编辑层不同（ft-032 改 claim / brief 改 perspective）。
+
+**接合点**（已存在 / 可加强）：
+- 已存在：`deep_interpret_rich` 的 prompt 让 LLM 在 method_summary 里写 `[Fig. 1]` 锚点
+- 已存在：BriefSection + ClaimCard 速读 + figure gallery 在 SpeedReadView 同页共存
+- v1.3+ 候选：`key_innovation` bullets 挂 claim_id；brief `[Fig. N]` 锚点点击跳 figure；ReadingStation SpeedCardPane 露 brief 入口
 
 ## Out of Scope / Won't Do（2026-04-28 竞品分析后锁定）
 
