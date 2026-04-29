@@ -7,7 +7,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from django.conf import settings
+# ft-034 P0-2: SYSTEM + model 集中在 apps.llm
+from apps.llm.models import get_profile
+from apps.llm.prompts.figure_classifier import SYSTEM as CLASSIFY_SYSTEM
 
 from .figure_extractor import Figure, figures_root
 from .llm import LLMError, build_image_content, chat, extract_json
@@ -19,27 +21,12 @@ VALID_KINDS = {
     "qualitative", "dataset", "ablation", "misc",
 }
 
-CLASSIFY_SYSTEM = """你是论文配图分类器。输入是论文中的一张图（含可选 caption），
-输出一个类别标签和置信度。仅输出 JSON：
-{"kind": "architecture|result_figure|result_table|qualitative|dataset|ablation|misc",
- "confidence": 0.0-1.0}
-
-类别定义：
-- architecture: 模型/方法架构图、pipeline、framework、overview（方法结构）
-- result_figure: 实验曲线（loss / metric / bar）
-- result_table: 表格形式的实验数字
-- qualitative: 定性结果、生成样本、可视化对比
-- dataset: 数据集样例、数据统计
-- ablation: 消融分析图表
-- misc: 不明或其他
-只输出 JSON。"""
-
 
 def classify_figures(arxiv_id: str, figures: list[Figure]) -> list[Figure]:
     """对每张图调 LLM 分类，回写 kind/confidence 字段并返回同一 list。"""
     if not figures:
         return figures
-    model = settings.LLM_MODEL_VISION_CLASSIFIER or settings.LLM_MODEL_MULTIMODAL
+    model = get_profile("figure_classifier").model
     if not model:
         log.warning("no vision classifier model configured, skip")
         return figures

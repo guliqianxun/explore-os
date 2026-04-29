@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from interpret.llm import LLMError
+from apps.llm.errors import LLMError  # ft-034 P0-1
 
 from apps.interpret.base import (
     ClaimDraft,

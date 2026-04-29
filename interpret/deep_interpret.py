@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import logging
 
-from django.conf import settings
-
+# ft-034 P0-2: SYSTEM + model 集中在 apps.llm
+from apps.llm.models import get_profile
+from apps.llm.prompts.deep import SYSTEM as DEEP_SYSTEM_SUFFIX
 from interpret.caption_extractor import Caption
 from interpret.interpretation import DEEP_PLACEHOLDER, DeepOut, perspective_prefix
 from interpret.llm import LLMError, chat, extract_json
@@ -21,24 +22,6 @@ from subscriptions.loader import PerspectiveSpec
 from subscriptions.memory import PaperRecord
 
 log = logging.getLogger(__name__)
-
-
-DEEP_SYSTEM_SUFFIX = """任务：基于方法章节文本 + 配图 caption + 正文引用上下文 + 近期推送过的相关论文，
-产出论文结构化深度解读。输出 JSON：
-{
-  "method_summary": "方法怎么做的（200-300字，精炼学术语言；可引用 [Fig. N] 锚点）",
-  "key_innovation": ["关键创新点 1", "关键创新点 2", "可选 3"],
-  "limitations": ["局限 1", "可选局限 2"],
-  "for_you": "结合视角的 1-2 句个人化解读"
-}
-
-规则：
-- method_summary 优先解释 caption 含 framework/overview 那张图描述的结构。
-- key_innovation 是"相对已有工作的差异点"，避免列 trivial 设计。
-- limitations 从论文自承或可推断的弱点出发。
-- 若提供"近期推送过的相关论文"，可在 for_you 里点出与之的延续/差异关系（让读者建立 trend 感）。
-- 用 [Fig. 1] / [Tab. 2] 形式引用配图。
-- 只输出 JSON，不要解释，不要 markdown 围栏。"""
 
 
 def deep_interpret_rich(
@@ -71,13 +54,14 @@ def deep_interpret_rich(
         user += f"\n=== 近期推送过的相关论文（供联想/对比） ===\n{mem_block}\n"
     user += "\n请产出 JSON 四段。"
 
+    profile = get_profile("deep")
     try:
         res = chat(
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            model=settings.LLM_MODEL_TEXT,
+            model=profile.model,
             temperature=0.3,
             max_tokens=900,
             timeout=60.0,

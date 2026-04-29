@@ -1,7 +1,12 @@
-"""ft-020: LLM JSON 调用封装.
+"""ft-020 + ft-034 P0-1: chat_json 中央实现已迁至 ``apps.llm.client``.
 
-复用 ``interpret.llm.chat`` —— 不重新发明 HTTP / 重试。
-单测：patch ``apps.interpret.llm_client.chat_json`` 替代真调。
+本模块保留 thin wrapper，原因：
+1. 现有测试 ``apps/interpret/tests_llm_client.py`` 通过
+   ``patch.object(llm_client, "chat", ...)`` 拦截，必须保留本模块级 ``chat`` 名字。
+2. ``DefaultInterpreter`` 仍 ``from apps.interpret.llm_client import chat_json``，
+   保留同名 wrapper 不破坏调用方。
+
+新代码请直接 ``from apps.llm.client import chat_json``。
 """
 from __future__ import annotations
 
@@ -9,7 +14,9 @@ import json
 import logging
 from typing import Any
 
-from interpret.llm import LLMError, chat, extract_json
+# 重新导入到本模块命名空间：测试 patch.object(llm_client, "chat") 才能生效
+from apps.llm.client import chat, extract_json
+from apps.llm.errors import LLMError
 
 log = logging.getLogger(__name__)
 
@@ -23,9 +30,10 @@ def chat_json(
     max_tokens: int = 2048,
     timeout: float = 60.0,
 ) -> dict[str, Any]:
-    """单轮 chat，强制 JSON object 返回。
+    """单轮 chat，强制 JSON object 返回。失败 raise ``LLMError``.
 
-    返回解析后的 dict；解析失败时 raise LLMError。
+    本地保留实现（不直接 re-export apps.llm.client.chat_json），因为
+    测试通过 patch 本模块的 ``chat`` 注入假 LLM；re-export 会让 patch 失效。
     """
     messages = [
         {"role": "system", "content": system},
@@ -55,3 +63,6 @@ def chat_json(
         if not isinstance(obj, dict):
             raise LLMError(f"expected JSON object, got {type(obj).__name__}")
         return obj
+
+
+__all__ = ["chat", "chat_json", "extract_json", "LLMError"]

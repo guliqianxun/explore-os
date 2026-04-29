@@ -16,7 +16,9 @@ import logging
 import re
 from dataclasses import dataclass
 
-from django.conf import settings
+# ft-034 P0-2: SYSTEM + model 集中在 apps.llm
+from apps.llm.models import get_profile
+from apps.llm.prompts.figure_picker import SYSTEM as LLM_PICK_SYSTEM
 
 from .caption_extractor import Caption
 from .llm import LLMError, chat, extract_json
@@ -88,13 +90,6 @@ def pick_architecture(
 
 # ---------------- LLM 兜底（仅 caption 文本，不喂图） ----------------
 
-LLM_PICK_SYSTEM = """你是论文配图选择助手。给你一组论文的 figure caption（编号 + 文本），
-请选出最像"方法/架构总览图"的那张。仅输出 JSON：
-{"number": <int>, "reason": "<10字内>"}
-
-判断依据：caption 描述了模型结构、pipeline、framework、approach overview 的优先；
-描述定性结果、消融、对比的不优先。"""
-
 
 def pick_qualitative(
     captions: list[Caption],
@@ -138,13 +133,14 @@ def pick_table(captions: list[Caption]) -> Caption | None:
 
 def _llm_pick(figures: list[Caption]) -> Caption | None:
     user = "\n".join(f"#{c.number}  {c.text}" for c in figures[:15])
+    profile = get_profile("figure_picker")
     try:
         res = chat(
             messages=[
                 {"role": "system", "content": LLM_PICK_SYSTEM},
                 {"role": "user", "content": user},
             ],
-            model=settings.LLM_MODEL_TEXT,
+            model=profile.model,
             temperature=0.1,
             max_tokens=80,
             timeout=30.0,

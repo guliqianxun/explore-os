@@ -8,11 +8,12 @@ import httpx
 from django.conf import settings
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+# ft-034 P0-2: EMBEDDING_MODEL / EMBEDDING_DIM 已集中至 apps.llm.models
+from apps.llm.models import EMBEDDING_DIM, EMBEDDING_MODEL
+
 log = logging.getLogger(__name__)
 
-EMBEDDING_MODEL = "text-embedding-v3"
 EMBEDDING_BATCH = 25   # 百炼 v3 限制：≤25/req
-EMBEDDING_DIM = 1024
 
 
 class EmbeddingError(RuntimeError):

@@ -4,19 +4,12 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from apps.llm.prompts.tldr import SYSTEM as TLDR_SYSTEM  # ft-034 P0-2
 from sources.base import Item
 
 from .llm import LLMError, chat, extract_json
 
 log = logging.getLogger(__name__)
-
-
-TLDR_SYSTEM = """你是论文速读助手。读输入的 title + abstract，用中文输出 JSON：
-{
-  "summary": "1-2 句话的核心要点，不超过 60 字",
-  "keywords": ["关键词1", "关键词2", "关键词3"]
-}
-只输出 JSON，不要解释。summary 用陈述句，避免"本文""作者"这种模板词。"""
 
 
 @dataclass(slots=True)

@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     # Local apps
     "apps.core",
     "apps.api",
+    "apps.llm",
     "subscriptions",
     "sources",
     "interpret",
