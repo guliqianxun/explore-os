@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import type { PaperListItem } from "@/api/papers";
@@ -11,6 +12,8 @@ interface HeroPaperCardProps {
   lead?: string;
   /** ft-033: 领域关键词 chips（来自 PaperBrief.keywords，最多 5 个）. */
   keywords?: string[];
+  /** ft-033: 英文原文 abstract，折叠区在 lead 下方按需展开. */
+  abstractEn?: string;
 }
 
 /**
@@ -21,8 +24,9 @@ interface HeroPaperCardProps {
  * top-of-feed paper can be triaged without leaving the list view.
  */
 export function HeroPaperCard({
-  paper, apiBase, lead, keywords,
+  paper, apiBase, lead, keywords, abstractEn,
 }: HeroPaperCardProps) {
+  const [showEn, setShowEn] = useState(false);
   const thumb =
     paper.n_figures > 0 && apiBase
       ? `${apiBase}/papers/${encodeURIComponent(paper.arxiv_id)}/figure/1.png`
@@ -35,7 +39,7 @@ export function HeroPaperCard({
 
   return (
     <article
-      className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-6 md:gap-8
+      className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-6 md:gap-8
                  border-b border-[var(--rule)] pb-10 mb-10
                  transition-colors"
     >
@@ -64,10 +68,36 @@ export function HeroPaperCard({
           {lead ? (
             <p
               className="mt-4 font-serif text-[1.05rem] leading-[1.7] text-[var(--fg)]
-                         line-clamp-6 whitespace-pre-line"
+                         whitespace-pre-line"
             >
               {lead}
             </p>
+          ) : null}
+          {abstractEn ? (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowEn((v) => !v);
+                }}
+                className="text-[10px] font-sans uppercase tracking-[0.16em]
+                           text-[var(--fg-soft)] hover:text-[var(--accent)]
+                           transition-colors"
+              >
+                {showEn ? "▾ Hide original abstract" : "▸ Show original abstract"}
+              </button>
+              {showEn ? (
+                <p
+                  className="mt-2 font-serif text-[0.95rem] leading-[1.7]
+                             text-[var(--fg-soft)] whitespace-pre-line
+                             border-l-2 border-[var(--rule)] pl-3"
+                >
+                  {abstractEn.trim()}
+                </p>
+              ) : null}
+            </div>
           ) : null}
           {keywords && keywords.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-1.5">

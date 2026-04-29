@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import type { PaperListItem } from "@/api/papers";
@@ -11,6 +12,8 @@ interface PaperCardProps {
   lead?: string;
   /** ft-033: 领域关键词 chips（最多 4 个）. */
   keywords?: string[];
+  /** ft-033: 英文原文 abstract，折叠区按需展开. */
+  abstractEn?: string;
 }
 
 /**
@@ -20,7 +23,10 @@ interface PaperCardProps {
  * ft-028 adds a `<VerdictActions />` triplet on the right that mutates
  * `UserPaperStatus` without leaving the list view.
  */
-export function PaperCard({ paper, apiBase, lead, keywords }: PaperCardProps) {
+export function PaperCard({
+  paper, apiBase, lead, keywords, abstractEn,
+}: PaperCardProps) {
+  const [showEn, setShowEn] = useState(false);
   const thumb =
     paper.n_figures > 0 && apiBase
       ? `${apiBase}/papers/${encodeURIComponent(paper.arxiv_id)}/figure/1.png`
@@ -30,7 +36,7 @@ export function PaperCard({ paper, apiBase, lead, keywords }: PaperCardProps) {
 
   return (
     <article
-      className="grid grid-cols-[1fr_120px] gap-5 py-7
+      className="grid grid-cols-[1fr_100px] gap-5 py-7
                  border-b border-[var(--rule)] last:border-b-0"
     >
       <div className="min-w-0">
@@ -51,10 +57,36 @@ export function PaperCard({ paper, apiBase, lead, keywords }: PaperCardProps) {
           {lead ? (
             <p
               className="mt-3 font-serif text-[0.98rem] leading-[1.65]
-                         text-[var(--fg-soft)] line-clamp-4 whitespace-pre-line"
+                         text-[var(--fg-soft)] whitespace-pre-line"
             >
               {lead}
             </p>
+          ) : null}
+          {abstractEn ? (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowEn((v) => !v);
+                }}
+                className="text-[10px] font-sans uppercase tracking-[0.14em]
+                           text-[var(--fg-soft)] hover:text-[var(--accent)]
+                           transition-colors"
+              >
+                {showEn ? "▾ Hide original abstract" : "▸ Show original abstract"}
+              </button>
+              {showEn ? (
+                <p
+                  className="mt-2 font-serif text-[0.92rem] leading-[1.65]
+                             text-[var(--fg-soft)] whitespace-pre-line
+                             border-l-2 border-[var(--rule)] pl-3"
+                >
+                  {abstractEn.trim()}
+                </p>
+              ) : null}
+            </div>
           ) : null}
           {keywords && keywords.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1.5">

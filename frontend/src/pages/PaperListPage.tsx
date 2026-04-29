@@ -321,6 +321,7 @@ function BriefView({
                 apiBase={apiBase}
                 lead={lead}
                 keywords={p.keywords}
+                abstractEn={p.abstract_en}
               />
             ) : (
               <PaperCard
@@ -329,6 +330,7 @@ function BriefView({
                 apiBase={apiBase}
                 lead={lead}
                 keywords={p.keywords}
+                abstractEn={p.abstract_en}
               />
             );
           })}
