@@ -369,6 +369,44 @@ class PaperStatusView(APIView):
         return Response({"status": row.status, "paper_key": paper.key})
 
 
+class PaperKeywordsView(APIView):
+    """``POST /api/papers/<id>/keywords/`` body ``{keywords: [str]}`` → 覆盖式更新.
+
+    用户在 detail 页 / Ingest 表单填的作者 keywords。空数组合法（清空）。
+    单条 max 64 char，最多 20 条；超出截断（不抛 400 以减少 UI 摩擦）。
+    """
+
+    MAX_ITEMS = 20
+    MAX_LEN = 64
+
+    def post(self, request, id_or_key: str):
+        paper = resolve_paper(id_or_key)
+        raw = (request.data or {}).get("keywords", None)
+        if not isinstance(raw, list):
+            return Response(
+                {"detail": "keywords must be a list"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for item in raw:
+            if not isinstance(item, str):
+                continue
+            kw = item.strip()[: self.MAX_LEN]
+            if not kw:
+                continue
+            key = kw.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            cleaned.append(kw)
+            if len(cleaned) >= self.MAX_ITEMS:
+                break
+        paper.keywords = cleaned
+        paper.save(update_fields=["keywords"])
+        return Response({"keywords": cleaned, "paper_key": paper.key})
+
+
 def _serialize_comment(c: UserComment) -> dict:
     return {
         "id": c.id,

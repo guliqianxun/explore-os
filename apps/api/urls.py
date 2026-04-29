@@ -25,6 +25,7 @@ from apps.api.views import (
     PaperCommentDetailView,
     PaperCommentListView,
     PaperDetailView,
+    PaperKeywordsView,
     PaperListView,
     PaperMarkdownView,
     PaperBriefRegenerateView,
@@ -79,6 +80,11 @@ urlpatterns = [
         "papers/<str:id_or_key>/status/",
         PaperStatusView.as_view(),
         name="api-paper-status",
+    ),
+    path(
+        "papers/<str:id_or_key>/keywords/",
+        PaperKeywordsView.as_view(),
+        name="api-paper-keywords",
     ),
     path(
         "papers/<str:id_or_key>/comments/",

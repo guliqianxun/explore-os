@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { BriefSection } from "@/components/BriefSection";
 import { ClaimCard } from "@/components/ClaimCard";
+import { KeywordsEditor } from "@/components/KeywordsEditor";
 import {
   ClaimDTO,
   EquationDTO,
@@ -166,6 +167,13 @@ export default function SpeedReadView({
             </span>
           </div>
         </header>
+
+        {/* paper.keywords 编辑（作者 keywords，区别于 brief.keywords / LLM 抽） */}
+        <KeywordsEditor
+          paperKey={detail.paper_key ?? ""}
+          arxivId={arxivId}
+          initial={detail.keywords ?? []}
+        />
 
         {/* ft-033: brief 顶置（中文摘要 + 英文摘要折叠 + 关键词 + 视角点评 + 创新点 + 限制） */}
         <BriefSection

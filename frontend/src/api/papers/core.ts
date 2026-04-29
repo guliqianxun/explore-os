@@ -108,6 +108,8 @@ export interface PaperDetail {
   pdf_url?: string | null;
   /** ft-033: 原文 abstract（detail 暴露完整文本）。 */
   abstract?: string;
+  /** 作者 keywords（区别于 brief.keywords / LLM 抽出的）。 */
+  keywords?: string[];
   /** ft-033: 完整 PaperBrief（未生成 → null）。 */
   brief?: PaperBriefDTO | null;
   sections: SectionDTO[];
@@ -159,6 +161,19 @@ export async function setPaperStatus(
 ): Promise<void> {
   const api = await getApi();
   await api.post(`/papers/${encodeURIComponent(id)}/status/`, { status });
+}
+
+/** 覆盖式更新 paper.keywords（作者关键词，区别于 brief.keywords / LLM）. */
+export async function setPaperKeywords(
+  id: string,
+  keywords: string[],
+): Promise<string[]> {
+  const api = await getApi();
+  const r = await api.post<{ keywords: string[] }>(
+    `/papers/${encodeURIComponent(id)}/keywords/`,
+    { keywords },
+  );
+  return r.data.keywords;
 }
 
 export async function listPaperComments(id: string): Promise<CommentDTO[]> {
