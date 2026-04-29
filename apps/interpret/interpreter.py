@@ -41,18 +41,15 @@ CONFIDENCE_FLOOR = 0.5
 
 
 def get_paper_markdown(arxiv_id: str, pdf_path: Path) -> str:
-    """复用 docling paper-level 缓存，导出 markdown。超 budget 截断。"""
-    from apps.extract.extractors.docling_ext import _convert
+    """复用 docling paper-level 缓存，导出 markdown。超 budget 截断。
 
-    doc = _convert(arxiv_id, Path(pdf_path))
-    md = doc.export_to_markdown() or ""
-    if len(md) > MARKDOWN_CHAR_BUDGET:
-        log.warning(
-            "[interpret] markdown truncated arxiv_id=%s len=%d budget=%d",
-            arxiv_id, len(md), MARKDOWN_CHAR_BUDGET,
-        )
-        md = md[:MARKDOWN_CHAR_BUDGET]
-    return md
+    ft-034 P0-4：不再直接调 ``_convert`` 私有；走 ``apps.extract.extractor`` 的
+    public API。截断阈值仍由 ``MARKDOWN_CHAR_BUDGET`` 控制（与 ``apps.llm.budgets``
+    数值一致）。
+    """
+    from apps.extract.extractor import get_paper_markdown_by_arxiv
+
+    return get_paper_markdown_by_arxiv(arxiv_id, Path(pdf_path))
 
 
 def _coerce_claim_type(v: Any) -> str:

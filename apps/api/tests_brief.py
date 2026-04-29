@@ -116,7 +116,7 @@ def _mock_skim(monkeypatch, abstract_zh="一种自奖励的 LM 框架。", keywo
         abstract_zh=abstract_zh, keywords=keywords, usage={"total": 100},
     )
     monkeypatch.setattr(
-        "interpret.interpretation.skim_interpret",
+        "apps.llm.services.brief_generate.skim_interpret",
         lambda item, persp: fake,
     )
 
@@ -134,7 +134,7 @@ def _mock_deep(monkeypatch):
         table_path="", table_caption="",
     )
     monkeypatch.setattr(
-        "interpret.deep_interpret.deep_interpret_rich",
+        "apps.llm.services.brief_generate.deep_interpret_rich",
         lambda item, chunks, captions, mem, persp: fake,
     )
 
@@ -182,7 +182,7 @@ def test_generate_brief_regenerate_覆盖(paper, monkeypatch):
 
 def test_generate_brief_skim_失败_仍落空行(paper, monkeypatch):
     monkeypatch.setattr(
-        "interpret.interpretation.skim_interpret",
+        "apps.llm.services.brief_generate.skim_interpret",
         lambda item, persp: None,
     )
     _mock_deep(monkeypatch)
@@ -263,8 +263,8 @@ def test_post_regenerate_502_on_pipeline_error(client, paper, monkeypatch):
     def boom(*a, **kw):
         raise RuntimeError("LLM down")
 
-    monkeypatch.setattr("interpret.interpretation.skim_interpret", boom)
-    monkeypatch.setattr("interpret.deep_interpret.deep_interpret_rich", boom)
+    monkeypatch.setattr("apps.llm.services.brief_generate.skim_interpret", boom)
+    monkeypatch.setattr("apps.llm.services.brief_generate.deep_interpret_rich", boom)
     r = client.post(f"/api/papers/{paper.arxiv_id}/brief/regenerate/")
     assert r.status_code == 502
     assert "generation failed" in r.json()["detail"]

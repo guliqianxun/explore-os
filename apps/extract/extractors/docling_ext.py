@@ -92,6 +92,10 @@ def _get_converter() -> Any:
         return _CONVERTER
 
 
+# ft-034 P0-4：禁止跨 app 调用 _convert（review-A H7）。
+# 跨 app（apps.interpret / apps.llm.services / apps.papers）请走 public API
+# `apps.extract.extractor.get_paper_markdown(paper_id)`。本函数仅 apps.extract
+# 内部使用（DoclingExtractor.extract + extractor.get_paper_markdown）。
 def _convert(arxiv_id: str, pdf_path: Path) -> Any:
     """paper-level 缓存的 docling convert。同 arxiv_id 多次调用只 convert 一次。"""
     if arxiv_id in _DOC_CACHE:

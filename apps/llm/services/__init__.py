@@ -1,11 +1,14 @@
-"""apps.llm.services — LLM 能力 public 接口（ft-034 P0-1）.
+"""apps.llm.services — LLM 能力 public 接口（ft-034 P0-1 / P0-3）.
 
-**Stub only**：F2 范围将在此处落地 5 个能力的 service 实现：
-- skim_interpret.py
-- deep_interpret.py
+F2 落地：
+- skim_interpret.py（搬自 ``interpret/interpretation.py:skim_interpret``）
+- deep_interpret.py（搬自 ``interpret/deep_interpret.py:deep_interpret_rich``）
+- brief_generate.py（搬自 ``apps/papers/brief_generator.py`` 装配逻辑）
+
+剩余 stub（后续 sprint）：
 - extract_claims.py
-- brief_generate.py
 - rewriter.py
-
-本 sprint（F1）只占位，调用方仍走老 ``interpret.*`` / ``apps.interpret.*`` 入口。
 """
+from apps.llm.services import brief_generate, deep_interpret, skim_interpret
+
+__all__ = ["skim_interpret", "deep_interpret", "brief_generate"]

@@ -1,18 +1,28 @@
-"""ft-019 + ft-015: 统一抽取入口.
+"""ft-019 + ft-015 + ft-034 P0-4: 统一抽取入口 + paper-level markdown public API.
 
 ft-019 的 5 类 material 接口契约保留；具体实现 ft-015 切到 IBM Docling
 （替换原 pymupdf 启发式 + equation/citation 启发式）。
+
+ft-034 P0-4：暴露 ``get_paper_markdown(paper_id) -> str`` public API，封装
+docling 的 paper-level convert + markdown 导出 + 截断。跨 app 调用方
+（``apps.interpret.interpreter`` 等）应走此 API，不要 import 私有
+``apps.extract.extractors.docling_ext._convert``。
 
 外部典型用法：
 
     >>> from apps.extract.extractor import DefaultExtractor, persist_result
     >>> result = DefaultExtractor().extract(pdf_path, arxiv_id="2401.12345")
     >>> persist_result(result)
+
+    >>> from apps.extract.extractor import get_paper_markdown
+    >>> md = get_paper_markdown(paper_id)
 """
 from __future__ import annotations
 
 import logging
 from pathlib import Path
+
+from apps.llm.budgets import MARKDOWN_CHAR_BUDGET
 
 from .base import ExtractResult
 from .extractors.docling_ext import DoclingExtractor
@@ -33,6 +43,59 @@ class DefaultExtractor:
 def extract(paper_pdf_path: Path, paper_arxiv_id: str) -> ExtractResult:
     """单步函数式入口。"""
     return DefaultExtractor().extract(paper_pdf_path, paper_arxiv_id)
+
+
+def _markdown_from(arxiv_id: str, pdf_path: Path) -> str:
+    """Internal: 从 arxiv_id + pdf_path 跑 docling convert + markdown 导出 + 截断.
+
+    ``_convert`` 带 ``_DOC_CACHE``（key=arxiv_id），同一 paper 多次调用只 convert
+    一次。截断阈值走 ``apps.llm.budgets.MARKDOWN_CHAR_BUDGET``（30k chars）。
+    """
+    from apps.extract.extractors.docling_ext import _convert
+
+    doc = _convert(arxiv_id, pdf_path)
+    md = doc.export_to_markdown() or ""
+    if len(md) > MARKDOWN_CHAR_BUDGET:
+        log.warning(
+            "[extract] markdown truncated arxiv_id=%s len=%d budget=%d",
+            arxiv_id, len(md), MARKDOWN_CHAR_BUDGET,
+        )
+        md = md[:MARKDOWN_CHAR_BUDGET]
+    return md
+
+
+def get_paper_markdown(paper_id: int) -> str:
+    """Public API: paper → markdown 字符串（ft-034 P0-4）.
+
+    封装 docling paper-level convert + markdown 导出 + 截断。``_convert`` 已
+    带 ``_DOC_CACHE``（key=arxiv_id），同一 paper 多次调用只 convert 一次。
+
+    截断阈值走 ``apps.llm.budgets.MARKDOWN_CHAR_BUDGET``（30k chars）。
+
+    用法：
+        >>> from apps.extract.extractor import get_paper_markdown
+        >>> md = get_paper_markdown(paper.id)
+
+    跨 app 调用（``apps.interpret`` / ``apps.llm.services``）请走本函数；
+    **禁止** 直接 import ``apps.extract.extractors.docling_ext._convert``。
+    """
+    from apps.papers.models import Paper
+
+    paper = Paper.objects.get(id=paper_id)
+    if not paper.pdf_path:
+        raise ValueError(f"Paper id={paper_id} has no pdf_path")
+    arxiv_id = paper.arxiv_id or paper.key
+    return _markdown_from(arxiv_id, Path(paper.pdf_path))
+
+
+def get_paper_markdown_by_arxiv(arxiv_id: str, pdf_path: Path) -> str:
+    """Public sibling: 跨 app 调用方手上有 ``arxiv_id + pdf_path`` 时使用.
+
+    封装与 ``get_paper_markdown(paper_id)`` 相同的 docling convert + markdown
+    导出逻辑；调用方无需查 ``Paper`` instance（如 ``apps.interpret`` 测试链不建
+    Paper 行）。
+    """
+    return _markdown_from(arxiv_id, Path(pdf_path))
 
 
 def persist_result(result: ExtractResult) -> dict[str, int]:
