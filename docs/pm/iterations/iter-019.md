@@ -3,9 +3,9 @@ pm_id: iter-019
 pm_type: iteration
 title: Sprint 19 — 代码 review + 解耦重构（v1.2 收尾）
 milestone: v1.2
-status: in_progress
+status: done
 start_at: 2026-04-29
-end_at: 2026-05-12
+end_at: 2026-04-29
 ---
 
 # iter-019 Sprint 19：代码 review + 解耦重构
@@ -32,9 +32,40 @@ papers_user_* 表）不被重构破坏。
 | # | 内容 | 优先级 | 状态 |
 |---|---|---|---|
 | 1 | Phase 1：6 组并行 review，报告落 `docs/pm/reviews/` | P0 | ✅ done |
-| 2 | Phase 2：PM 整合 6 份报告 → 修复决策 → ft-034 真实 spec | P0 | ✅ done（PHASE-2-DECISION + ft-034.md 已落） |
-| 3 | Phase 3：派修复 agent F1→(F2∥F3∥F4) worktree 隔离 | P0 | ready |
-| 4 | Phase 4：集成 + 测试 + ft-034 完工 | P0 | blocked |
+| 2 | Phase 2：PM 整合 6 份报告 → 修复决策 → ft-034 真实 spec | P0 | ✅ done |
+| 3 | Phase 3：派修复 agent F1→(F2∥F3∥F4) worktree 隔离 | P0 | ✅ done（4 commits：4e70fc7 / 55f1789 / b7b4b49 / 3b5327c） |
+| 4 | Phase 4：集成 + 测试 + ft-034 完工 | P0 | ✅ done |
+
+## Phase 3+4 实测结果（4/29 一日内完成，原计划 12 日）
+
+| 项 | 基线 | 落地 | 备注 |
+|---|---|---|---|
+| pytest | 332 passed | **371 passed** (+39) | F1 +24 / F3 +14 / F2 +10 / F4 -9 死测 |
+| tsc | — | **0 error** | F3 worktree 跑过；主仓 npm install 后复测 0 |
+| build 主 chunk | ~636 KB | **637.75 KB** (+1.75 KB) | ≤ 基线 +50 KB ✓ |
+| `from interpret` apps/papers/brief_generator.py | — | **0 命中** ✓ | 反向胶水切断 |
+| `_convert` apps/interpret/ | — | **0 命中** ✓ | 私有 API 跨 app 调用清零 |
+| `BASE_DIR / 'media'` apps/ | 4 处 | **0 处** ✓ | paths.* 化 |
+| brief 视觉 / Reading Station | — | 不变 | （用户实测待跑） |
+
+## 关键交付
+
+- **F1**（4e70fc7）：apps/llm 中台层 + prompt(7→5)/model(8→7)/budget(4) registry
+- **F3**（55f1789）：apps/api/views(859→拆 5 sub) + serializers(184→拆 6 sub) + frontend types/api 拆分 + JobStatus 5 值过渡 mapping
+- **F2**（b7b4b49）：apps/llm/services/{skim,deep,brief}_interpret + brief_generator 瘦身 + extract.get_paper_markdown public API
+- **F4**（3b5327c）：BASE_DIR 4 处修 + 6 个 0 字节 stub + 顶级 tldr/figure_classifier 死码 + frontend claims.ts + apps/llm/models 同步清 orphan profile
+
+## 决策 / 偏离
+
+- **3 thin wrappers 留下**（`interpret/{caption_extractor,figure_extractor,pdf_chunker}.py`）— `subscriptions/run_subscription.py` 仍引用，按 P2-1 决议（v1.4 chat 分级落地后回头评估老 email 链是否弃）
+- **4 management commands 标 deprecated 而非删** — dev 调试入口仍有人手验证价值
+- **JobStatus 5 值后端兼容** — `queued→pending` / `succeeded→done` 在 JobSerializer 边界翻译，1 sprint 过渡，v1.3 删除老值
+- **legacy `interpret/llm.py` 留 thin re-export wrapper** — 一周观察期，v1.3 第二刀清
+
+## 下一步
+
+- v1.3 iter-020：ft-030 Library + FTS5（papers/ + types 已拆好）
+- v1.4 决议门：P2-1 老 email 链 (subscriptions/run_subscription.py 436 行) 是否弃
 
 ## Review 分组（Phase 1）
 
