@@ -7,6 +7,8 @@ interface BriefSectionProps {
   paperKey: string;
   arxivId: string;
   brief: PaperBriefDTO | null | undefined;
+  /** ft-033: 原文英文 abstract，折叠区显示（中文摘要旁边的"原文"按钮）. */
+  abstractEn?: string;
 }
 
 /**
@@ -16,10 +18,13 @@ interface BriefSectionProps {
  * No-brief state: a single [Generate brief] button that POSTs regenerate
  * (synchronous, ~5–15s LLM call).
  */
-export function BriefSection({ paperKey, arxivId, brief }: BriefSectionProps) {
+export function BriefSection({
+  paperKey, arxivId, brief, abstractEn,
+}: BriefSectionProps) {
   const queryClient = useQueryClient();
   const id = paperKey || arxivId;
   const [error, setError] = useState<string | null>(null);
+  const [showEn, setShowEn] = useState(false);
 
   const mut = useMutation({
     mutationFn: () => regeneratePaperBrief(id),
@@ -35,37 +40,43 @@ export function BriefSection({ paperKey, arxivId, brief }: BriefSectionProps) {
   if (!brief || !brief.abstract_zh) {
     return (
       <section>
-        <div
-          className="font-mono text-[10px] uppercase tracking-[0.16em]
-                     text-[var(--fg-muted)] mb-3"
-        >
-          Brief
-        </div>
-        <div
-          className="rounded border border-dashed border-[var(--rule)] p-6
-                     text-center"
-        >
-          <p className="font-serif text-sm italic text-[var(--fg-muted)]">
-            No brief yet. Generate the editorial summary
-            (中文摘要 + 关键词 + 视角点评)?
-          </p>
+        <div className="flex items-baseline justify-between mb-3">
+          <div
+            className="font-mono text-[10px] uppercase tracking-[0.16em]
+                       text-[var(--fg-muted)]"
+          >
+            Brief
+          </div>
           <button
             type="button"
             onClick={() => mut.mutate()}
             disabled={mut.isPending}
-            className="mt-3 px-4 py-1.5 rounded-chip border border-[var(--fg)]
+            className="px-3 py-1 rounded-chip border border-[var(--fg)]
                        bg-[var(--fg)] text-[var(--bg)]
-                       text-[11px] font-sans uppercase tracking-[0.16em]
+                       text-[10px] font-sans uppercase tracking-[0.14em]
                        disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {mut.isPending ? "Generating…" : "Generate brief"}
           </button>
-          {error ? (
-            <p className="mt-2 text-xs text-[var(--counter-fg)] font-sans">
-              {error}
-            </p>
-          ) : null}
         </div>
+        {abstractEn ? (
+          <p
+            className="font-serif text-[1.02rem] leading-[1.75] text-[var(--fg)]
+                       whitespace-pre-line"
+          >
+            {abstractEn.trim()}
+          </p>
+        ) : (
+          <p className="font-serif text-sm italic text-[var(--fg-muted)]">
+            No abstract extracted yet. Click <strong>Generate brief</strong> to
+            run the LLM pipeline (中文摘要 + 关键词 + 视角点评).
+          </p>
+        )}
+        {error ? (
+          <p className="mt-2 text-xs text-[var(--counter-fg)] font-sans">
+            {error}
+          </p>
+        ) : null}
       </section>
     );
   }
@@ -97,6 +108,29 @@ export function BriefSection({ paperKey, arxivId, brief }: BriefSectionProps) {
       >
         {brief.abstract_zh}
       </p>
+
+      {abstractEn ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setShowEn((v) => !v)}
+            className="text-[10px] font-sans uppercase tracking-[0.16em]
+                       text-[var(--fg-soft)] hover:text-[var(--accent)]
+                       transition-colors"
+          >
+            {showEn ? "▾ Hide original abstract" : "▸ Show original abstract"}
+          </button>
+          {showEn ? (
+            <p
+              className="mt-2 font-serif text-[0.95rem] leading-[1.7]
+                         text-[var(--fg-soft)] whitespace-pre-line
+                         border-l-2 border-[var(--rule)] pl-3"
+            >
+              {abstractEn.trim()}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {brief.keywords.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-1.5">

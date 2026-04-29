@@ -46,6 +46,76 @@ def _resolve_perspective() -> PerspectiveSpec:
     return PerspectiveSpec(preset="researcher")
 
 
+def _classify_bucket_from_path(path: str) -> str:
+    """根据 docling Section.path 字符串匹配 ``BUCKET_KEYWORDS`` 的桶名.
+
+    ``method`` / ``experiments`` / ``conclusion`` 等。匹配失败回 ``other``，
+    会被 ``PaperChunks.by_bucket`` 在不被消费时自然丢弃。
+    """
+    from apps.extract.section_extractor import BUCKET_KEYWORDS
+
+    p = (path or "").lower()
+    for bucket, keywords in BUCKET_KEYWORDS:
+        if any(kw in p for kw in keywords):
+            return bucket
+    return "other"
+
+
+def _build_chunks(paper: Paper):
+    """从 docling Section 表组装 ``PaperChunks`` 喂给 ``deep_interpret_rich``.
+
+    每个非空 raw_text 行落一个 ``Section`` 入桶；空行跳过。
+    """
+    from apps.extract.models import Section as DBSection
+    from apps.extract.section_extractor import (
+        PaperChunks as PChunks,
+        Section as PSection,
+    )
+
+    rows = DBSection.objects.filter(
+        paper_arxiv_id=paper.arxiv_id or "",
+    ).order_by("seq")
+    sections = []
+    for r in rows:
+        if not (r.raw_text or "").strip():
+            continue
+        sections.append(PSection(
+            bucket=_classify_bucket_from_path(r.path),
+            title=r.path,
+            text=r.raw_text,
+        ))
+    return PChunks(arxiv_id=paper.arxiv_id or paper.key, sections=sections)
+
+
+def _build_captions(paper: Paper):
+    """从 ``Figure`` 表组装 ``Caption`` 列表（仅前 8 张，控 token）.
+
+    ingest 链没存正文引用上下文 — references 留空，``deep_interpret_rich``
+    仍能用 caption 文本做框架图识别。
+    """
+    from apps.extract.caption_extractor import Caption as PCaption
+    from apps.extract.models import Figure
+
+    out = []
+    for f in Figure.objects.filter(
+        paper_arxiv_id=paper.arxiv_id or "",
+    ).order_by("seq")[:8]:
+        cap = (f.caption or "").strip()
+        if not cap:
+            continue
+        out.append(PCaption(
+            arxiv_id=f.paper_arxiv_id,
+            kind="figure",
+            number=f.seq,
+            text=cap,
+            page=f.page or 0,
+            bbox_caption=(0.0, 0.0, 0.0, 0.0),
+            bbox_image=(0.0, 0.0, 0.0, 0.0),
+            references=[],
+        ))
+    return out
+
+
 def _abstract_from_sections(paper: Paper) -> str:
     """Fallback：当 ``paper.abstract`` 空时，从 docling Section 实时拉.
 
@@ -118,7 +188,8 @@ def generate_brief(paper: Paper, *, regenerate: bool = False) -> PaperBrief:
     避免下次调用陷入死循环；前端按 ``has_brief`` 区分但 ``abstract_zh`` 也可能为空。
     """
     # 惰性 import，避免在测试 mock 时拉起 LLM client
-    from interpret.interpretation import deep_interpret, skim_interpret
+    from interpret.deep_interpret import deep_interpret_rich
+    from interpret.interpretation import skim_interpret
 
     existing = PaperBrief.objects.filter(paper=paper).first()
     if existing and not regenerate and existing.abstract_zh:
@@ -128,7 +199,11 @@ def generate_brief(paper: Paper, *, regenerate: bool = False) -> PaperBrief:
     persp = _resolve_perspective()
 
     skim = skim_interpret(item, persp)
-    deep = deep_interpret(item, persp)
+    # ft-033 增强：组装 method/experiments/conclusion chunks + figure captions，
+    # 调 deep_interpret_rich 拿 method_summary / key_innovation / limitations / for_you
+    chunks = _build_chunks(paper)
+    captions = _build_captions(paper)
+    deep = deep_interpret_rich(item, chunks, captions, [], persp)
 
     abstract_zh = (skim.abstract_zh if skim else "") or ""
     keywords = list(skim.keywords) if skim else []

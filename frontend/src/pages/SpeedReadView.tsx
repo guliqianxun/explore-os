@@ -167,21 +167,13 @@ export default function SpeedReadView({
           </div>
         </header>
 
-        {/* ft-033: brief 顶置（中文摘要 + 关键词 + 视角点评 + 创新点 + 限制） */}
+        {/* ft-033: brief 顶置（中文摘要 + 英文摘要折叠 + 关键词 + 视角点评 + 创新点 + 限制） */}
         <BriefSection
           paperKey={detail.paper_key ?? ""}
           arxivId={arxivId}
           brief={detail.brief ?? null}
+          abstractEn={detail.abstract || abstract}
         />
-
-        {abstract ? (
-          <section>
-            <SectionLabel>Abstract (原文)</SectionLabel>
-            <p className="font-serif text-[1.05rem] leading-[1.75] text-[var(--fg-soft)] whitespace-pre-line">
-              {abstract.trim()}
-            </p>
-          </section>
-        ) : null}
 
         <section>
           <SectionLabel>Key claims · {sortedClaims.length}</SectionLabel>

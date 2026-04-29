@@ -134,8 +134,8 @@ def _mock_deep(monkeypatch):
         table_path="", table_caption="",
     )
     monkeypatch.setattr(
-        "interpret.interpretation.deep_interpret",
-        lambda item, persp: fake,
+        "interpret.deep_interpret.deep_interpret_rich",
+        lambda item, chunks, captions, mem, persp: fake,
     )
 
 
@@ -264,7 +264,7 @@ def test_post_regenerate_502_on_pipeline_error(client, paper, monkeypatch):
         raise RuntimeError("LLM down")
 
     monkeypatch.setattr("interpret.interpretation.skim_interpret", boom)
-    monkeypatch.setattr("interpret.interpretation.deep_interpret", boom)
+    monkeypatch.setattr("interpret.deep_interpret.deep_interpret_rich", boom)
     r = client.post(f"/api/papers/{paper.arxiv_id}/brief/regenerate/")
     assert r.status_code == 502
     assert "generation failed" in r.json()["detail"]
