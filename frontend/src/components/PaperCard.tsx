@@ -36,7 +36,7 @@ export function PaperCard({
 
   return (
     <article
-      className="grid grid-cols-[1fr_100px] gap-5 py-7
+      className="grid grid-cols-[3fr_1fr] gap-5 py-7
                  border-b border-[var(--rule)] last:border-b-0"
     >
       <div className="min-w-0">
