@@ -21,6 +21,7 @@ dependencies = [
     "torchvision>=0.21.0",
     "matplotlib>=3.10.9",
     "apscheduler>=3.10",
+    "socksio>=1.0.0",
 ]
 
 [dependency-groups]
