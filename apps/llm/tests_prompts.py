@@ -9,15 +9,13 @@ from apps.llm.prompts import get_prompt, list_prompts
 EXPECTED_NAMES = {
     "skim",
     "deep",
-    "tldr",
     "narrative",
     "rewriter",
     "figure_picker",
-    "figure_classifier",
 }
 
 
-def test_registry_contains_all_seven_prompts():
+def test_registry_contains_all_prompts():
     assert set(list_prompts()) == EXPECTED_NAMES
 
 
@@ -25,7 +23,7 @@ def test_registry_contains_all_seven_prompts():
 def test_each_prompt_is_non_empty_string(name: str):
     s = get_prompt(name)
     assert isinstance(s, str)
-    assert len(s.strip()) >= 20  # 7 个 prompt 都至少几十字
+    assert len(s.strip()) >= 20  # 每个 prompt 都至少几十字
 
 
 def test_get_prompt_unknown_raises_keyerror():
@@ -47,8 +45,6 @@ def test_legacy_constants_match_registry():
     """旧文件 import 时仍能取到同样的字符串。"""
     from apps.llm.prompts.skim import SYSTEM as SKIM
     from apps.llm.prompts.deep import SYSTEM as DEEP
-    from apps.llm.prompts.tldr import SYSTEM as TLDR
 
     assert get_prompt("skim") == SKIM
     assert get_prompt("deep") == DEEP
-    assert get_prompt("tldr") == TLDR

@@ -59,19 +59,6 @@ def _vision_model() -> str:
     )
 
 
-def _vision_model_strict() -> str:
-    """vision 强约束：未配置任何 vision/multimodal model 时返回空串（不降级到 text）。
-
-    用于 figure_classifier 这类必须真喂图像的能力，调用方据此 early-skip。
-    """
-    return (
-        getattr(settings, "LLM_MODEL_VISION", "")
-        or settings.LLM_MODEL_VISION_CLASSIFIER
-        or settings.LLM_MODEL_MULTIMODAL
-        or ""
-    )
-
-
 def _deep_model() -> str:
     """deep_interpret 优先用 ``LLM_MODEL_DEEP``，缺失降级到 text。
 
@@ -97,13 +84,6 @@ def _build_registry() -> dict[str, ModelProfile]:
             temperature=0.3,
             system_prompt_name="deep",
         ),
-        "tldr": ModelProfile(
-            name="tldr",
-            model=_text_model(),
-            max_tokens=200,
-            temperature=0.3,
-            system_prompt_name="tldr",
-        ),
         "narrative": ModelProfile(
             name="narrative",
             model=_text_model(),
@@ -127,15 +107,6 @@ def _build_registry() -> dict[str, ModelProfile]:
             max_tokens=80,
             temperature=0.2,
             system_prompt_name="figure_picker",
-        ),
-        "figure_classifier": ModelProfile(
-            # strict 模式：未配置 vision model 时 model="" — 调用方应据此 early-skip
-            # （保留 ft-012 原始的 "no vision classifier model configured, skip" 行为）
-            name="figure_classifier",
-            model=_vision_model_strict(),
-            max_tokens=200,
-            temperature=0.2,
-            system_prompt_name="figure_classifier",
         ),
         "extract_claims": ModelProfile(
             name="extract_claims",

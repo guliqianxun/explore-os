@@ -13,10 +13,11 @@ import logging
 # ft-034 P0-2: SYSTEM + model 集中在 apps.llm
 from apps.llm.models import get_profile
 from apps.llm.prompts.deep import SYSTEM as DEEP_SYSTEM_SUFFIX
-from interpret.caption_extractor import Caption
+# ft-034 P1-3: thin re-export wrapper 清理 → 直 import apps.extract.*
+from apps.extract.caption_extractor import Caption
+from apps.extract.section_extractor import PaperChunks
 from interpret.interpretation import DEEP_PLACEHOLDER, DeepOut, perspective_prefix
 from interpret.llm import LLMError, chat, extract_json
-from interpret.pdf_chunker import PaperChunks
 from sources.base import Item
 from subscriptions.loader import PerspectiveSpec
 from subscriptions.memory import PaperRecord

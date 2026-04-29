@@ -10,7 +10,7 @@ import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from django.conf import settings
+from apps.core.paths import media_dir
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +37,11 @@ class Figure:
 
 
 def figures_root() -> Path:
-    root = Path(getattr(settings, "BASE_DIR", Path.cwd())) / "media" / "figures"
+    """``<DATA_DIR>/media/figures`` 父目录（per-arxiv 子目录由调用方拼）.
+
+    ft-022 后所有持久化路径走 ``EXPLORE_OS_DATA_DIR``；frozen exe 中 BASE_DIR 不可写。
+    """
+    root = media_dir() / "figures"
     root.mkdir(parents=True, exist_ok=True)
     return root
 

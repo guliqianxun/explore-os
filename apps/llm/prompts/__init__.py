@@ -1,6 +1,9 @@
-"""Prompt registry（ft-034 P0-2）.
+"""Prompt registry（ft-034 P0-2 / P1-2 死码清理后剩 5 个 prompt）.
 
-7 处 SYSTEM 字符串集中地。每个 prompt 模块只导出 ``SYSTEM: str`` 常量。
+5 处 SYSTEM 字符串集中地。每个 prompt 模块只导出 ``SYSTEM: str`` 常量。
+
+ft-034 P1-2: 删除 tldr / figure_classifier 两个 prompt（顶级 interpret 同名模块
+已无业务引用，整体删除）。
 
 使用：
 
@@ -16,22 +19,18 @@ from __future__ import annotations
 
 from apps.llm.prompts import (
     deep,
-    figure_classifier,
     figure_picker,
     narrative,
     rewriter,
     skim,
-    tldr,
 )
 
 _REGISTRY: dict[str, str] = {
     "skim": skim.SYSTEM,
     "deep": deep.SYSTEM,
-    "tldr": tldr.SYSTEM,
     "narrative": narrative.SYSTEM,
     "rewriter": rewriter.SYSTEM,
     "figure_picker": figure_picker.SYSTEM,
-    "figure_classifier": figure_classifier.SYSTEM,
 }
 
 

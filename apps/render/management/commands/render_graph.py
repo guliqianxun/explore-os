@@ -1,5 +1,9 @@
 """ft-021: ``python manage.py render_graph <arxiv_id> [--format excalidraw|svg]``.
 
+DEPRECATED (ft-034 P1-4): 0 ``call_command`` 引用，与 ``apps/api/ingest._run_render``
+逻辑重复。生产入口走 ``chain_extract_interpret_render``；本 CLI 仅 dev 调试 fallback。
+v1.4 决议是否删除。
+
 从 interpret_* + extract_* 表组装 PaperGraphModel，写出文件并落库 RenderArtifact。
 """
 from __future__ import annotations
@@ -28,7 +32,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--out-dir",
             default="",
-            help="Override output dir (default: <BASE_DIR>/media/render/<arxiv_id>).",
+            help="Override output dir (default: <DATA_DIR>/media/render/<arxiv_id>).",
         )
 
     def handle(self, *args, **opts):
