@@ -172,6 +172,10 @@ class PaperListView(APIView):
                 "abstract_zh": brief.abstract_zh if brief else "",
                 # 作者 keywords（来自 paper 自身，不是 brief.keywords / LLM）
                 "keywords": list(p.keywords or []),
+                # LLM 抽的综述 keywords（订阅 paper 的 chip 主源）
+                "brief_keywords": (
+                    list(brief.keywords)[:6] if brief else []
+                ),
                 # AI summary 卡用：brief.key_innovation 前 2 条
                 "key_innovation": (
                     list(brief.key_innovation)[:2] if brief else []

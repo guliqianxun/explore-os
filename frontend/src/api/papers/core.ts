@@ -58,6 +58,8 @@ export interface PaperListItem {
   abstract_zh: string;
   /** 作者 keywords（来自 paper 自身，不是 brief.keywords/LLM）。 */
   keywords: string[];
+  /** LLM 抽的综述 keywords（chip 主源；paper.keywords 空时 fallback）。 */
+  brief_keywords: string[];
   /** AI summary 卡用：brief.key_innovation 前 2 条。 */
   key_innovation: string[];
   /** brief 是否已生成（abstract_zh 非空才算）。 */
@@ -88,6 +90,7 @@ function normalizePaperListItem(raw: PaperListItemWire): PaperListItem {
     tldr_zh: raw.tldr_zh ?? "",
     abstract_zh: raw.abstract_zh ?? "",
     keywords: raw.keywords ?? [],
+    brief_keywords: raw.brief_keywords ?? [],
     key_innovation: raw.key_innovation ?? [],
     has_brief: raw.has_brief ?? false,
     abstract_en: raw.abstract_en ?? "",

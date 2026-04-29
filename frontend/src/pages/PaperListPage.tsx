@@ -309,15 +309,18 @@ function BriefView({
         <section className="mb-12">
           <SectionHeader label="主要论文" count={primary.length} />
           {primary.map((p, i) => {
-            // 新布局：abstractEn 默认可见；lead = abstract_zh 走 toggle。
+            // lead = abstract_zh（默认可见）；abstractEn 走 toggle。
             const lead = p.abstract_zh || p.tldr_zh || undefined;
+            // chip 主源：作者 keywords 优先；空则 fallback 到 brief.keywords (LLM)
+            const chipKeywords =
+              p.keywords.length > 0 ? p.keywords : p.brief_keywords;
             return i === 0 ? (
               <HeroPaperCard
                 key={p.arxiv_id}
                 paper={p}
                 apiBase={apiBase}
                 lead={lead}
-                keywords={p.keywords}
+                keywords={chipKeywords}
                 abstractEn={p.abstract_en}
               />
             ) : (
@@ -326,7 +329,7 @@ function BriefView({
                 paper={p}
                 apiBase={apiBase}
                 lead={lead}
-                keywords={p.keywords}
+                keywords={chipKeywords}
                 abstractEn={p.abstract_en}
               />
             );
@@ -339,13 +342,18 @@ function BriefView({
         <section>
           <SectionHeader label="速读" count={skim.length} />
           <div>
-            {skim.map((p) => (
-              <SkimCard
-                key={p.arxiv_id}
-                paper={p}
-                lead={p.tldr_zh || p.abstract_zh || (p.abstract_en ? p.abstract_en.slice(0, 120) + "…" : undefined)}
-              />
-            ))}
+            {skim.map((p) => {
+              const skimLead = p.abstract_zh || p.tldr_zh || undefined;
+              return (
+                <SkimCard
+                  key={p.arxiv_id}
+                  paper={p}
+                  lead={skimLead}
+                  keywords={p.keywords}
+                  abstractEn={p.abstract_en}
+                />
+              );
+            })}
           </div>
         </section>
       ) : null}

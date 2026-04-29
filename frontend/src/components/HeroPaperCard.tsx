@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import type { PaperListItem } from "@/api/papers";
 import { MetaCards } from "@/components/PaperCard";
+import { PaperLinks } from "@/components/PaperLinks";
 import { VerdictActions } from "@/components/VerdictActions";
 
 interface HeroPaperCardProps {
@@ -34,13 +35,16 @@ export function HeroPaperCard({
 
   return (
     <article className="border-b border-[var(--rule)] pb-8 mb-8">
-      <div className="flex items-center gap-2 text-[10.5px] uppercase tracking-[0.14em]
-                      font-sans font-medium text-[var(--accent)] mb-2">
-        <span>Featured</span>
-        <span className="text-[var(--fg-muted)]">·</span>
-        <span className="text-[var(--fg-muted)] normal-case tracking-normal font-mono">
-          {paper.arxiv_id}
-        </span>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 text-[10.5px] uppercase tracking-[0.14em]
+                        font-sans font-medium text-[var(--accent)]">
+          <span>Featured</span>
+          <span className="text-[var(--fg-muted)]">·</span>
+          <span className="text-[var(--fg-muted)] normal-case tracking-normal font-mono">
+            {paper.arxiv_id}
+          </span>
+        </div>
+        <PaperLinks arxivId={paper.arxiv_id} />
       </div>
 
       {/* Floated figure for poster wrap */}
@@ -88,7 +92,7 @@ export function HeroPaperCard({
           </div>
         ) : null}
         {abstractEn ? (
-          <p className="mt-3 font-serif text-[0.98rem] leading-[1.65]
+          <p className="mt-3 font-serif text-[1rem] leading-[1.7]
                         text-[var(--fg)] whitespace-pre-line">
             {abstractEn.trim()}
           </p>
@@ -108,11 +112,12 @@ export function HeroPaperCard({
                        text-[var(--fg-soft)] hover:text-[var(--accent)]
                        transition-colors"
           >
-            {showZh ? "▾ Hide 中文 abstract" : "▸ Show 中文 abstract"}
+            {showZh ? "▾ Hide 中文翻译" : "▸ Show 中文翻译"}
           </button>
           {showZh ? (
-            <p className="mt-2 font-serif text-[0.96rem] leading-[1.65] text-[var(--fg)]
-                          whitespace-pre-line border-l-2 border-[var(--rule)] pl-3">
+            <p className="mt-2 font-serif text-[0.96rem] leading-[1.7]
+                          text-[var(--fg)] whitespace-pre-line
+                          border-l-2 border-[var(--rule)] pl-3">
               {lead}
             </p>
           ) : null}

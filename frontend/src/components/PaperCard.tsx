@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { getPaperDetail, type PaperDetail, type PaperListItem } from "@/api/papers";
+import { PaperLinks } from "@/components/PaperLinks";
 import { VerdictActions } from "@/components/VerdictActions";
 
 interface PaperCardProps {
@@ -36,9 +37,12 @@ export function PaperCard({
 
   return (
     <article className="py-5 border-b border-[var(--rule)] last:border-b-0">
-      <div className="font-mono text-[10px] tracking-[0.04em]
-                      text-[var(--fg-muted)] mb-1.5 truncate">
-        {paper.arxiv_id}
+      <div className="flex items-center justify-between gap-3 mb-1.5">
+        <div className="font-mono text-[10px] tracking-[0.04em]
+                        text-[var(--fg-muted)] truncate">
+          {paper.arxiv_id}
+        </div>
+        <PaperLinks arxivId={paper.arxiv_id} compact />
       </div>
 
       {/* Floated figure wraps with the body content below */}
@@ -105,7 +109,7 @@ export function PaperCard({
                        text-[var(--fg-soft)] hover:text-[var(--accent)]
                        transition-colors"
           >
-            {showZh ? "▾ Hide 中文 abstract" : "▸ Show 中文 abstract"}
+            {showZh ? "▾ Hide 中文翻译" : "▸ Show 中文翻译"}
           </button>
           {showZh ? (
             <p className="mt-1.5 font-serif text-[0.92rem] leading-[1.6]

@@ -28,6 +28,10 @@ class PaperListItemSerializer(serializers.Serializer):
     keywords = serializers.ListField(
         child=serializers.CharField(), default=list,
     )
+    # LLM 抽的综述 keywords（chip 主源，paper.keywords 空时 fallback）
+    brief_keywords = serializers.ListField(
+        child=serializers.CharField(), default=list,
+    )
     # AI summary 卡用：brief.key_innovation 前 2 条
     key_innovation = serializers.ListField(
         child=serializers.CharField(), default=list,
