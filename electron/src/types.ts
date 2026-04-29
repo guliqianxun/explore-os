@@ -24,6 +24,8 @@ export interface SidecarInfo {
 export interface ExploreBridge {
   getBackendPort(): Promise<number | null>;
   getSidecarStatus(): Promise<SidecarInfo>;
+  /** 通过系统浏览器打开外链（arxiv / pdf 下载等） */
+  openExternal(url: string): Promise<void>;
 }
 
 declare global {

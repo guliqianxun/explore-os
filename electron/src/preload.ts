@@ -17,6 +17,8 @@ const bridge: ExploreBridge = {
     ipcRenderer.invoke("explore:get-backend-port") as Promise<number | null>,
   getSidecarStatus: () =>
     ipcRenderer.invoke("explore:get-sidecar-status") as Promise<SidecarInfo>,
+  openExternal: (url: string) =>
+    ipcRenderer.invoke("explore:open-external", url) as Promise<void>,
 };
 
 contextBridge.exposeInMainWorld("explore", bridge);

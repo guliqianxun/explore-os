@@ -8,7 +8,7 @@
 //   explore:get-backend-port    -> number | null
 //   explore:get-sidecar-status  -> SidecarInfo
 
-import { app, BrowserWindow, Menu, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from "electron";
 import * as path from "path";
 
 import { getSidecarInfo, startSidecar, stopSidecar } from "./sidecar";
@@ -78,6 +78,12 @@ async function createWindow(): Promise<void> {
 function registerIpc(): void {
   ipcMain.handle("explore:get-backend-port", () => sidecarPort);
   ipcMain.handle("explore:get-sidecar-status", () => getSidecarInfo());
+  // 限制允许的协议（防止 file:// 之类的 LFI）
+  ipcMain.handle("explore:open-external", async (_e, url: string) => {
+    if (typeof url !== "string") return;
+    if (!/^https?:\/\//i.test(url)) return;
+    await shell.openExternal(url);
+  });
 }
 
 async function bootstrap(): Promise<void> {
