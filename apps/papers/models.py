@@ -106,6 +106,10 @@ class Paper(models.Model):
     # ft-033: 原文 abstract（从 docling 第一个 abstract section 回填 / ingest 时写入）。
     # 是 brief_generator 喂给 skim_interpret 的输入；空时 brief 仅显示 title。
     abstract = models.TextField(blank=True, default="")
+    # 作者上传的 keywords（区别于 brief.keywords —— 后者是 LLM 抽出的）。
+    # arxiv 元数据无原生 keywords 字段，主要由 PDF/URL ingest 时用户填入或
+    # detail 页手动编辑。空数组表示 paper 未声明 author keywords。
+    keywords = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

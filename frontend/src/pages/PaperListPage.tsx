@@ -309,11 +309,8 @@ function BriefView({
         <section className="mb-12">
           <SectionHeader label="主要论文" count={primary.length} />
           {primary.map((p, i) => {
-            // ft-033: lead 优先用完整中文摘要（line-clamp 控高），fallback tldr/英文
-            const lead =
-              p.abstract_zh ||
-              p.tldr_zh ||
-              (p.abstract_en ? p.abstract_en.slice(0, 320) + (p.abstract_en.length > 320 ? "…" : "") : undefined);
+            // 新布局：abstractEn 默认可见；lead = abstract_zh 走 toggle。
+            const lead = p.abstract_zh || p.tldr_zh || undefined;
             return i === 0 ? (
               <HeroPaperCard
                 key={p.arxiv_id}

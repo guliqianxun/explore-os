@@ -56,8 +56,10 @@ export interface PaperListItem {
   tldr_zh: string;
   /** 完整中文摘要（list 卡片 lead 用 — 比 tldr_zh 信息密度高）。 */
   abstract_zh: string;
-  /** 顶 3 个领域关键词（chip 显示用）。 */
+  /** 作者 keywords（来自 paper 自身，不是 brief.keywords/LLM）。 */
   keywords: string[];
+  /** AI summary 卡用：brief.key_innovation 前 2 条。 */
+  key_innovation: string[];
   /** brief 是否已生成（abstract_zh 非空才算）。 */
   has_brief: boolean;
   /** 原文 abstract（fallback；brief 缺失时前端截断显示）。 */
@@ -86,6 +88,7 @@ function normalizePaperListItem(raw: PaperListItemWire): PaperListItem {
     tldr_zh: raw.tldr_zh ?? "",
     abstract_zh: raw.abstract_zh ?? "",
     keywords: raw.keywords ?? [],
+    key_innovation: raw.key_innovation ?? [],
     has_brief: raw.has_brief ?? false,
     abstract_en: raw.abstract_en ?? "",
   };

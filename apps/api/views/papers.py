@@ -170,7 +170,12 @@ class PaperListView(APIView):
                 # ft-033 brief short fields (None when absent)
                 "tldr_zh": brief.tldr_zh if brief else "",
                 "abstract_zh": brief.abstract_zh if brief else "",
-                "keywords": list(brief.keywords)[:3] if brief else [],
+                # 作者 keywords（来自 paper 自身，不是 brief.keywords / LLM）
+                "keywords": list(p.keywords or []),
+                # AI summary 卡用：brief.key_innovation 前 2 条
+                "key_innovation": (
+                    list(brief.key_innovation)[:2] if brief else []
+                ),
                 "has_brief": brief is not None and bool(brief.abstract_zh),
                 "abstract_en": p.abstract or "",
             })
@@ -253,6 +258,8 @@ class PaperDetailView(APIView):
             data["pdf_url"] = f"/api/papers/{paper.key}/pdf/"
             # ft-033: brief nested（None 表示未生成）+ abstract 原文
             data["abstract"] = paper.abstract or ""
+            # 作者 keywords（区别于 brief.keywords / LLM 抽）
+            data["keywords"] = list(paper.keywords or [])
             brief_row = PaperBrief.objects.filter(paper=paper).first()
             data["brief"] = _serialize_brief(brief_row) if brief_row else None
         else:
@@ -260,6 +267,7 @@ class PaperDetailView(APIView):
             data["has_pdf"] = False
             data["pdf_url"] = None
             data["abstract"] = ""
+            data["keywords"] = []
             data["brief"] = None
         return Response(data)
 
