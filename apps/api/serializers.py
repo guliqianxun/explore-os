@@ -96,6 +96,7 @@ class PaperListItemSerializer(serializers.Serializer):
     n_claims = serializers.IntegerField()
     # ft-033: brief 短字段（list 视图用 — 不展开完整 PaperBrief，避 N+1）
     tldr_zh = serializers.CharField(allow_blank=True, default="")
+    abstract_zh = serializers.CharField(allow_blank=True, default="")
     keywords = serializers.ListField(
         child=serializers.CharField(), default=list,
     )

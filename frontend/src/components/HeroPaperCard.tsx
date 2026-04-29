@@ -63,8 +63,8 @@ export function HeroPaperCard({
           </h2>
           {lead ? (
             <p
-              className="mt-4 font-serif text-[1.05rem] leading-[1.7] text-[var(--fg-soft)]
-                         line-clamp-4"
+              className="mt-4 font-serif text-[1.05rem] leading-[1.7] text-[var(--fg)]
+                         line-clamp-6 whitespace-pre-line"
             >
               {lead}
             </p>

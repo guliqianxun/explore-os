@@ -309,10 +309,11 @@ function BriefView({
         <section className="mb-12">
           <SectionHeader label="主要论文" count={primary.length} />
           {primary.map((p, i) => {
-            // ft-033: lead 优先用 brief.tldr_zh，缺则截断英文 abstract
+            // ft-033: lead 优先用完整中文摘要（line-clamp 控高），fallback tldr/英文
             const lead =
+              p.abstract_zh ||
               p.tldr_zh ||
-              (p.abstract_en ? p.abstract_en.slice(0, 240) + (p.abstract_en.length > 240 ? "…" : "") : undefined);
+              (p.abstract_en ? p.abstract_en.slice(0, 320) + (p.abstract_en.length > 320 ? "…" : "") : undefined);
             return i === 0 ? (
               <HeroPaperCard
                 key={p.arxiv_id}
@@ -343,7 +344,7 @@ function BriefView({
               <SkimCard
                 key={p.arxiv_id}
                 paper={p}
-                lead={p.tldr_zh || (p.abstract_en ? p.abstract_en.slice(0, 120) + "…" : undefined)}
+                lead={p.tldr_zh || p.abstract_zh || (p.abstract_en ? p.abstract_en.slice(0, 120) + "…" : undefined)}
               />
             ))}
           </div>

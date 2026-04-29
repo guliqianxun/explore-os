@@ -195,6 +195,7 @@ class PaperListView(APIView):
                 "n_claims": claim_counts.get(aid, 0),
                 # ft-033 brief short fields (None when absent)
                 "tldr_zh": brief.tldr_zh if brief else "",
+                "abstract_zh": brief.abstract_zh if brief else "",
                 "keywords": list(brief.keywords)[:3] if brief else [],
                 "has_brief": brief is not None and bool(brief.abstract_zh),
                 "abstract_en": p.abstract or "",

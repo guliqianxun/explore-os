@@ -32,6 +32,8 @@ export interface PaperListItem {
   // ft-033 brief 短字段（list 视图用）
   /** 一句话精炼（中文）；空则前端 fallback abstract_en 截断。 */
   tldr_zh: string;
+  /** 完整中文摘要（list 卡片 lead 用 — 比 tldr_zh 信息密度高）。 */
+  abstract_zh: string;
   /** 顶 3 个领域关键词（chip 显示用）。 */
   keywords: string[];
   /** brief 是否已生成（abstract_zh 非空才算）。 */
@@ -60,6 +62,7 @@ function normalizePaperListItem(raw: PaperListItemWire): PaperListItem {
     n_tables: raw.n_tables,
     n_claims: raw.n_claims,
     tldr_zh: raw.tldr_zh ?? "",
+    abstract_zh: raw.abstract_zh ?? "",
     keywords: raw.keywords ?? [],
     has_brief: raw.has_brief ?? false,
     abstract_en: raw.abstract_en ?? "",

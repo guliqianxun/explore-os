@@ -51,7 +51,7 @@ export function PaperCard({ paper, apiBase, lead, keywords }: PaperCardProps) {
           {lead ? (
             <p
               className="mt-3 font-serif text-[0.98rem] leading-[1.65]
-                         text-[var(--fg-soft)] line-clamp-2"
+                         text-[var(--fg-soft)] line-clamp-4 whitespace-pre-line"
             >
               {lead}
             </p>
