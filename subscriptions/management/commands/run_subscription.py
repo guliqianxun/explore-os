@@ -75,6 +75,10 @@ class Command(BaseCommand):
                             help="目标日期 YYYY-MM-DD（默认昨日 Asia/Shanghai）")
         parser.add_argument("--limit-per-source", type=int, default=None)
         parser.add_argument("--ignore-memory", action="store_true")
+        parser.add_argument("--no-persist", action="store_true",
+                            help="跳过 Paper+PaperBrief 落库（仅走 email 链）")
+        parser.add_argument("--days", type=int, default=1,
+                            help="窗口宽度（天）：默认 1（昨日单天）；trial 可以放大到 7/14")
 
     def handle(self, *args, **opts) -> None:
         yaml_path = Path(opts["yaml"])
@@ -89,7 +93,8 @@ class Command(BaseCommand):
             return
 
         target_date = _parse_target_date(opts["target_date"])
-        since_utc, until_utc = _date_window(target_date)
+        days = max(1, int(opts["days"]))
+        since_utc, until_utc = _date_window(target_date, days=days)
         self.stdout.write(self.style.NOTICE(
             f"[target] date={target_date.isoformat()} "
             f"window=[{since_utc.isoformat()} .. {until_utc.isoformat()}]"
@@ -281,6 +286,24 @@ class Command(BaseCommand):
             existing.limitations = deep_struct.limitations
             existing.for_you = deep_struct.for_you
 
+        # ---- 7.5. persist Paper + PaperBrief（trial 桥：让产物进 feed） ----
+        if not opts["no_persist"]:
+            try:
+                from apps.llm.services.subscription_persist import (
+                    persist_subscription_results,
+                )
+                p_n, b_n = persist_subscription_results(
+                    scored_items, skim_out_by_id, deep_out_by_id, sub.perspective,
+                )
+                self.stdout.write(
+                    f"  [persist] {p_n} papers + {b_n} briefs → DB",
+                )
+            except Exception as exc:  # noqa: BLE001
+                # Trial scope：失败不破坏 email 链
+                self.stderr.write(self.style.WARNING(
+                    f"  [persist] FAILED: {exc!r}",
+                ))
+
         # ---- 8. narrative ----
         narrative: Narrative | None = None
         if not opts["no_llm"] and not opts["no_narrative"]:
@@ -347,7 +370,11 @@ class Command(BaseCommand):
             return
 
         if not sub.deliveries:
-            raise CommandError("no deliveries configured")
+            self.stdout.write(self.style.WARNING(
+                "  [delivery] no deliveries configured — skipping email/feishu;"
+                " papers were persisted to DB and visible in feed.",
+            ))
+            return
         sent_ok = False
         for d in sub.deliveries:
             try:
@@ -430,7 +457,8 @@ def _parse_target_date(s: str | None) -> date:
     return (datetime.now(SHANGHAI) - timedelta(days=1)).date()
 
 
-def _date_window(target: date) -> tuple[datetime, datetime]:
-    start_local = datetime.combine(target, time.min, tzinfo=SHANGHAI)
+def _date_window(target: date, days: int = 1) -> tuple[datetime, datetime]:
+    """``days`` 控制窗口宽度（向后回看 N 天）；end 是 target+1 天 0 点。"""
     end_local = datetime.combine(target + timedelta(days=1), time.min, tzinfo=SHANGHAI)
+    start_local = end_local - timedelta(days=days)
     return start_local.astimezone(timezone.utc), end_local.astimezone(timezone.utc)
