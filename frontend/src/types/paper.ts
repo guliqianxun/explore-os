@@ -1,69 +1,39 @@
 /**
- * ft-028 central paper-domain types. Re-exported by `@/api/papers` to keep
- * existing consumers stable; new code SHOULD import from here.
+ * ft-034 P0-6: thin re-export shell.
  *
- * Field names are FROZEN per ft-028.md#dto-contracts — do NOT rename.
+ * Old single-file ``types/paper.ts`` was carved into ``paper-{core,material,
+ * claim,job}.ts`` per ft-034 P0-6. This file keeps existing
+ * ``import { ... } from "@/types/paper"`` consumers working through 1 sprint
+ * deprecation — new code SHOULD import from the per-domain file directly.
  */
 
-export type PaperStatus =
-  | "new"
-  | "queued"
-  | "reading"
-  | "read_kept"
-  | "read_dropped"
-  | "archived";
+export type {
+  BacklinkDTO,
+  BacklinkEdge,
+  CommentDTO,
+  PaperBriefDTO,
+  PaperStatus,
+  PaperUserStatus,
+  StatusFilter,
+} from "./paper-core";
 
-/** All meaningful filter values used by the UI (StatusFilterBar).
- *
- * `brief` is the email-style two-section grouped view (主要 = reading|queued,
- * 速读 = new); other values are single-status feeds.
- */
-export type StatusFilter = PaperStatus | "all" | "read" | "brief";
+export type {
+  CitationDTO,
+  EquationDTO,
+  FigureDTO,
+  SectionDTO,
+  TableDTO,
+} from "./paper-material";
 
-export interface CommentDTO {
-  id: number;
-  text: string;
-  /** ISO 8601 timestamp. */
-  created_at: string;
-  hidden: boolean;
-}
+export type {
+  ClaimDTO,
+  ClaimEvidence,
+  ClaimEvidenceDTO,
+  ClaimVerdict,
+  CounterSignal,
+  CounterSignalDTO,
+  EvidenceDTO,
+} from "./paper-claim";
 
-export interface BacklinkEdge {
-  id: number;
-  /** Filled on incoming edges (other paper points to me). */
-  src_key?: string;
-  src_title?: string;
-  /** Filled on outgoing edges (I point to other paper). */
-  dst_key?: string;
-  dst_title?: string;
-  relation: string;
-  note: string;
-  created_at: string;
-}
-
-export interface BacklinkDTO {
-  outgoing: BacklinkEdge[];
-  incoming: BacklinkEdge[];
-}
-
-// ---------------------------------------------------------------------------
-// ft-029: PDF + evidence + counter_signal additions
-//
-// `has_pdf` / `pdf_url` come from PaperDetailView (rpt-013). `pdf_url` may be
-// null for legacy detail responses without a Paper row — frontend should drive
-// off `has_pdf` and not assume `pdf_url` is non-null.
-// ---------------------------------------------------------------------------
-
-/** `material_id` of an evidence target — points into sections/figures/tables/equations. */
-export interface ClaimEvidence {
-  material_id: string;
-  /** "supports" | "qualifies" | etc. — string-typed, not enum-locked. */
-  relation: string;
-}
-
-export interface CounterSignal {
-  signal_id: string;
-  text: string;
-  signal_type: string;
-  evidence_material_id: string;
-}
+export type { JobDTO, JobStatus } from "./paper-job";
+export { normalizeJobStatus } from "./paper-job";

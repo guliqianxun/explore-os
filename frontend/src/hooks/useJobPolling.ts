@@ -1,12 +1,16 @@
 // ft-027 follow-up: poll non-terminal jobs every 2s, auto-stop on terminal status.
 import { useEffect } from "react";
-import { JobInfo, getJob, JobStatus } from "@/api/jobs";
+import { JobInfo, getJob, JobStatus, normalizeJobStatus } from "@/api/jobs";
 import { useJobsStore } from "@/stores/jobsStore";
 
-const TERMINAL: ReadonlyArray<JobStatus> = ["succeeded", "failed", "cancelled"];
+// ft-034 P0-6: 5-value enum lock (was 4-value with ``succeeded``). Legacy wire
+// values (``queued`` / ``succeeded``) are mapped via ``normalizeJobStatus``
+// before the terminal check so polling stops correctly during the 1-sprint
+// deprecation.
+const TERMINAL: ReadonlyArray<JobStatus> = ["done", "failed", "cancelled"];
 
 export function isTerminal(status: string): boolean {
-  return TERMINAL.includes(status as JobStatus);
+  return TERMINAL.includes(normalizeJobStatus(status));
 }
 
 /**

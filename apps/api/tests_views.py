@@ -297,7 +297,10 @@ def test_job_status_view(client, db):
     assert r.status_code == 200
     body = r.json()
     assert body["job_id"] == info.job_id
-    assert body["status"] == "succeeded"
+    # ft-034 P0-6: JobSerializer maps legacy ``succeeded`` → ``done``
+    # at the DTO boundary; the in-memory dataclass still writes the legacy
+    # literal until v1.3 drops the mapping.
+    assert body["status"] == "done"
     assert body["result"] == {"hello": "world"}
 
 

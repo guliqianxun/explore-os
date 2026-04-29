@@ -1,15 +1,19 @@
 import { getApi } from "./client";
+import { normalizeJobStatus, type JobStatus } from "@/types/paper-job";
 
-export type JobStatus =
-  | "pending"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "cancelled";
+// ft-034 P0-6: re-export canonical 5-value enum from the type module.
+// 老 import ``import { JobStatus } from "@/api/jobs"`` 不变；底层 lock 来自
+// ``@/types/paper-job``。前端短期兼容老值（queued / succeeded）走
+// ``normalizeJobStatus``。
+export type { JobStatus };
+export { normalizeJobStatus };
 
 export interface JobInfo {
   job_id: string;
   name: string;
+  /** Wire status — may be legacy ``queued`` / ``succeeded`` until v1.3 drop;
+   *  consumers should run ``normalizeJobStatus`` before comparing if the
+   *  origin is the trigger response (which bypasses JobSerializer). */
   status: JobStatus | string;
   created_at: string;
   started_at: string;
