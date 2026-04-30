@@ -5,11 +5,11 @@ import logging
 from dataclasses import dataclass
 
 import httpx
-from django.conf import settings
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 # ft-034 P0-2: EMBEDDING_MODEL / EMBEDDING_DIM 已集中至 apps.llm.models
 from apps.llm.models import EMBEDDING_DIM, EMBEDDING_MODEL
+from apps.llm.runtime_config import llm_config
 
 log = logging.getLogger(__name__)
 
@@ -41,10 +41,11 @@ def embed(
     """批量 embedding；自动分批。返回向量与 texts 顺序一一对应。"""
     if not texts:
         return EmbeddingResult(vectors=[], usage={})
-    if not settings.LLM_API_KEY:
+    cfg = llm_config()
+    if not cfg.api_key:
         raise EmbeddingError("LLM_API_KEY is not configured")
 
-    url = f"{settings.LLM_API_BASE.rstrip('/')}/embeddings"
+    url = f"{cfg.api_base.rstrip('/')}/embeddings"
     all_vectors: list[list[float]] = []
     total_usage: dict[str, int] = {}
 
@@ -54,7 +55,7 @@ def embed(
             resp = client.post(
                 url,
                 headers={
-                    "Authorization": f"Bearer {settings.LLM_API_KEY}",
+                    "Authorization": f"Bearer {cfg.api_key}",
                     "Content-Type": "application/json",
                 },
                 json={"model": model, "input": batch, "encoding_format": "float"},

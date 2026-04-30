@@ -35,6 +35,8 @@ from apps.api.views import (
     PaperTagDetailView,
     PaperTagListView,
     RenderTriggerView,
+    SettingsLLMTestView,
+    SettingsLLMView,
 )
 
 urlpatterns = [
@@ -146,4 +148,9 @@ urlpatterns = [
     path("ingest/upload/", IngestUploadView.as_view(), name="api-ingest-upload"),
     path("ingest/arxiv/", IngestArxivView.as_view(), name="api-ingest-arxiv"),
     path("ingest/url/", IngestUrlView.as_view(), name="api-ingest-url"),
+
+    # ---- user settings: LLM 接口配置 ----
+    path("settings/llm/", SettingsLLMView.as_view(), name="api-settings-llm"),
+    path("settings/llm/test/", SettingsLLMTestView.as_view(),
+         name="api-settings-llm-test"),
 ]

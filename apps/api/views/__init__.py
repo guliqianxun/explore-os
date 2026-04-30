@@ -22,6 +22,7 @@ from apps.api.views.jobs import (
     _do_render,
 )
 from apps.api.views.materials import FigureView, PaperMarkdownView
+from apps.api.views.settings_llm import SettingsLLMTestView, SettingsLLMView
 from apps.api.views.papers import (
     PaperBacklinkDetailView,
     PaperBacklinkView,
@@ -66,4 +67,7 @@ __all__ = [
     "InterpretTriggerView",
     "RenderTriggerView",
     "JobStatusView",
+    # settings
+    "SettingsLLMView",
+    "SettingsLLMTestView",
 ]

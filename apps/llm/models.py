@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from django.conf import settings
+from apps.llm.runtime_config import llm_config
 
 
 # ---------------- embedding 顶级常量（迁自 interpret/embedding.py） ----------------
@@ -42,29 +42,23 @@ class ModelProfile:
 
 
 def _text_model() -> str:
-    return settings.LLM_MODEL_TEXT or settings.LLM_MODEL
+    return llm_config().model_text
 
 
 def _vision_model() -> str:
-    """优先使用专门的 vision classifier model；缺失则降级到 multimodal；再缺失则降级到 text。
-
-    注意：``LLM_MODEL_VISION`` 不是 settings 里既有项；为兼容文档表述使用 getattr。
-    """
-    explicit = getattr(settings, "LLM_MODEL_VISION", None)
+    """vision classifier > multimodal > text。"""
+    cfg = llm_config()
     return (
-        explicit
-        or settings.LLM_MODEL_VISION_CLASSIFIER
-        or settings.LLM_MODEL_MULTIMODAL
-        or _text_model()
+        cfg.model_vision_classifier
+        or cfg.model_multimodal
+        or cfg.model_text
     )
 
 
 def _deep_model() -> str:
-    """deep_interpret 优先用 ``LLM_MODEL_DEEP``，缺失降级到 text。
-
-    ``LLM_MODEL_DEEP`` 不是 settings 既有项；通过 getattr 容错。
-    """
-    return getattr(settings, "LLM_MODEL_DEEP", None) or _text_model()
+    """deep_interpret 优先 model_deep，缺失降级到 text。"""
+    cfg = llm_config()
+    return cfg.model_deep or cfg.model_text
 
 
 def _build_registry() -> dict[str, ModelProfile]:
@@ -100,10 +94,9 @@ def _build_registry() -> dict[str, ModelProfile]:
         ),
         "figure_picker": ModelProfile(
             # 注意：figure_picker LLM 兜底"仅 caption 文本，不喂图"，
-            # 应该走 text model；spec 表述里的 LLM_MODEL_VISION 缺省项不存在时
-            # 自然落到 text，符合现状。
+            # 走 text model 而不是 vision；旧 spec 留的 LLM_MODEL_VISION 顾及现状。
             name="figure_picker",
-            model=getattr(settings, "LLM_MODEL_VISION", None) or _text_model(),
+            model=_text_model(),
             max_tokens=80,
             temperature=0.2,
             system_prompt_name="figure_picker",

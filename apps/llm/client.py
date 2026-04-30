@@ -17,10 +17,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from django.conf import settings
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from apps.llm.errors import LLMError
+from apps.llm.runtime_config import llm_config
 
 log = logging.getLogger(__name__)
 
@@ -55,11 +55,14 @@ def chat(
     具体能力（skim / deep / tldr / ...）应通过 ``apps.llm.models.get_profile``
     取自己的 max_tokens，而不是依赖 default。
     """
-    if not settings.LLM_API_KEY:
+    cfg = llm_config()
+    if not cfg.api_key:
         raise LLMError("LLM_API_KEY is not configured")
 
-    model = model or settings.LLM_MODEL_TEXT or settings.LLM_MODEL
-    url = f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions"
+    model = model or cfg.model_text
+    if not model:
+        raise LLMError("LLM model is not configured")
+    url = f"{cfg.api_base.rstrip('/')}/chat/completions"
     payload: dict[str, Any] = {
         "model": model,
         "messages": messages,
@@ -73,7 +76,7 @@ def chat(
         resp = client.post(
             url,
             headers={
-                "Authorization": f"Bearer {settings.LLM_API_KEY}",
+                "Authorization": f"Bearer {cfg.api_key}",
                 "Content-Type": "application/json",
             },
             json=payload,

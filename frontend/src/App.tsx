@@ -6,6 +6,7 @@ import PaperListPage from "@/pages/PaperListPage";
 import PaperDetailPage from "@/pages/PaperDetailPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import IngestPage from "@/pages/IngestPage";
+import SettingsPage from "@/pages/SettingsPage";
 
 // Drag region for the frameless Electron window. The whole header is
 // draggable; nav links/buttons opt out via `noDrag`.
@@ -54,6 +55,7 @@ export default function App() {
           <NavItem to="/" label="Papers" />
           <NavItem to="/subscriptions" label="Subscriptions" />
           <NavItem to="/ingest" label="Ingest" />
+          <NavItem to="/settings" label="Settings" />
         </nav>
       </header>
       <main className="flex-1 overflow-hidden bg-[var(--bg)]">
@@ -62,6 +64,7 @@ export default function App() {
           <Route path="/papers/:arxivId" element={<PaperDetailPage />} />
           <Route path="/subscriptions" element={<SubscriptionPage />} />
           <Route path="/ingest" element={<IngestPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           {/* ft-027: keep old /run permalinks working. */}
           <Route path="/run" element={<Navigate to="/ingest" replace />} />
         </Routes>
