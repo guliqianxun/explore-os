@@ -1,10 +1,10 @@
 {
   "project": "explore-os",
-  "version": "v1.2-refactor",
-  "updated_at": "2026-04-29-iter-019-done",
+  "version": "v1.2-trial",
+  "updated_at": "2026-04-30-iter-020-done",
   "roadmap": "ROADMAP.md",
-  "current_iteration": "iter-019",
-  "current_focus": "iter-019 Phase 3+4 done（4/29）：F1+F2+F3+F4 全部落地 → pytest 332 → 371 passed (+39，含 -9 死测删) / tsc 0 / build 主 chunk 637 KB（≤ 基线+50KB） / brief 视图 + Reading Station 不变。ft-034 ✅ done。v1.2 收尾完成，启动 v1.3 iter-020（ft-030 Library + FTS5）",
+  "current_iteration": "iter-020",
+  "current_focus": "iter-020 ✅ done（4/30）：首位用户 onboarding 闭环 — HashRouter prod blank 修 / paper.keywords 字段 + 编辑器 / 墙报式精读卡 + 速度卡 / 订阅链桥（legacy run_subscription → Paper+PaperBrief）/ 外链 arXiv↗+PDF↓. 两条订阅 (precip-nowcasting + video-generation) 跑 14 篇 paper 落 feed ~70s. pytest 371 / tsc 0 / build 主 chunk 642KB (+5KB). ft-036 ✅ done. 「订阅=快粗 / detail=慢精」分层锁定. 下一刀：v1.3 ft-030 Library+FTS5 或 detail 页 lazy docling 触发",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -40,7 +40,8 @@
     {"id": "ft-032", "title": "ClaimCard 用户修订层（user_claim_edit override + hide）", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-033", "title": "Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）", "status": "done", "milestone": "v1.2"},
     {"id": "ft-034", "title": "services 接口规整：apps/llm 中台层 + 跨段解耦 7 条 P0（iter-019 PHASE-2-DECISION 拍板）", "status": "done", "milestone": "v1.2"},
-    {"id": "ft-035", "title": "user_profile 蒸馏层（α 第一刀，与 chat 分级一起做）", "status": "planned", "milestone": "v1.4"}
+    {"id": "ft-035", "title": "user_profile 蒸馏层（α 第一刀，与 chat 分级一起做）", "status": "planned", "milestone": "v1.4"},
+    {"id": "ft-036", "title": "First-user trial polish：HashRouter fix + 墙报式卡 + paper.keywords + 订阅桥 + 外链", "status": "done", "milestone": "v1.2"}
   ],
   "iterations": [
     {"id": "iter-001", "status": "done"},
@@ -61,6 +62,7 @@
     {"id": "iter-016", "status": "planned", "scope": ["ft-025"]},
     {"id": "iter-017", "status": "planned", "scope": ["ft-032"]},
     {"id": "iter-018", "status": "done", "scope": ["ft-033"]},
-    {"id": "iter-019", "status": "done", "scope": ["code-review", "ft-034"]}
+    {"id": "iter-019", "status": "done", "scope": ["code-review", "ft-034"]},
+    {"id": "iter-020", "status": "done", "scope": ["ft-036"]}
   ]
 }
