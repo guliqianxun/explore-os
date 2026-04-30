@@ -18,16 +18,22 @@ directories:
   buildResources: build
 
 # Files packed into the asar / app dir.
+# (parent-relative globs like ../frontend/dist are silently dropped from `files`;
+#  the frontend SPA goes into `extraResources` below and is loaded via
+#  `process.resourcesPath` from main.ts.)
 files:
   - dist-electron/**/*
   - resources/**/*
-  - ../frontend/dist/**/*
   - package.json
 
-# PyInstaller bundle — copied verbatim under <app>/resources/sidecar/.
+# PyInstaller bundle + frontend SPA — copied verbatim under <app>/resources/.
 extraResources:
   - from: ../dist/explore-os-sidecar
     to: sidecar
+    filter:
+      - "**/*"
+  - from: ../frontend/dist
+    to: frontend
     filter:
       - "**/*"
 

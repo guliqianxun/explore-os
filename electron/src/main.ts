@@ -46,27 +46,24 @@ async function createWindow(): Promise<void> {
   });
 
   // Dev: load the Vite dev server (set by ft-024 dev script).
-  // Prod: load the built Vite SPA from frontend/dist/index.html. The path
-  // resolves relative to dist-electron/main.js — the layout is:
+  // Prod: load the built Vite SPA from frontend/index.html.
   //
-  //   <repo>/electron/dist-electron/main.js   (running file in dev)
-  //   <repo>/frontend/dist/index.html         (Vite build output)
+  // Dev:      <repo>/electron/dist-electron/main.js
+  //           + <repo>/frontend/dist/index.html
+  //           -> __dirname/../../frontend/dist/index.html
+  // Packaged: <app>/resources/app.asar/dist-electron/main.js
+  //           + <app>/resources/frontend/index.html  (extraResources)
+  //           -> process.resourcesPath/frontend/index.html
   //
-  // In a packaged build, electron-builder is configured (build/electron-builder.yml)
-  // to copy `frontend/dist/**/*` into the asar so the same relative layout
-  // (`../../frontend/dist/index.html` from `dist-electron/main.js`) keeps working.
+  // Parent-relative globs in `files` are silently dropped by electron-builder,
+  // so the SPA ships via `extraResources` (see build/electron-builder.yml).
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
     await mainWindow.loadURL(devUrl);
   } else {
-    const indexHtml = path.join(
-      __dirname,
-      "..",
-      "..",
-      "frontend",
-      "dist",
-      "index.html",
-    );
+    const indexHtml = app.isPackaged
+      ? path.join(process.resourcesPath, "frontend", "index.html")
+      : path.join(__dirname, "..", "..", "frontend", "dist", "index.html");
     await mainWindow.loadFile(indexHtml);
   }
 

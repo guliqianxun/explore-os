@@ -35,7 +35,7 @@ mpl_data, mpl_binaries, mpl_hidden = collect_all("matplotlib")
 trans_data, trans_binaries, trans_hidden = collect_all("transformers")
 
 a = Analysis(
-    ["sidecar_entry.py"],
+    [str(ROOT / "sidecar_entry.py")],
     pathex=[str(ROOT)],
     binaries=(
         torch_binaries
@@ -45,12 +45,12 @@ a = Analysis(
         + trans_binaries
     ),
     datas=[
-        ("config", "config"),
-        ("apps", "apps"),
-        ("interpret", "interpret"),
-        ("delivery", "delivery"),
-        ("sources", "sources"),
-        ("subscriptions", "subscriptions"),
+        (str(ROOT / "config"), "config"),
+        (str(ROOT / "apps"), "apps"),
+        (str(ROOT / "interpret"), "interpret"),
+        (str(ROOT / "delivery"), "delivery"),
+        (str(ROOT / "sources"), "sources"),
+        (str(ROOT / "subscriptions"), "subscriptions"),
         *torch_data,
         *docling_data,
         *docling_core_data,
@@ -88,7 +88,7 @@ a = Analysis(
         *mpl_hidden,
         *trans_hidden,
     ],
-    hookspath=["build/hooks"],
+    hookspath=[str(ROOT / "build" / "hooks")],
     runtime_hooks=[],
     excludes=[
         "pytest",

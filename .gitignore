@@ -62,5 +62,11 @@ electron/dist-electron
 electron/node_modules
 build/dist
 build/__pycache__
+build/sidecar-cuda/
+build/sidecar-cpu/
+dist/
 *.spec.bak
 data-dev/
+
+# Source logo (kept local; binary icons under electron/build/icons/ are committed)
+logo.svg
