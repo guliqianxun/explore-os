@@ -1,10 +1,10 @@
 {
   "project": "explore-os",
   "version": "v1.2-trial",
-  "updated_at": "2026-04-30-pm-consistency-sync",
+  "updated_at": "2026-04-30-iter-021-planned",
   "roadmap": "ROADMAP.md",
-  "current_iteration": "iter-020",
-  "current_focus": "iter-020 ✅ done（4/30）首位用户 onboarding 闭环 + PM 一致性整理：ft-027 / iter-011 实际 4/27 完成（status 漂移 3 天，已更正为 done）；ft-030 milestone v1.2→v1.3（iter-020 复盘已锁定推迟）。下一刀候选：(C) ft-031 桌面通知 + brief 未决分组 / (B) detail 页 lazy docling 触发 / ft-030 v1.3 第一刀",
+  "current_iteration": "iter-021",
+  "current_focus": "iter-021 立项（4/30）：ft-031 桌面通知 + brief 未决分组 — Electron Notification IPC + notify 库（含 browser 回退）/ speed cards 区按 created_at 分今日/本周/更早三桶 / NavBar 未决 badge. ETA 1 天 (5/1). 不改 schema. iter-020 ✅ done + PM 一致性整理（ft-027 done / ft-030 → v1.3）已 land.",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -36,7 +36,7 @@
     {"id": "ft-028", "title": "Paper-centric schema + user_* 层 + Inbox verdict UI", "status": "done", "milestone": "v1.2"},
     {"id": "ft-029", "title": "Reading Station：3 栏 + pdf.js 内嵌 + ClaimCard 引文展开 + notes/tag/backlink", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-030", "title": "Library：filter + FTS5 全文搜索 + Zotero export", "status": "planned", "milestone": "v1.3"},
-    {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "planned", "milestone": "v1.2"},
+    {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "planned", "milestone": "v1.2", "spec": "features/ft-031.md"},
     {"id": "ft-032", "title": "ClaimCard 用户修订层（user_claim_edit override + hide）", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-033", "title": "Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）", "status": "done", "milestone": "v1.2"},
     {"id": "ft-034", "title": "services 接口规整：apps/llm 中台层 + 跨段解耦 7 条 P0（iter-019 PHASE-2-DECISION 拍板）", "status": "done", "milestone": "v1.2"},
@@ -58,11 +58,12 @@
     {"id": "iter-012", "status": "done", "scope": ["ft-028"]},
     {"id": "iter-013", "status": "planned", "scope": ["ft-029"]},
     {"id": "iter-014", "status": "planned", "scope": ["ft-030"]},
-    {"id": "iter-015", "status": "planned", "scope": ["ft-031"]},
+    {"id": "iter-015", "status": "superseded", "scope": ["ft-031"], "note": "ft-031 改由 iter-021 承接（iter-020 后立项，时间线已超 iter-015 占位）"},
     {"id": "iter-016", "status": "planned", "scope": ["ft-025"]},
     {"id": "iter-017", "status": "planned", "scope": ["ft-032"]},
     {"id": "iter-018", "status": "done", "scope": ["ft-033"]},
     {"id": "iter-019", "status": "done", "scope": ["code-review", "ft-034"]},
-    {"id": "iter-020", "status": "done", "scope": ["ft-036"]}
+    {"id": "iter-020", "status": "done", "scope": ["ft-036"]},
+    {"id": "iter-021", "status": "planned", "scope": ["ft-031"]}
   ]
 }

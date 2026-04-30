@@ -106,12 +106,13 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [iter-012](iterations/iter-012.md) — Sprint 12：Paper-centric schema + Inbox verdict（ft-028 ✅）
 - [iter-013](iterations/iter-013.md) — Sprint 13：Reading Station + ClaimCard 引文展开（ft-029）
 - [iter-014](iterations/iter-014.md) — Sprint 14：Library + FTS5 + Zotero export（ft-030）
-- [iter-015](iterations/iter-015.md) — Sprint 15：桌面通知 + brief 未决分组（ft-031）
+- [iter-015](iterations/iter-015.md) — Sprint 15：桌面通知 + brief 未决分组（ft-031，已被 iter-021 承接）
 - [iter-016](iterations/iter-016.md) — Sprint 16：自动更新 + CUDA/CPU 双轨（ft-025）
 - [iter-017](iterations/iter-017.md) — Sprint 17：ClaimCard 用户修订层（ft-032，紧跟 ft-029 实测后启动）
 - [iter-018](iterations/iter-018.md) — Sprint 18：Brief 内容处理层（ft-033，复用老邮件 pipeline）✅
 - [iter-019](iterations/iter-019.md) — Sprint 19：代码 review + 解耦重构（v1.2 收尾，6 组并行 review → 修复 → ft-034）✅
 - [iter-020](iterations/iter-020.md) — Sprint 20：First-user trial polish（ft-036 ✅）
+- [iter-021](iterations/iter-021.md) — Sprint 21：桌面通知 + brief 未决分组（ft-031）
 
 ## 战略转向（2026-04-25）
 
