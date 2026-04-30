@@ -3,9 +3,9 @@ pm_id: iter-011
 pm_type: iteration
 title: Sprint 11 — Subscription 表单化 + Ingest 入口
 milestone: v1.1
-status: in_progress
+status: done
 start_at: 2026-04-27
-end_at: 2026-04-30
+end_at: 2026-04-27
 ---
 
 # iter-011 Sprint 11：Subscription 表单化 + Ingest
@@ -58,3 +58,12 @@ ft-025（自动更新 + CUDA/CPU 双轨）推到 iter-012。
 - D1: backend 8 endpoints + chain
 - D2: frontend SubscriptionPage 重做
 - D3: frontend IngestPage + 实战
+
+## 收尾
+
+**单日完成**（2026-04-27 一气拿下，commits `7fc7075` + `ffc27a7`）。
+
+**PM 漂移更正**（2026-04-30）：本 iter 实际在 2026-04-27 已完成，但 status 一
+直挂 in_progress 到 iter-020 复盘时才同步。期间 iter-012/018/019/020 都基于本
+iter 交付的 SubscriptionPage / IngestPage 继续工作，事实上把本 iter 当 done。
+end_at 同步更正为 2026-04-27。详见 ft-027.md 落地段。

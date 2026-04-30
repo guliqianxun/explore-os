@@ -45,7 +45,7 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 | **v0.8 (M7)** | **索引层闭环（图谱可视化 freeze）** | PaperGraphModel / `.excalidraw` / SVG 已落地，**实测可读性不及 HTML**；交互式可视化推迟到 Electron HTML 视图 | 2026-04/05 ✅ |
 | **v0.9 (M8)** | **Electron 基础设施 + DRF API** | C1/C3/C5/C9 单机化清理 / EXPLORE_OS_DATA_DIR / DRF 包装 CLI / APScheduler in-process | 2026-05 |
 | **v1.0 (M9)** | **Electron shell + Python sidecar** | electron-builder / PyInstaller Django / HTTP localhost / 端口与进程管理 | 2026-05 |
-| **v1.1 (M10)** | **前端 MVP + Editorial 重设计** | 4 页 → 编辑/杂志重设计 → Subscription 表单化 + Ingest（PDF/arxiv/URL）| 2026-05/06 ✅ ft-024/026，🔄 ft-027 |
+| **v1.1 (M10)** | **前端 MVP + Editorial 重设计** | 4 页 → 编辑/杂志重设计 → Subscription 表单化 + Ingest（PDF/arxiv/URL）| 2026-05/06 ✅ ft-024/026/027 |
 | **v1.2 (M11)** | **用户层（A 进 B 出）+ 重构收尾** | Paper-centric schema ✅ / Inbox verdict ✅ / Reading Station ✅ / Brief 内容层 ✅ / **代码 review + 解耦重构（iter-019）+ ft-034 services 接口规整** | 2026-05 |
 | **v1.3 (M12)** | **Library + FTS5 + Zotero export** | ft-030（FTS5 收编 typeahead/Library/backlink 单引擎）+ Zotero `.bib + pdf` 导出 | 2026-05/06 |
 | **v1.4 (M13)** | **chat 分级 + user_profile 蒸馏** | α 蒸馏层（ft-035）/ 按记忆层分级 chat（fresh / sustained / archived）/ with-memory 是系统第一逻辑 | 2026-06/07 |
@@ -86,7 +86,9 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [ft-030](features/ft-030.md) — Library + FTS5 全文搜索 + Zotero export
 - [ft-031](features/ft-031.md) — 桌面通知 + brief 未决分组
 - [ft-032](features/ft-032.md) — ClaimCard 用户修订层（user_claim_edit override）
-- [ft-033](features/ft-033.md) — Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）
+- [ft-033](features/ft-033.md) — Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）✅
+- [ft-034](features/ft-034.md) — services 接口规整：apps/llm 中台层 + 跨段解耦 7 条 P0 ✅
+- [ft-036](features/ft-036.md) — First-user trial polish：HashRouter fix + 墙报式卡 + paper.keywords + 订阅桥 + 外链 ✅
 
 ## 当前迭代
 
@@ -100,7 +102,7 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [iter-008](iterations/iter-008.md) — Sprint 8：Electron shell + Python sidecar（ft-023 ✅）
 - [iter-009](iterations/iter-009.md) — Sprint 9：前端 MVP 4 页（ft-024 ✅）
 - [iter-010](iterations/iter-010.md) — Sprint 10：编辑/杂志重设计（ft-026 ✅）
-- [iter-011](iterations/iter-011.md) — Sprint 11：Subscription 表单化 + Ingest（ft-027）
+- [iter-011](iterations/iter-011.md) — Sprint 11：Subscription 表单化 + Ingest（ft-027 ✅）
 - [iter-012](iterations/iter-012.md) — Sprint 12：Paper-centric schema + Inbox verdict（ft-028 ✅）
 - [iter-013](iterations/iter-013.md) — Sprint 13：Reading Station + ClaimCard 引文展开（ft-029）
 - [iter-014](iterations/iter-014.md) — Sprint 14：Library + FTS5 + Zotero export（ft-030）
@@ -108,7 +110,8 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [iter-016](iterations/iter-016.md) — Sprint 16：自动更新 + CUDA/CPU 双轨（ft-025）
 - [iter-017](iterations/iter-017.md) — Sprint 17：ClaimCard 用户修订层（ft-032，紧跟 ft-029 实测后启动）
 - [iter-018](iterations/iter-018.md) — Sprint 18：Brief 内容处理层（ft-033，复用老邮件 pipeline）✅
-- [iter-019](iterations/iter-019.md) — Sprint 19：代码 review + 解耦重构（v1.2 收尾，6 组并行 review → 修复 → ft-034）🔄
+- [iter-019](iterations/iter-019.md) — Sprint 19：代码 review + 解耦重构（v1.2 收尾，6 组并行 review → 修复 → ft-034）✅
+- [iter-020](iterations/iter-020.md) — Sprint 20：First-user trial polish（ft-036 ✅）
 
 ## 战略转向（2026-04-25）
 
