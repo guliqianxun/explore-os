@@ -10,7 +10,7 @@
 
 import { contextBridge, ipcRenderer } from "electron";
 
-import type { ExploreBridge, SidecarInfo } from "./types";
+import type { DataDirInfo, ExploreBridge, SidecarInfo } from "./types";
 
 const bridge: ExploreBridge = {
   getBackendPort: () =>
@@ -19,6 +19,23 @@ const bridge: ExploreBridge = {
     ipcRenderer.invoke("explore:get-sidecar-status") as Promise<SidecarInfo>,
   openExternal: (url: string) =>
     ipcRenderer.invoke("explore:open-external", url) as Promise<void>,
+  notify: (opts) =>
+    ipcRenderer.invoke("explore:notify", opts) as Promise<void>,
+  onNotificationClick: (handler) => {
+    const listener = (_e: unknown, jobId: string | null) => handler(jobId);
+    ipcRenderer.on("explore:notification-clicked", listener);
+    return () => ipcRenderer.off("explore:notification-clicked", listener);
+  },
+  getDataDirInfo: () =>
+    ipcRenderer.invoke("explore:get-data-dir-info") as Promise<
+      DataDirInfo | null
+    >,
+  setDataDirOverride: (override) =>
+    ipcRenderer.invoke("explore:set-data-dir-override", override) as Promise<{
+      ok: boolean;
+    }>,
+  pickDirectory: () =>
+    ipcRenderer.invoke("explore:pick-directory") as Promise<string | null>,
 };
 
 contextBridge.exposeInMainWorld("explore", bridge);

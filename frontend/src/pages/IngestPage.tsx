@@ -2,6 +2,7 @@
 // shows in-progress ingest jobs with 3-stage chain status.
 import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ interface JobMeta {
 }
 
 export default function IngestPage() {
+  const { t } = useTranslation();
   const [arxivId, setArxivId] = useState("");
   const [url, setUrl] = useState("");
 
@@ -48,7 +50,8 @@ export default function IngestPage() {
   const uploadMut = useMutation({
     mutationFn: (f: File) => ingestUpload(f),
     onSuccess: trackResp,
-    onError: (e: unknown) => alert(`Upload failed: ${(e as Error).message}`),
+    onError: (e: unknown) =>
+      alert(t("ingest.upload_failed", { err: (e as Error).message })),
   });
 
   const arxivMut = useMutation({
@@ -57,7 +60,8 @@ export default function IngestPage() {
       trackResp(r);
       setArxivId("");
     },
-    onError: (e: unknown) => alert(`arXiv fetch failed: ${(e as Error).message}`),
+    onError: (e: unknown) =>
+      alert(t("ingest.arxiv_failed", { err: (e as Error).message })),
   });
 
   const urlMut = useMutation({
@@ -66,7 +70,8 @@ export default function IngestPage() {
       trackResp(r);
       setUrl("");
     },
-    onError: (e: unknown) => alert(`URL fetch failed: ${(e as Error).message}`),
+    onError: (e: unknown) =>
+      alert(t("ingest.url_failed", { err: (e as Error).message })),
   });
 
   // Poll non-terminal ingest jobs every 2s.
@@ -114,11 +119,10 @@ export default function IngestPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          Ingest a paper
+          {t("ingest.title")}
         </h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-          drop a PDF, paste an arXiv id, or fetch from a URL — we extract,
-          interpret, and render
+          {t("ingest.subtitle")}
         </p>
       </header>
 
@@ -133,7 +137,7 @@ export default function IngestPage() {
           </section>
 
           {/* arXiv id */}
-          <Divider label="or paste an arXiv id" />
+          <Divider label={t("ingest.or_arxiv")} />
           <section className="flex gap-2">
             <Input
               placeholder="e.g. 2401.12345"
@@ -145,12 +149,12 @@ export default function IngestPage() {
               onClick={() => arxivMut.mutate(arxivId.trim())}
               disabled={!arxivValid || arxivMut.isPending}
             >
-              {arxivMut.isPending ? "Fetching…" : "Fetch"}
+              {arxivMut.isPending ? t("common.fetching") : t("ingest.fetch")}
             </Button>
           </section>
 
           {/* URL */}
-          <Divider label="or from a URL" />
+          <Divider label={t("ingest.or_url")} />
           <section className="flex gap-2">
             <Input
               placeholder="https://arxiv.org/pdf/2401.12345.pdf"
@@ -161,7 +165,7 @@ export default function IngestPage() {
               onClick={() => urlMut.mutate(url.trim())}
               disabled={!url || urlMut.isPending}
             >
-              {urlMut.isPending ? "Fetching…" : "Fetch"}
+              {urlMut.isPending ? t("common.fetching") : t("ingest.fetch")}
             </Button>
           </section>
 
@@ -174,11 +178,11 @@ export default function IngestPage() {
                 color: "var(--fg)",
               }}
             >
-              In progress ({ingestList.length})
+              {t("ingest.in_progress")} ({ingestList.length})
             </h2>
             {ingestList.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
-                No ingest jobs yet.
+                {t("ingest.no_jobs")}
               </p>
             ) : (
               ingestList.map((j) => (

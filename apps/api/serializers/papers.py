@@ -38,6 +38,8 @@ class PaperListItemSerializer(serializers.Serializer):
     )
     has_brief = serializers.BooleanField(default=False)
     abstract_en = serializers.CharField(allow_blank=True, default="")
+    # ft-031: brief 速读区按 created_at 三段分桶（今日/本周/更早）需要前端可读
+    created_at = serializers.DateTimeField()
 
 
 class CommentSerializer(serializers.Serializer):

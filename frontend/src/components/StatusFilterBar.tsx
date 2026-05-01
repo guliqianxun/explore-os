@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { StatusFilter } from "@/types/paper";
 import { cn } from "@/lib/utils";
 
@@ -11,18 +12,14 @@ interface StatusFilterBarProps {
   onChange: (s: StatusFilter) => void;
 }
 
-interface ChipDef {
-  value: StatusFilter;
-  label: string;
-}
-
-const CHIPS: ChipDef[] = [
-  { value: "brief", label: "Brief" },
-  { value: "new", label: "New" },
-  { value: "queued", label: "Queued" },
-  { value: "reading", label: "Reading" },
-  { value: "read", label: "Read" },
-  { value: "all", label: "All" },
+// i18n key suffix for each chip; resolved at render in ``papers.filter.*``.
+const CHIPS: { value: StatusFilter; key: string }[] = [
+  { value: "brief", key: "brief" },
+  { value: "new", key: "new" },
+  { value: "queued", key: "queued" },
+  { value: "reading", key: "reading" },
+  { value: "read", key: "read" },
+  { value: "all", key: "all" },
 ];
 
 /**
@@ -37,12 +34,13 @@ export function StatusFilterBar({
   counts,
   onChange,
 }: StatusFilterBarProps) {
+  const { t } = useTranslation();
   return (
     <nav
       aria-label="Inbox status filter"
       className="flex items-center gap-2 flex-wrap"
     >
-      {CHIPS.map(({ value, label }) => {
+      {CHIPS.map(({ value, key }) => {
         const active = current === value;
         const count = counts[value];
         return (
@@ -59,7 +57,7 @@ export function StatusFilterBar({
                 : "border-[var(--rule)] text-[var(--fg-soft)] hover:border-[var(--fg)] hover:text-[var(--fg)]",
             )}
           >
-            <span>{label}</span>
+            <span>{t(`papers.filter.${key}`)}</span>
             {typeof count === "number" ? (
               <span
                 className={cn(

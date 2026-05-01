@@ -1,12 +1,12 @@
-// User settings → LLM 接口配置（api_base / api_key / models / budget）+ Test ping
+// ft-038: clean Settings — General (language) + LLM + Data directory.
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  FieldSource,
   LLMSettingsDTO,
   LLMSettingsPatch,
   LLMTestResult,
@@ -14,16 +14,18 @@ import {
   testLLMConnection,
   updateLLMSettings,
 } from "@/api/settings";
+import type { DataDirInfo } from "@/api/client";
+import { SUPPORTED_LANGS, currentLang, setLang, type Lang } from "@/i18n";
 
 interface DraftState {
   api_base: string;
   api_key: string;
-  api_key_dirty: boolean; // true once user typed in the key field
+  api_key_dirty: boolean;
   model_text: string;
   model_multimodal: string;
   model_vision_classifier: string;
   model_deep: string;
-  daily_budget_cny: string; // string for input control
+  daily_budget_cny: string;
 }
 
 function emptyDraft(d: LLMSettingsDTO | undefined): DraftState {
@@ -39,28 +41,8 @@ function emptyDraft(d: LLMSettingsDTO | undefined): DraftState {
   };
 }
 
-const SOURCE_LABEL: Record<FieldSource, string> = {
-  user: "user_config.json",
-  env: ".env",
-  default: "默认",
-};
-
-function SourceBadge({ source }: { source: FieldSource }) {
-  return (
-    <span
-      className="ml-2 text-[10px] uppercase tracking-wider px-1.5 py-px rounded-chip"
-      style={{
-        background: source === "user" ? "var(--accent-soft, #eef2ff)" : "var(--bg-soft)",
-        color: source === "user" ? "var(--accent, #4f46e5)" : "var(--fg-muted)",
-        border: "1px solid var(--rule)",
-      }}
-    >
-      {SOURCE_LABEL[source]}
-    </span>
-  );
-}
-
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const settingsQ = useQuery({
     queryKey: ["settings", "llm"],
@@ -71,7 +53,6 @@ export default function SettingsPage() {
   const [keyVisible, setKeyVisible] = useState(false);
   const [testResult, setTestResult] = useState<LLMTestResult | null>(null);
 
-  // Sync draft from server data on first load / after save
   useEffect(() => {
     if (settingsQ.data && !draft.api_key_dirty) {
       setDraft(emptyDraft(settingsQ.data));
@@ -88,9 +69,7 @@ export default function SettingsPage() {
         model_vision_classifier: draft.model_vision_classifier,
         model_deep: draft.model_deep,
       };
-      // Only send api_key if user touched the field (so we don't accidentally clear it)
       if (draft.api_key_dirty) patch.api_key = draft.api_key;
-      // Budget: send numeric or omit
       const b = draft.daily_budget_cny.trim();
       if (b) {
         const n = Number(b);
@@ -111,7 +90,6 @@ export default function SettingsPage() {
     onSuccess: setTestResult,
   });
 
-  const sources = settingsQ.data?.sources || {};
   const masked = settingsQ.data?.api_key_masked || "";
   const keySet = settingsQ.data?.api_key_set ?? false;
 
@@ -119,7 +97,7 @@ export default function SettingsPage() {
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       <header
         className="px-6 py-4 border-b"
-        style={{ borderColor: "var(--rule)", background: "var(--bg)" }}
+        style={{ borderColor: "var(--rule)" }}
       >
         <h1
           className="text-2xl"
@@ -129,228 +107,229 @@ export default function SettingsPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          Settings
+          {t("settings.title")}
         </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-          LLM 接口配置 — 覆盖 <code>.env</code> 默认；保存后立即对所有 LLM 调用生效
-        </p>
       </header>
 
       <ScrollArea className="flex-1">
-        <div className="px-6 py-5 max-w-2xl mx-auto space-y-6">
-          {settingsQ.isLoading ? (
-            <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
-              Loading…
-            </p>
-          ) : (
-            <>
-              <Section
-                label="API endpoint"
-                source={sources.api_base}
-                hint="OpenAI-compatible /chat/completions 根路径，如 https://api.openai.com/v1 或阿里云 https://dashscope.aliyuncs.com/compatible-mode/v1"
-              >
-                <Input
-                  value={draft.api_base}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, api_base: e.target.value }))
-                  }
-                  placeholder="https://api.openai.com/v1"
-                />
-              </Section>
+        <div className="px-6 py-6 max-w-2xl mx-auto space-y-10">
+          {/* General — language */}
+          <SectionGroup title={t("settings.general")}>
+            <LanguageRow />
+          </SectionGroup>
 
-              <Section
-                label="API key"
-                source={sources.api_key}
-                hint={
-                  keySet && !draft.api_key_dirty
-                    ? `当前已配置：${masked}（输入新值会替换；保留为空 = 不动）`
-                    : "Bearer token（OpenAI: sk-…；DashScope: sk-…）"
-                }
-              >
-                <div className="flex gap-2">
+          {/* LLM */}
+          <SectionGroup title={t("settings.llm")}>
+            {settingsQ.isLoading ? (
+              <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
+                {t("common.loading")}
+              </p>
+            ) : (
+              <>
+                <Field label={t("settings.api_endpoint")}>
                   <Input
-                    type={keyVisible ? "text" : "password"}
-                    autoComplete="off"
-                    value={draft.api_key}
-                    placeholder={keySet ? masked : "sk-…"}
+                    value={draft.api_base}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, api_base: e.target.value }))
+                    }
+                    placeholder="https://api.openai.com/v1"
+                  />
+                </Field>
+
+                <Field
+                  label={t("settings.api_key")}
+                  hint={
+                    keySet && !draft.api_key_dirty
+                      ? t("settings.api_key_set", { masked })
+                      : undefined
+                  }
+                >
+                  <div className="flex gap-2">
+                    <Input
+                      type={keyVisible ? "text" : "password"}
+                      autoComplete="off"
+                      value={draft.api_key}
+                      placeholder={
+                        keySet ? masked : t("settings.api_key_placeholder")
+                      }
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          api_key: e.target.value,
+                          api_key_dirty: true,
+                        }))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setKeyVisible((v) => !v)}
+                    >
+                      {keyVisible ? t("common.hide") : t("common.show")}
+                    </Button>
+                  </div>
+                </Field>
+
+                <Field label={t("settings.text_model")}>
+                  <Input
+                    value={draft.model_text}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, model_text: e.target.value }))
+                    }
+                    placeholder="gpt-4o-mini"
+                  />
+                </Field>
+
+                <Field
+                  label={t("settings.deep_model")}
+                  hint={t("settings.deep_model_hint")}
+                >
+                  <Input
+                    value={draft.model_deep}
+                    onChange={(e) =>
+                      setDraft((d) => ({ ...d, model_deep: e.target.value }))
+                    }
+                  />
+                </Field>
+
+                <Field
+                  label={t("settings.multimodal_model")}
+                  hint={t("settings.multimodal_model_hint")}
+                >
+                  <Input
+                    value={draft.model_multimodal}
                     onChange={(e) =>
                       setDraft((d) => ({
                         ...d,
-                        api_key: e.target.value,
-                        api_key_dirty: true,
+                        model_multimodal: e.target.value,
                       }))
                     }
                   />
+                </Field>
+
+                <Field
+                  label={t("settings.vision_model")}
+                  hint={t("settings.vision_model_hint")}
+                >
+                  <Input
+                    value={draft.model_vision_classifier}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        model_vision_classifier: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field
+                  label={t("settings.daily_budget")}
+                  hint={t("settings.daily_budget_hint")}
+                >
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={draft.daily_budget_cny}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        daily_budget_cny: e.target.value,
+                      }))
+                    }
+                    placeholder="30"
+                  />
+                </Field>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <Button
+                    onClick={() => saveMut.mutate()}
+                    disabled={saveMut.isPending}
+                  >
+                    {saveMut.isPending
+                      ? t("common.saving")
+                      : t("common.save")}
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setKeyVisible((v) => !v)}
+                    onClick={() => {
+                      setTestResult(null);
+                      testMut.mutate();
+                    }}
+                    disabled={testMut.isPending}
                   >
-                    {keyVisible ? "Hide" : "Show"}
+                    {testMut.isPending
+                      ? t("settings.testing")
+                      : t("settings.test_connection")}
                   </Button>
-                  {draft.api_key_dirty ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() =>
-                        setDraft((d) => ({ ...d, api_key: "", api_key_dirty: false }))
-                      }
+                  {saveMut.isSuccess && !saveMut.isPending ? (
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--fg-muted)" }}
                     >
-                      Cancel
-                    </Button>
+                      ✓ {t("common.saved")}
+                    </span>
                   ) : null}
                 </div>
-              </Section>
 
-              <Section
-                label="Text model"
-                source={sources.model_text}
-                hint="用于 skim / narrative / rewriter / extract_claims；默认 gpt-4o-mini"
-              >
-                <Input
-                  value={draft.model_text}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, model_text: e.target.value }))
-                  }
-                  placeholder="gpt-4o-mini"
-                />
-              </Section>
+                {testResult ? <TestResultCard result={testResult} /> : null}
+              </>
+            )}
+          </SectionGroup>
 
-              <Section
-                label="Deep model"
-                source={sources.model_deep}
-                hint="精读用更强模型；空 = 与 text model 相同"
-              >
-                <Input
-                  value={draft.model_deep}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, model_deep: e.target.value }))
-                  }
-                  placeholder="(empty = use text model)"
-                />
-              </Section>
-
-              <Section
-                label="Multimodal model"
-                source={sources.model_multimodal}
-                hint="图文理解（caption / figure 解读）；空 = 跳过多模态步骤"
-              >
-                <Input
-                  value={draft.model_multimodal}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, model_multimodal: e.target.value }))
-                  }
-                  placeholder="(empty = none)"
-                />
-              </Section>
-
-              <Section
-                label="Vision classifier model"
-                source={sources.model_vision_classifier}
-                hint="figure 分类（chart / table / equation 区分）；空 = 用 multimodal"
-              >
-                <Input
-                  value={draft.model_vision_classifier}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      model_vision_classifier: e.target.value,
-                    }))
-                  }
-                  placeholder="(empty = use multimodal)"
-                />
-              </Section>
-
-              <Section
-                label="Daily budget (CNY)"
-                source={sources.daily_budget_cny}
-                hint="每天 LLM 花销上限（人民币元，按 token 估算）；超额报警，0 = 不限"
-              >
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={draft.daily_budget_cny}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, daily_budget_cny: e.target.value }))
-                  }
-                  placeholder="30"
-                />
-              </Section>
-
-              {/* Action row */}
-              <div className="flex items-center gap-3 pt-2">
-                <Button
-                  onClick={() => saveMut.mutate()}
-                  disabled={saveMut.isPending}
-                >
-                  {saveMut.isPending ? "Saving…" : "Save"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setTestResult(null);
-                    testMut.mutate();
-                  }}
-                  disabled={testMut.isPending}
-                >
-                  {testMut.isPending ? "Testing…" : "Test connection"}
-                </Button>
-                {saveMut.isSuccess && !saveMut.isPending ? (
-                  <span className="text-xs" style={{ color: "var(--fg-muted)" }}>
-                    ✓ Saved
-                  </span>
-                ) : null}
-                {saveMut.isError ? (
-                  <span className="text-xs text-red-600">
-                    Save failed: {(saveMut.error as Error).message}
-                  </span>
-                ) : null}
-              </div>
-
-              {/* Test result */}
-              {testResult ? (
-                <TestResultCard result={testResult} />
-              ) : null}
-
-              {/* Config path footer */}
-              <div
-                className="text-[11px] pt-6 border-t"
-                style={{ color: "var(--fg-muted)", borderColor: "var(--rule)" }}
-              >
-                配置文件：<code>{settingsQ.data?.config_path}</code>
-                <br />
-                字段未填 → 回落 <code>.env</code> → 内建默认。安全起见 api_key
-                只本机存储；分发安装包不会带走它。
-              </div>
-            </>
-          )}
+          {/* Data directory */}
+          <DataDirSection />
         </div>
       </ScrollArea>
     </div>
   );
 }
 
-function Section({
+// ─────────────────────────────────────────────────────────────────────────
+// Layout primitives
+// ─────────────────────────────────────────────────────────────────────────
+
+function SectionGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4">
+      <h2
+        className="text-[11px] uppercase tracking-[0.18em] pb-1 border-b"
+        style={{
+          color: "var(--fg-muted)",
+          borderColor: "var(--rule)",
+          fontFamily: "var(--font-mono, ui-monospace)",
+        }}
+      >
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function Field({
   label,
-  source,
   hint,
   children,
 }: {
   label: string;
-  source?: FieldSource;
   hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
       <label
-        className="flex items-center text-sm mb-1"
-        style={{ color: "var(--fg)", fontFamily: "var(--font-sans)" }}
+        className="block text-sm mb-1"
+        style={{ color: "var(--fg)" }}
       >
         {label}
-        {source ? <SourceBadge source={source} /> : null}
       </label>
       {children}
       {hint ? (
@@ -365,7 +344,41 @@ function Section({
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Language switcher
+// ─────────────────────────────────────────────────────────────────────────
+
+function LanguageRow() {
+  const { t } = useTranslation();
+  const [lang, setLangState] = useState<Lang>(currentLang());
+  const handleChange = (next: Lang) => {
+    setLangState(next);
+    setLang(next);
+  };
+  return (
+    <Field label={t("settings.language")}>
+      <div className="flex gap-2">
+        {SUPPORTED_LANGS.map((l) => (
+          <Button
+            key={l}
+            type="button"
+            variant={l === lang ? "default" : "outline"}
+            onClick={() => handleChange(l)}
+          >
+            {t(`settings.language_${l}`)}
+          </Button>
+        ))}
+      </div>
+    </Field>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Test result
+// ─────────────────────────────────────────────────────────────────────────
+
 function TestResultCard({ result }: { result: LLMTestResult }) {
+  const { t } = useTranslation();
   if (result.ok) {
     const u = result.usage || {};
     return (
@@ -378,17 +391,14 @@ function TestResultCard({ result }: { result: LLMTestResult }) {
         }}
       >
         <div className="font-medium text-emerald-700">
-          ✓ Connection OK
-        </div>
-        <div className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-          model <code>{result.model}</code> · {result.latency_ms}ms ·{" "}
-          {u.total_tokens ?? "?"} tokens
+          ✓ {t("settings.test_ok")}
         </div>
         <div
-          className="text-xs mt-1 font-mono"
-          style={{ color: "var(--fg-soft)" }}
+          className="text-xs mt-1"
+          style={{ color: "var(--fg-muted)" }}
         >
-          → {result.content || "(empty)"}
+          {result.model} · {result.latency_ms}ms ·{" "}
+          {u.total_tokens ?? "?"} tokens
         </div>
       </div>
     );
@@ -402,10 +412,106 @@ function TestResultCard({ result }: { result: LLMTestResult }) {
         color: "#991b1b",
       }}
     >
-      <div className="font-medium">
-        ✗ Test failed ({result.kind === "config" ? "config" : "network / vendor"})
-      </div>
+      <div className="font-medium">✗ {t("settings.test_failed")}</div>
       <div className="text-xs mt-1 font-mono">{result.error}</div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ft-037: Data directory
+// ─────────────────────────────────────────────────────────────────────────
+
+function DataDirSection() {
+  const { t } = useTranslation();
+  const bridge =
+    typeof window !== "undefined" ? window.explore : undefined;
+  const [info, setInfo] = useState<DataDirInfo | null>(null);
+  const [draft, setDraft] = useState<string>("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!bridge?.getDataDirInfo) return;
+    bridge.getDataDirInfo().then((r) => {
+      setInfo(r);
+      setDraft(r?.user_override ?? "");
+    });
+  }, [bridge]);
+
+  if (!bridge?.getDataDirInfo || !info) return null;
+
+  const handlePick = async () => {
+    const picked = await bridge.pickDirectory?.();
+    if (picked) {
+      setDraft(picked);
+      setSaved(false);
+    }
+  };
+  const handleSave = async () => {
+    await bridge.setDataDirOverride?.(draft.trim() || null);
+    setSaved(true);
+    const fresh = await bridge.getDataDirInfo!();
+    setInfo(fresh);
+  };
+  const handleReset = async () => {
+    setDraft("");
+    await bridge.setDataDirOverride?.(null);
+    setSaved(true);
+    const fresh = await bridge.getDataDirInfo!();
+    setInfo(fresh);
+  };
+  const dirty = (draft.trim() || null) !== (info.user_override ?? null);
+  const sourceLabel = t(`settings.data_dir_source.${info.source}`);
+
+  return (
+    <SectionGroup title={t("settings.data_dir")}>
+      <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
+        {t("settings.data_dir_subtitle")}
+      </p>
+
+      <Field
+        label={t("settings.data_dir_current")}
+        hint={`${sourceLabel}${info.portable ? " · portable" : ""}`}
+      >
+        <Input value={info.effective} readOnly />
+      </Field>
+
+      <Field
+        label={t("settings.data_dir_override")}
+        hint={t("settings.data_dir_override_hint")}
+      >
+        <div className="flex gap-2">
+          <Input
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              setSaved(false);
+            }}
+          />
+          <Button type="button" variant="outline" onClick={handlePick}>
+            {t("common.browse")}
+          </Button>
+        </div>
+      </Field>
+
+      <div className="flex items-center gap-3 pt-1">
+        <Button onClick={handleSave} disabled={!dirty}>
+          {t("common.save")}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={handleReset}
+          disabled={!info.user_override && !draft.trim()}
+        >
+          {t("common.reset")}
+        </Button>
+        {saved ? (
+          <span className="text-xs" style={{ color: "var(--fg-muted)" }}>
+            ✓ {t("settings.data_dir_restart_hint")}
+          </span>
+        ) : null}
+      </div>
+    </SectionGroup>
   );
 }

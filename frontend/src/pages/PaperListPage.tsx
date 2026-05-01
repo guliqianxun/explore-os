@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { listPapers, type PaperListItem } from "@/api/papers";
 import { getApi } from "@/api/client";
@@ -62,6 +63,7 @@ async function fetchPapersForFilter(
 }
 
 export default function PaperListPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const filter = parseStatusParam(searchParams.get("status"));
 
@@ -139,7 +141,7 @@ export default function PaperListPage() {
 
   // Brief view: split into two groups by status.
   // 主要 = reading|queued (user has signaled intent)
-  // 速读 = new (undecided)
+  // 速读 = new (undecided) — ft-031: 再按 created_at 分今日 / 本周 / 更早三桶
   // archived/read_* are hidden in brief.
   const briefGroups = useMemo(() => {
     if (!isBrief || !data) return null;
@@ -147,7 +149,21 @@ export default function PaperListPage() {
       (p) => p.status === "reading" || p.status === "queued",
     );
     const skim = data.filter((p) => p.status === "new");
-    return { primary, skim };
+    // ft-031: 三段分桶。created_at 来自后端 UTC ISO；前端按 local "今天 0:00" 切。
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(startOfToday.getTime() - 7 * 24 * 3600 * 1000);
+    const skimToday: typeof skim = [];
+    const skimWeek: typeof skim = [];
+    const skimOlder: typeof skim = [];
+    for (const p of skim) {
+      // created_at 缺失（老数据）→ 落"更早"桶，避免误归今日
+      const ts = p.created_at ? new Date(p.created_at).getTime() : 0;
+      if (ts >= startOfToday.getTime()) skimToday.push(p);
+      else if (ts >= weekAgo.getTime()) skimWeek.push(p);
+      else skimOlder.push(p);
+    }
+    return { primary, skim, skimToday, skimWeek, skimOlder };
   }, [isBrief, data]);
 
   const [hero, ...rest] = data ?? [];
@@ -171,7 +187,7 @@ export default function PaperListPage() {
               className="font-serif text-4xl md:text-5xl font-semibold
                          text-[var(--fg)] leading-none"
             >
-              Today&rsquo;s brief
+              {t("papers.today")}
             </h1>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -187,7 +203,7 @@ export default function PaperListPage() {
                          text-[var(--fg-soft)] hover:border-[var(--accent)]
                          hover:text-[var(--accent)] transition disabled:opacity-50"
             >
-              {isFetching ? "Refreshing" : "Refresh"}
+              {isFetching ? t("papers.refreshing") : t("papers.refresh")}
             </button>
           </div>
         </header>
@@ -207,10 +223,10 @@ export default function PaperListPage() {
 
         {/* Body */}
         {isLoading ? (
-          <p className="font-serif text-[var(--fg-muted)]">Loading…</p>
+          <p className="font-serif text-[var(--fg-muted)]">{t("common.loading")}</p>
         ) : error ? (
           <p className="font-serif text-[var(--counter-fg)]">
-            Failed to load papers: {(error as Error).message}
+            {(error as Error).message}
           </p>
         ) : !data || data.length === 0 ? (
           <EmptyState filter={filter} onViewAll={() => handleFilterChange("all")} />
@@ -218,6 +234,9 @@ export default function PaperListPage() {
           <BriefView
             primary={briefGroups.primary}
             skim={briefGroups.skim}
+            skimToday={briefGroups.skimToday}
+            skimWeek={briefGroups.skimWeek}
+            skimOlder={briefGroups.skimOlder}
             apiBase={apiBase}
             today={today}
             onViewAll={() => handleFilterChange("all")}
@@ -255,6 +274,9 @@ export default function PaperListPage() {
 interface BriefViewProps {
   primary: PaperListItem[];
   skim: PaperListItem[];
+  skimToday: PaperListItem[];
+  skimWeek: PaperListItem[];
+  skimOlder: PaperListItem[];
   apiBase: string;
   today: string;
   onViewAll: () => void;
@@ -268,14 +290,19 @@ interface BriefViewProps {
 function BriefView({
   primary,
   skim,
+  skimToday,
+  skimWeek,
+  skimOlder,
   apiBase,
   today,
   onViewAll,
 }: BriefViewProps) {
+  const { t } = useTranslation();
+  const [olderOpen, setOlderOpen] = useState(false);
   if (primary.length === 0 && skim.length === 0) {
     return (
       <div className="font-serif text-[var(--fg-muted)] py-16 text-center">
-        <p className="text-lg italic">No papers in your brief.</p>
+        <p className="text-lg italic">{t("papers.empty_brief")}</p>
         <p className="mt-2 text-sm">
           <button
             type="button"
@@ -284,7 +311,7 @@ function BriefView({
                        hover:text-[var(--accent)] hover:decoration-[var(--accent)]
                        transition-colors"
           >
-            View all papers &rarr;
+            {t("papers.view_all")}
           </button>
         </p>
       </div>
@@ -307,7 +334,7 @@ function BriefView({
       {/* 主要论文 — full editorial cards */}
       {primary.length > 0 ? (
         <section className="mb-12">
-          <SectionHeader label="主要论文" count={primary.length} />
+          <SectionHeader label={t("papers.primary")} count={primary.length} />
           {primary.map((p, i) => {
             // lead = abstract_zh（默认可见）；abstractEn 走 toggle。
             const lead = p.abstract_zh || p.tldr_zh || undefined;
@@ -337,27 +364,82 @@ function BriefView({
         </section>
       ) : null}
 
-      {/* 速读 — compact one-liner rows */}
+      {/* 速读 — ft-031: 按 created_at 分今日/本周/更早三桶。更早默认折叠。 */}
       {skim.length > 0 ? (
         <section>
-          <SectionHeader label="速读" count={skim.length} />
-          <div>
-            {skim.map((p) => {
-              const skimLead = p.abstract_zh || p.tldr_zh || undefined;
-              return (
-                <SkimCard
-                  key={p.arxiv_id}
-                  paper={p}
-                  lead={skimLead}
-                  keywords={p.keywords}
-                  abstractEn={p.abstract_en}
-                />
-              );
-            })}
-          </div>
+          <SectionHeader label={t("papers.skim")} count={skim.length} />
+          {skimToday.length > 0 ? (
+            <SkimBucket label={t("papers.skim_today")} papers={skimToday} />
+          ) : null}
+          {skimWeek.length > 0 ? (
+            <SkimBucket label={t("papers.skim_week")} papers={skimWeek} />
+          ) : null}
+          {skimOlder.length > 0 ? (
+            <div>
+              <button
+                type="button"
+                onClick={() => setOlderOpen((v) => !v)}
+                className="font-mono text-[11px] uppercase tracking-[0.16em]
+                           text-[var(--fg-muted)] hover:text-[var(--accent)]
+                           transition-colors py-2"
+              >
+                {olderOpen ? "▾" : "▸"} {t("papers.skim_older")} ({skimOlder.length})
+              </button>
+              {olderOpen ? (
+                <div className="pt-2">
+                  {skimOlder.map((p) => {
+                    const skimLead = p.abstract_zh || p.tldr_zh || undefined;
+                    return (
+                      <SkimCard
+                        key={p.arxiv_id}
+                        paper={p}
+                        lead={skimLead}
+                        keywords={p.keywords}
+                        abstractEn={p.abstract_en}
+                      />
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </section>
       ) : null}
     </>
+  );
+}
+
+function SkimBucket({
+  label,
+  papers,
+}: {
+  label: string;
+  papers: PaperListItem[];
+}) {
+  return (
+    <div className="mb-6">
+      <h3
+        className="font-mono text-[11px] uppercase tracking-[0.16em]
+                   text-[var(--fg-muted)] py-2 sticky top-[3.25rem]
+                   bg-[var(--bg)]/95 backdrop-blur z-[5]"
+      >
+        {label} ({papers.length})
+      </h3>
+      <div>
+        {papers.map((p) => {
+          const skimLead = p.abstract_zh || p.tldr_zh || undefined;
+          return (
+            <SkimCard
+              key={p.arxiv_id}
+              paper={p}
+              lead={skimLead}
+              keywords={p.keywords}
+              abstractEn={p.abstract_en}
+            />
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -381,10 +463,11 @@ interface EmptyStateProps {
 }
 
 function EmptyState({ filter, onViewAll }: EmptyStateProps) {
+  const { t } = useTranslation();
   if (filter === "new") {
     return (
       <div className="font-serif text-[var(--fg-muted)] py-16 text-center">
-        <p className="text-lg italic">No new papers.</p>
+        <p className="text-lg italic">{t("papers.empty_new")}</p>
         <p className="mt-2 text-sm">
           <button
             type="button"
@@ -393,7 +476,7 @@ function EmptyState({ filter, onViewAll }: EmptyStateProps) {
                        hover:text-[var(--accent)] hover:decoration-[var(--accent)]
                        transition-colors"
           >
-            View all papers &rarr;
+            {t("papers.view_all")}
           </button>
         </p>
       </div>
@@ -402,17 +485,15 @@ function EmptyState({ filter, onViewAll }: EmptyStateProps) {
 
   return (
     <div className="font-serif text-[var(--fg-muted)] py-16 text-center">
-      <p className="text-lg italic">The desk is empty.</p>
+      <p className="text-lg italic">{t("papers.empty_default")}</p>
       <p className="mt-2 text-sm">
-        Trigger a run from the{" "}
         <Link
           to="/ingest"
           className="underline decoration-[var(--rule)] underline-offset-4
                      hover:text-[var(--accent)] hover:decoration-[var(--accent)]"
         >
-          Ingest
-        </Link>{" "}
-        tab to surface today&rsquo;s reading.
+          {t("papers.open_ingest")}
+        </Link>
       </p>
     </div>
   );

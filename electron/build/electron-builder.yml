@@ -43,16 +43,27 @@ nodeGypRebuild: false
 buildDependenciesFromSource: false
 
 mac:
-  target: dmg
+  # ft-037: zip 形态是 portable（解压即跑，不写 /Applications）
+  target:
+    - dmg
+    - zip
   identity: null            # self-use stage: no signing
   category: public.app-category.productivity
   icon: build/icons/icon.icns
 
 win:
+  # ft-037: portable 与 nsis 并存。
+  # - nsis: 写 Program Files / 注册表，正常安装
+  # - portable: 单文件自解压 exe，双击即跑（PORTABLE_EXECUTABLE_DIR 自动注入）
   target:
     - nsis
+    - portable
   icon: build/icons/icon.ico
   signingHashAlgorithms: null  # self-use stage: no signing
+
+# ft-037: portable target 的 exe 命名（默认会带 portable 后缀，显式标注更清晰）
+portable:
+  artifactName: "${productName}-${version}-portable.${ext}"
 
 linux:
   target:

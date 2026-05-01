@@ -47,7 +47,7 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 | **v1.0 (M9)** | **Electron shell + Python sidecar** | electron-builder / PyInstaller Django / HTTP localhost / 端口与进程管理 | 2026-05 |
 | **v1.1 (M10)** | **前端 MVP + Editorial 重设计** | 4 页 → 编辑/杂志重设计 → Subscription 表单化 + Ingest（PDF/arxiv/URL）| 2026-05/06 ✅ ft-024/026/027 |
 | **v1.2 (M11)** | **用户层（A 进 B 出）+ 重构收尾** | Paper-centric schema ✅ / Inbox verdict ✅ / Reading Station ✅ / Brief 内容层 ✅ / **代码 review + 解耦重构（iter-019）+ ft-034 services 接口规整** | 2026-05 |
-| **v1.3 (M12)** | **Library + FTS5 + Zotero export** | ft-030（FTS5 收编 typeahead/Library/backlink 单引擎）+ Zotero `.bib + pdf` 导出 | 2026-05/06 |
+| **v1.3 (M12)** | **Library + FTS5 + Zotero export + PC 便携版** | ft-030（FTS5 收编 typeahead/Library/backlink 单引擎）+ Zotero `.bib + pdf` 导出 + ft-037（portable + data_dir 用户可配）| 2026-05/06 |
 | **v1.4 (M13)** | **chat 分级 + user_profile 蒸馏** | α 蒸馏层（ft-035）/ 按记忆层分级 chat（fresh / sustained / archived）/ with-memory 是系统第一逻辑 | 2026-06/07 |
 | **v1.5 (M14)** | **分发：自动更新 + CUDA/CPU 双轨** | electron-updater / 双 PyInstaller spec / 不签名（自用阶段）| 2026-07/08 |
 | **v1.x (M15+)** | 扩展方向 | 代码签名 / 公开分发 / xingsuo 作为 source / GitHub + HF Models 信源 | 待评估 |

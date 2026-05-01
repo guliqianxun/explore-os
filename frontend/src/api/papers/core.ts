@@ -66,6 +66,8 @@ export interface PaperListItem {
   has_brief: boolean;
   /** 原文 abstract（fallback；brief 缺失时前端截断显示）。 */
   abstract_en: string;
+  /** ft-031: ISO8601 UTC，brief 速读区按今日/本周/更早分桶用。 */
+  created_at: string;
 }
 
 /** Wire shape — every ft-028 field is optional during rollout. */
@@ -94,6 +96,7 @@ function normalizePaperListItem(raw: PaperListItemWire): PaperListItem {
     key_innovation: raw.key_innovation ?? [],
     has_brief: raw.has_brief ?? false,
     abstract_en: raw.abstract_en ?? "",
+    created_at: raw.created_at ?? "",
   };
 }
 

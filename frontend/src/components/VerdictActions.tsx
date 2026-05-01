@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import type { PaperListItem } from "@/api/papers";
 import type { PaperStatus } from "@/types/paper";
@@ -14,15 +15,6 @@ interface VerdictActionsProps {
   /** Layout hint — defaults to horizontal row. */
   className?: string;
 }
-
-const VERDICT_LABELS: Record<PaperStatus, string> = {
-  new: "New",
-  queued: "Queued",
-  reading: "Reading",
-  read_kept: "Kept",
-  read_dropped: "Dropped",
-  archived: "Archived",
-};
 
 interface VerdictContext {
   /**
@@ -47,6 +39,7 @@ export function VerdictActions({
   onChanged,
   className,
 }: VerdictActionsProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -103,7 +96,7 @@ export function VerdictActions({
           className,
         )}
       >
-        {VERDICT_LABELS.archived}
+        {t("papers.verdict.archived")}
       </div>
     );
   }
@@ -130,19 +123,19 @@ export function VerdictActions({
       className={cn("inline-flex items-center gap-1.5", className)}
     >
       <VerdictButton
-        label="Skip"
+        label={t("papers.verdict.skip")}
         active={paper.status === "read_dropped"}
         disabled={mutation.isPending}
         onClick={() => handle("read_dropped")}
       />
       <VerdictButton
-        label="Queue"
+        label={t("papers.verdict.queue")}
         active={paper.status === "queued"}
         disabled={mutation.isPending}
         onClick={() => handle("queued")}
       />
       <VerdictButton
-        label="Read now"
+        label={t("papers.verdict.read_now")}
         accent
         active={paper.status === "reading"}
         disabled={mutation.isPending}

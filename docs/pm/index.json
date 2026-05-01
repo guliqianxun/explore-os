@@ -1,10 +1,10 @@
 {
   "project": "explore-os",
   "version": "v1.2-trial",
-  "updated_at": "2026-04-30-iter-021-planned",
+  "updated_at": "2026-05-01-iter-021-done",
   "roadmap": "ROADMAP.md",
   "current_iteration": "iter-021",
-  "current_focus": "iter-021 立项（4/30）：ft-031 桌面通知 + brief 未决分组 — Electron Notification IPC + notify 库（含 browser 回退）/ speed cards 区按 created_at 分今日/本周/更早三桶 / NavBar 未决 badge. ETA 1 天 (5/1). 不改 schema. iter-020 ✅ done + PM 一致性整理（ft-027 done / ft-030 → v1.3）已 land.",
+  "current_focus": "iter-021 ✅ done（5/1）：ft-031 桌面通知 + brief 三段分桶 + NavBar badge / ft-031.5 detail 页 PDF 自动下载 + 订阅 paper 详情 404 修复 / ft-037 PC 便携版 + 数据目录用户可配 / ft-038 i18n 双语 + Settings 页发布前清理。下一刀：用户即将引导重构「今日要览」页。",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -36,12 +36,14 @@
     {"id": "ft-028", "title": "Paper-centric schema + user_* 层 + Inbox verdict UI", "status": "done", "milestone": "v1.2"},
     {"id": "ft-029", "title": "Reading Station：3 栏 + pdf.js 内嵌 + ClaimCard 引文展开 + notes/tag/backlink", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-030", "title": "Library：filter + FTS5 全文搜索 + Zotero export", "status": "planned", "milestone": "v1.3"},
-    {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "planned", "milestone": "v1.2", "spec": "features/ft-031.md"},
+    {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "done", "milestone": "v1.2", "spec": "features/ft-031.md"},
     {"id": "ft-032", "title": "ClaimCard 用户修订层（user_claim_edit override + hide）", "status": "planned", "milestone": "v1.2"},
     {"id": "ft-033", "title": "Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）", "status": "done", "milestone": "v1.2"},
     {"id": "ft-034", "title": "services 接口规整：apps/llm 中台层 + 跨段解耦 7 条 P0（iter-019 PHASE-2-DECISION 拍板）", "status": "done", "milestone": "v1.2"},
     {"id": "ft-035", "title": "user_profile 蒸馏层（α 第一刀，与 chat 分级一起做）", "status": "planned", "milestone": "v1.4"},
-    {"id": "ft-036", "title": "First-user trial polish：HashRouter fix + 墙报式卡 + paper.keywords + 订阅桥 + 外链", "status": "done", "milestone": "v1.2"}
+    {"id": "ft-036", "title": "First-user trial polish：HashRouter fix + 墙报式卡 + paper.keywords + 订阅桥 + 外链", "status": "done", "milestone": "v1.2"},
+    {"id": "ft-037", "title": "PC 便携版（portable）+ 数据目录用户可配", "status": "done", "milestone": "v1.3", "spec": "features/ft-037.md"},
+    {"id": "ft-038", "title": "i18n 双语 + Settings 页发布前清理", "status": "done", "milestone": "v1.2", "spec": "features/ft-038.md"}
   ],
   "iterations": [
     {"id": "iter-001", "status": "done"},
@@ -64,6 +66,6 @@
     {"id": "iter-018", "status": "done", "scope": ["ft-033"]},
     {"id": "iter-019", "status": "done", "scope": ["code-review", "ft-034"]},
     {"id": "iter-020", "status": "done", "scope": ["ft-036"]},
-    {"id": "iter-021", "status": "planned", "scope": ["ft-031"]}
+    {"id": "iter-021", "status": "done", "scope": ["ft-031", "ft-031.5", "ft-037", "ft-038"]}
   ]
 }

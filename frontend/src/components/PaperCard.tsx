@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { getPaperDetail, type PaperDetail, type PaperListItem } from "@/api/papers";
 import { PaperLinks } from "@/components/PaperLinks";
@@ -26,6 +27,7 @@ interface PaperCardProps {
 export function PaperCard({
   paper, apiBase, lead, keywords, abstractEn,
 }: PaperCardProps) {
+  const { t } = useTranslation();
   const [showZh, setShowZh] = useState(false);
   const thumb =
     paper.n_figures > 0 && apiBase
@@ -109,7 +111,7 @@ export function PaperCard({
                        text-[var(--fg-soft)] hover:text-[var(--accent)]
                        transition-colors"
           >
-            {showZh ? "▾ Hide 中文翻译" : "▸ Show 中文翻译"}
+            {showZh ? t("papers.tabs.hide_zh") : t("papers.tabs.show_zh")}
           </button>
           {showZh ? (
             <p className="mt-1.5 font-serif text-[0.92rem] leading-[1.6]
@@ -137,6 +139,7 @@ type TabName = "materials" | "claims" | "summary";
  * content (lazy-fetches paper detail on first click). Click again to close.
  */
 export function MetaCards({ paper }: { paper: PaperListItem }) {
+  const { t } = useTranslation();
   const [active, setActive] = useState<TabName | null>(null);
 
   const detailQ = useQuery({
@@ -154,34 +157,45 @@ export function MetaCards({ paper }: { paper: PaperListItem }) {
         <TabButton
           active={active === "materials"}
           onClick={() => toggle("materials")}
-          label="Materials"
-          summary={`${paper.n_figures} fig · ${paper.n_tables} tbl · ${paper.n_sections} sec`}
+          label={t("papers.tabs.materials")}
+          summary={t("papers.tabs.materials_summary", {
+            fig: paper.n_figures,
+            tbl: paper.n_tables,
+            sec: paper.n_sections,
+          })}
         />
         <TabButton
           active={active === "claims"}
           onClick={() => toggle("claims")}
-          label="Claims"
+          label={t("papers.tabs.claims")}
           summary={
             paper.n_comments > 0
-              ? `${paper.n_claims} claims · ${paper.n_comments} notes`
-              : `${paper.n_claims} claims`
+              ? t("papers.tabs.claims_summary_with_notes", {
+                  claims: paper.n_claims,
+                  notes: paper.n_comments,
+                })
+              : t("papers.tabs.claims_summary", { claims: paper.n_claims })
           }
         />
         <TabButton
           active={active === "summary"}
           onClick={() => toggle("summary")}
-          label="AI Summary"
-          summary={paper.has_brief ? "ready" : "not generated"}
+          label={t("papers.tabs.summary")}
+          summary={
+            paper.has_brief
+              ? t("papers.tabs.summary_ready")
+              : t("papers.tabs.summary_pending")
+          }
         />
       </div>
       {active !== null ? (
         <div className="mt-2 rounded-card border border-[var(--rule)]
                         bg-[var(--bg-soft)]/40 p-3">
           {detailQ.isLoading ? (
-            <p className="text-[12px] italic text-[var(--fg-muted)]">Loading…</p>
+            <p className="text-[12px] italic text-[var(--fg-muted)]">{t("common.loading")}</p>
           ) : detailQ.error ? (
             <p className="text-[12px] text-[var(--counter-fg)]">
-              Failed: {(detailQ.error as Error).message}
+              {t("papers.tabs.load_failed", { err: (detailQ.error as Error).message })}
             </p>
           ) : detailQ.data ? (
             <TabPanel

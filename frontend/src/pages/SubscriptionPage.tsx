@@ -2,6 +2,7 @@
 // the Advanced details inside SubscriptionEditor.
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,6 +30,7 @@ function formatLastRun(j: { status: string; finished_at?: string; error?: string
 }
 
 export default function SubscriptionPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const subsQ = useQuery({
     queryKey: ["subscriptions"],
@@ -122,13 +124,13 @@ export default function SubscriptionPage() {
               letterSpacing: "-0.01em",
             }}
           >
-            Subscriptions
+            {t("subs.title")}
           </h1>
           <p className="text-xs mt-0.5" style={{ color: "var(--fg-muted)" }}>
-            interest digests delivered on a schedule
+            {t("subs.subtitle")}
           </p>
         </div>
-        <Button onClick={openNew}>+ New subscription</Button>
+        <Button onClick={openNew}>{t("subs.new")}</Button>
       </header>
 
       <ActiveRunsBanner />
@@ -137,7 +139,7 @@ export default function SubscriptionPage() {
         <div className="px-6 py-4 max-w-3xl mx-auto">
           {subsQ.isLoading ? (
             <p className="text-sm" style={{ color: "var(--fg-muted)" }}>
-              Loading…
+              {t("common.loading")}
             </p>
           ) : subsQ.data && subsQ.data.length > 0 ? (
             subsQ.data.map((sub) => (
@@ -147,7 +149,7 @@ export default function SubscriptionPage() {
                 onEdit={() => openEdit(sub)}
                 onRun={() => runMut.mutate(sub.name)}
                 onDelete={() => {
-                  if (window.confirm(`Delete "${sub.name}"?`)) {
+                  if (window.confirm(t("subs.delete_confirm", { name: sub.name }))) {
                     deleteMut.mutate(sub.name);
                   }
                 }}
@@ -173,11 +175,9 @@ export default function SubscriptionPage() {
                 className="text-base mb-1"
                 style={{ fontFamily: "var(--font-serif)", color: "var(--fg)" }}
               >
-                No subscriptions yet
+                {t("subs.empty_title")}
               </p>
-              <p className="text-xs">
-                Click <em>+ New subscription</em> above to add one.
-              </p>
+              <p className="text-xs">{t("subs.empty_hint")}</p>
             </div>
           )}
         </div>

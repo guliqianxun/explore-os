@@ -2,6 +2,51 @@
 
 ## [Unreleased]
 
+### 2026-05-01 — iter-021 done：ft-031 / ft-031.5 / ft-037 / ft-038 一体落地
+
+**ft-031 桌面通知 + brief 三段分桶（done）**
+
+- Electron `Notification` IPC（`explore:notify`）+ 浏览器 `window.Notification`
+  fallback。新文件 `frontend/src/lib/notify.ts` 抽象。
+- `useJobPolling` 提到 App 顶层；`run-sub:*` 边沿 `done` 时 fire-and-forget
+  notify + invalidate 未决数。`notifiedRef` Set 防重发。
+- `PaperListPage` 速读区按 `created_at` 三段分桶（今日/本周/更早，更早默认折叠）。
+  后端 `PaperListItemSerializer` 加 `created_at`（不改 schema）。
+- NavBar Papers 旁挂未决数 badge（>=100 → "99+"）。
+- 通知点击 → `navigate("/?status=new")`。
+
+**ft-031.5 detail 页 PDF 自动下载 + 订阅 paper 详情 404 修复**
+
+- 放宽 PaperDetailView 404：Paper 行存在但 materials 空也返回 detail。
+  根因订阅 paper 不走 extract/interpret 链路。
+- 新文件 `apps/papers/pdf_auto.py::ensure_pdf_async`：detail GET fire-and-forget
+  拉 arXiv PDF 到 `papers_dir`，写回 `paper.pdf_path`。`_INFLIGHT` set 去重。
+
+**ft-037 PC 便携版 + 数据目录用户可配（done）**
+
+- electron-builder Win `[nsis, portable]` 并存；Mac `[dmg, zip]`。
+- 新文件 `electron/src/dataDir.ts`：四级优先级 `user_override > env >
+  PORTABLE_EXECUTABLE_DIR/data > 平台默认`。
+- `launcher.json` 与 sidecar `user_config.json` 解耦（避免鸡生蛋）。
+- 3 个新 IPC：`get-data-dir-info` / `set-data-dir-override` / `pick-directory`。
+- Settings 页"数据目录"卡 + "重启生效"提示。
+- 不做：手机版 / 自动迁移 / 热切目录 / 代码签名。
+
+**ft-038 i18n 双语 + Settings 页发布前清理（done）**
+
+- 装 i18next + react-i18next + browser-languagedetector。
+- `frontend/src/i18n/{index.ts, locales/{zh,en}.json}` 按 namespace 组织。
+- 翻译覆盖：NavBar / 通知 / 今日要览 / 订阅页+卡 / 导入页+拖拽 / Verdict 三键 /
+  状态过滤栏 / 3 标签卡 + ▸ 显示中文翻译 toggle / Settings 全局。
+- **Settings 页重写**：砍 SourceBadge / footer / 大部分 hint。三大组：
+  通用（语言切换 — 立即生效 + localStorage）/ LLM / 数据目录。
+- 不翻译：LLM 生成内容、Subscription Editor 大表单、Reading Station 内容区。
+- 主 chunk 658→719kB（+61KB i18next 运行时）— 接受。
+
+**iter-021 验收**：pytest 391 / tsc 0 / Electron prod 实测全通过。
+
+---
+
 ### 2026-04-29 (续) — ft-033 落地 + 5 次用户实测调优 + 解读 vs 解压两条路 lock
 
 **ft-033 Brief 内容处理层完成（done，同日立项 + 同日落地）**：

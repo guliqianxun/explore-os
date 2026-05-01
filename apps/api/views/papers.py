@@ -182,6 +182,7 @@ class PaperListView(APIView):
                 ),
                 "has_brief": brief is not None and bool(brief.abstract_zh),
                 "abstract_en": p.abstract or "",
+                "created_at": p.created_at,
             })
         return Response(PaperListItemSerializer(items, many=True).data)
 
@@ -208,6 +209,16 @@ class PaperDetailView(APIView):
         else:
             paper = Paper.objects.filter(arxiv_id=arxiv_id).first()
 
+        # ft-031.5: 订阅 paper 落库时只跑 skim/deep email pipeline，没本地
+        # PDF；详情页打开时 fire-and-forget 拉一份到 papers_dir，下次进来
+        # 直接命中。失败/缓存命中均不阻塞响应。
+        if paper is not None:
+            try:
+                from apps.papers.pdf_auto import ensure_pdf_async
+                ensure_pdf_async(paper)
+            except Exception:  # noqa: BLE001
+                log.warning("[pdf_auto] enqueue failed", exc_info=True)
+
         # Legacy material lookups still key off the string column. When we did
         # resolve a Paper, prefer its arxiv_id (the URL might have been a key).
         material_arxiv_id = paper.arxiv_id if (paper and paper.arxiv_id) else arxiv_id
@@ -230,7 +241,9 @@ class PaperDetailView(APIView):
             .order_by("claim_id")
         )
 
-        if not (sections or figures or tables or claims):
+        # ft-031.5: 订阅 paper 没跑过 extract/interpret 是常态，不再 404。
+        # 仅当 Paper 行不存在 *且* 也没 legacy material 时才 404。
+        if not (sections or figures or tables or claims) and paper is None:
             return Response(
                 {"detail": f"no extract / interpret data for {arxiv_id}"},
                 status=status.HTTP_404_NOT_FOUND,

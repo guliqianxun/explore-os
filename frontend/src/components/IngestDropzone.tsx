@@ -1,5 +1,6 @@
 // ft-027: drag-or-click PDF dropzone (editorial styling, no third-party dep).
 import { ChangeEvent, DragEvent, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onFile: (file: File) => void;
@@ -7,13 +8,14 @@ interface Props {
 }
 
 export default function IngestDropzone({ onFile, disabled }: Props) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [hover, setHover] = useState(false);
 
   const pick = (f: File | null | undefined) => {
     if (!f) return;
     if (!f.name.toLowerCase().endsWith(".pdf")) {
-      alert("Please drop a .pdf file");
+      alert(t("ingest.drop_invalid"));
       return;
     }
     onFile(f);
@@ -53,10 +55,10 @@ export default function IngestDropzone({ onFile, disabled }: Props) {
         className="text-base"
         style={{ fontFamily: "var(--font-serif)", color: "var(--fg)" }}
       >
-        Drop a PDF here
+        {t("ingest.drop_pdf")}
       </p>
       <p className="text-xs mt-1" style={{ color: "var(--fg-muted)" }}>
-        or click to choose a file
+        {t("ingest.drop_hint")}
       </p>
       <input
         ref={inputRef}

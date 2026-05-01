@@ -37,13 +37,17 @@ export function getSidecarInfo(): SidecarInfo {
  * `/api/health/`. Returns the port. Throws (and updates `info.status`)
  * on any failure.
  */
-export async function startSidecar(): Promise<number> {
+/**
+ * ft-037: ``dataDir`` 由 main 进程通过 ``resolveDataDir()`` 算好后传入；
+ * 不再读 ``app.getPath("userData")``（在 portable 模式下 userData 已被改成
+ * exe 同目录的 electron-data，与真正的 sidecar 数据目录可能不一致）。
+ */
+export async function startSidecar(dataDir: string): Promise<number> {
   if (proc) {
     throw new Error("sidecar already running");
   }
   info = { status: "starting", port: null };
 
-  const dataDir = app.getPath("userData");
   const isDev = !app.isPackaged;
 
   let cmd: string;
@@ -91,7 +95,13 @@ export async function startSidecar(): Promise<number> {
 
   proc = spawn(cmd, args, {
     cwd,
-    env: { ...process.env, PYTHONUNBUFFERED: "1" },
+    // ft-037: 同步给 sidecar 子进程一份 EXPLORE_OS_DATA_DIR — 子进程的
+    // ``apps.core.paths`` 优先读这个 env，与 ``--data-dir`` arg 双保险。
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: "1",
+      EXPLORE_OS_DATA_DIR: dataDir,
+    },
     stdio: ["ignore", "pipe", "pipe"],
     // Windows: `uv` resolves through PATH only when shell:true.
     shell: isDev && process.platform === "win32",

@@ -1,4 +1,5 @@
 // ft-027: editorial-style subscription card.
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import type { SubscriptionDTO } from "@/api/subscriptions";
 
@@ -19,6 +20,7 @@ export default function SubscriptionCard({
   running,
   lastRun,
 }: Props) {
+  const { t } = useTranslation();
   const sourceLabels = (sub.sources || []).map((s) => s.key).join(" · ") || "—";
   const deliveryLabels =
     (sub.deliveries || [])
@@ -53,16 +55,16 @@ export default function SubscriptionCard({
               className="text-[11px] uppercase tracking-wide"
               style={{ color: "var(--fg-muted)" }}
             >
-              disabled
+              {t("subs.disabled")}
             </span>
           )}
         </div>
         <div className="flex gap-1.5 shrink-0">
           <Button size="sm" variant="outline" onClick={onEdit}>
-            Edit
+            {t("subs.edit")}
           </Button>
           <Button size="sm" onClick={onRun} disabled={running}>
-            {running ? "Running…" : "Run now"}
+            {running ? t("subs.running") : t("subs.run")}
           </Button>
           <Button size="sm" variant="ghost" onClick={onDelete}>
             ×
@@ -92,17 +94,17 @@ export default function SubscriptionCard({
         className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-xs"
         style={{ color: "var(--fg-soft)" }}
       >
-        <dt style={{ color: "var(--fg-muted)" }}>sources</dt>
+        <dt style={{ color: "var(--fg-muted)" }}>{t("subs.field_sources")}</dt>
         <dd>{sourceLabels}</dd>
-        <dt style={{ color: "var(--fg-muted)" }}>delivery</dt>
+        <dt style={{ color: "var(--fg-muted)" }}>{t("subs.field_delivery")}</dt>
         <dd className="truncate">{deliveryLabels}</dd>
-        <dt style={{ color: "var(--fg-muted)" }}>schedule</dt>
+        <dt style={{ color: "var(--fg-muted)" }}>{t("subs.field_schedule")}</dt>
         <dd>
           <code style={{ fontFamily: "var(--font-mono)" }}>{schedule}</code>
         </dd>
         {lastRun && (
           <>
-            <dt style={{ color: "var(--fg-muted)" }}>last run</dt>
+            <dt style={{ color: "var(--fg-muted)" }}>{t("subs.field_last_run")}</dt>
             <dd>{lastRun}</dd>
           </>
         )}

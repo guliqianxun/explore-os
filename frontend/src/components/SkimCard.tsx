@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import type { PaperListItem } from "@/api/papers";
 import { PaperLinks } from "@/components/PaperLinks";
@@ -21,6 +22,7 @@ interface SkimCardProps {
  *   不挂 figure thumbnail / 3 meta cards —— 那是精读卡的形态.
  */
 export function SkimCard({ paper, lead, keywords, abstractEn }: SkimCardProps) {
+  const { t } = useTranslation();
   const [showZh, setShowZh] = useState(false);
   const displayTitle = paper.title || paper.arxiv_id;
   const detailHref = `/papers/${encodeURIComponent(paper.arxiv_id)}`;
@@ -75,7 +77,7 @@ export function SkimCard({ paper, lead, keywords, abstractEn }: SkimCardProps) {
                            text-[var(--fg-soft)] hover:text-[var(--accent)]
                            transition-colors"
               >
-                {showZh ? "▾ Hide 中文翻译" : "▸ Show 中文翻译"}
+                {showZh ? t("papers.tabs.hide_zh") : t("papers.tabs.show_zh")}
               </button>
               {showZh ? (
                 <p className="mt-1.5 font-serif text-[0.9rem] leading-[1.6]
