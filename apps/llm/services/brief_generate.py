@@ -55,6 +55,8 @@ class BriefData(TypedDict):
     for_you: str
     perspective_used: str
     model_used: str
+    # ft-040: paper 主语言（'zh' | 'en'）。决定 _zh 字段内容是中文还是英文。
+    lang: str
 
 
 # ---------------- subscription / perspective ----------------
@@ -209,6 +211,10 @@ def generate_brief_data(paper: Paper) -> BriefData:
 
     persp_label = (persp.custom or persp.preset or "")[:128]
 
+    # ft-040: paper 语言；skim/deep 都已带 lang 字段（默认从 paper 检测）。
+    # 用 deep.lang 兜底（skim 失败仍取得 deep.lang）；都没有 fallback 'zh'。
+    lang = getattr(skim, "lang", None) or getattr(deep, "lang", None) or "zh"
+
     return BriefData(
         abstract_zh=abstract_zh,
         keywords=keywords,
@@ -219,6 +225,7 @@ def generate_brief_data(paper: Paper) -> BriefData:
         for_you=getattr(deep, "for_you", "") or "",
         perspective_used=persp_label,
         model_used="",  # SkimOut/DeepOut 暂未带 model 名；留空待 ft-014 升级
+        lang=lang,
     )
 
 

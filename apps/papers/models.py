@@ -254,6 +254,8 @@ class PaperBrief(models.Model):
     perspective_used = models.CharField(max_length=128, blank=True, default="")
     model_used = models.CharField(max_length=64, blank=True, default="")
     generated_at = models.DateTimeField(auto_now=True)
+    # ft-040: paper 主语言。``zh`` | ``en``。决定 _zh 字段内容是中文还是英文。
+    lang = models.CharField(max_length=8, blank=True, default="")
 
     class Meta:
         db_table = "papers_brief"

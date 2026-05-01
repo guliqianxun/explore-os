@@ -131,7 +131,20 @@
       "summary_pending": "not generated",
       "load_failed": "Failed: {{err}}",
       "show_zh": "▸ Show Chinese",
-      "hide_zh": "▾ Hide Chinese"
+      "hide_zh": "▾ Hide Chinese",
+      "no_abstract": "Abstract not available"
+    },
+    "brief": {
+      "method_summary": "Method",
+      "key_innovation": "Key innovation",
+      "limitations": "Limitations",
+      "claims_preview": "Key claims",
+      "show_claims": "▸ Show key claims",
+      "hide_claims": "▾ Hide",
+      "no_claims": "No claims extracted yet",
+      "claims_loading": "Loading claims…",
+      "lang_en_badge": "EN",
+      "lang_zh_badge": "ZH"
     }
   },
   "notifications": {

@@ -21,7 +21,7 @@ from apps.api.views.jobs import (
     _do_interpret,
     _do_render,
 )
-from apps.api.views.materials import FigureView, PaperMarkdownView
+from apps.api.views.materials import FigureFastView, FigureView, PaperMarkdownView
 from apps.api.views.settings_llm import SettingsLLMTestView, SettingsLLMView
 from apps.api.views.papers import (
     PaperBacklinkDetailView,
@@ -60,6 +60,7 @@ __all__ = [
     # materials
     "PaperMarkdownView",
     "FigureView",
+    "FigureFastView",
     # claims
     "ClaimsView",
     # jobs / triggers

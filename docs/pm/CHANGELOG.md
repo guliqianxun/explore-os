@@ -2,6 +2,65 @@
 
 ## [Unreleased]
 
+### 2026-05-01 (iter-022) — ft-039 Primary 卡重塑 + ft-040 Brief 双语 + ingest 链路完善
+
+**ft-039 Primary 卡 A+B+E + pdfplumber fast figures（done）**
+
+- 新文件 `apps/extract/figure_pdfplumber.py`：pdfplumber 找 image-heavy 页 → union
+  bbox + 16pt padding → page.crop().to_image(150 DPI) → 落 `media/figures-fast/<id>/`，
+  最多 3 张。与 docling figures（`media/figures/`）解耦。
+- 新文件 `apps/papers/pdf_auto.py::ensure_figures_fast_async`：detail GET 时
+  fire-and-forget；`_FAST_INFLIGHT` set 守门去重。
+- 新 API `GET /api/papers/<id>/figure-fast/<seq>.png` (`FigureFastView`)。
+- 新组件 `frontend/src/components/BriefSummary.tsx`：react-markdown 渲染
+  method_summary，左红右蓝双列展示创新点 / 局限。
+- 新组件 `frontend/src/components/ClaimsPreview.tsx`：默认折叠，点开懒加载
+  detail，渲染 Top 3 claims（含 claim_type / page）。
+- list DTO 扩字段 `method_summary_zh` / `limitations` —— BriefSummary 直读 list，
+  无需懒加载 detail。
+- PaperCard / HeroPaperCard：去 MetaCards，挂 BriefSummary + ClaimsPreview；
+  图源切 `figure-fast/1.png`，onError 隐藏整图区。
+
+**ft-040 Brief 双语 + ingest 链路完善（done）**
+
+双语 LLM：
+- 新文件 `apps/llm/lang_detect.py`：CJK 启发式（含汉字 → zh，否则 → en）。
+- 新文件 `apps/llm/prompts/skim_en.py` / `deep_en.py`：英文 prompt，与中文版
+  同 JSON 输出 schema。
+- `skim_interpret.py` / `deep_interpret.py`：
+  - 自动 detect_paper_lang，选 prompt 变体；`SkimOut.lang` / `DeepOut.lang`。
+  - **Perspective 双语**：英文 paper 用 `[Perspective]` + `PRESETS_EN`，
+    中文用 `【视角】` + `PRESETS`。否则中文标签会让 LLM 拐回中文输出。
+  - deep user 消息的 section header 也按 lang 双语。
+- `brief_generate.py` / `brief_generator.py` / `subscription_persist.py`：
+  `BriefData.lang` 透传 + 写 `PaperBrief.lang`。
+- Migration `0008_paperbrief_lang`：加 `lang` 字段。
+- list DTO 暴露 `brief_lang`；`_serialize_brief` 也加 `lang`。
+- `BriefSummary.tsx`：`briefLang` prop + UI ≠ brief.lang 时方法概要标题旁
+  显示 EN/中 小 badge。
+- 字段重命名（`abstract_zh` → 中性）**不做**——内容反映 paper 语言，命名将就。
+
+ingest 链路完善：
+- `apps/api/ingest.py::_backfill_abstract_from_sections`：extract 阶段后从
+  第一段 Section.raw_text 头部 ~2000 字回填 `Paper.abstract`（订阅链路有，
+  ingest 漏了，导致 brief view 看不到 abstract）。
+- chain 末尾 `jobs.enqueue(_run_brief, ...)` 起独立 brief job（`ingest-brief:<id>`），
+  不阻塞主链路；LLM 失败 swallow，不影响 chain 三阶段 succeeded。
+- 新 mgmt 命令 `backfill_briefs.py`：一次性给 extract 跑过但 brief 空的 paper
+  补 brief。`--apply` / `--limit` / `--paper <id>` 三参数。
+- 实测：4/4 老 paper（GraphCast / 006a5f88 / d4b846bd / d648e78e）全产出英文
+  brief，含 abstract / method / 3-4 个创新点 / 3 个局限。
+
+杂项修复：
+- `useJobPolling.ts`：getJob 拿到 404（sidecar 重启丢 in-memory `_JOBS`）→
+  本地 job 标 terminal `done`。修复"3 个灰点永远不动"的卡住症状。
+- `apps/api/views/papers.py::_serialize_brief`：补暴露 `lang` 字段。
+
+**验收**：pytest 391 passed / electron tsc 0 / frontend tsc 0 / Electron prod
+实测通过（GraphCast 等 4 篇均产出英文 brief，UI 切换语言正常）。
+
+---
+
 ### 2026-05-01 — iter-021 done：ft-031 / ft-031.5 / ft-037 / ft-038 一体落地
 
 **ft-031 桌面通知 + brief 三段分桶（done）**

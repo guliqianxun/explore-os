@@ -51,10 +51,33 @@ export function useJobPolling(intervalMs = 2000): void {
     const tick = async () => {
       await Promise.all(
         activeIds.map(async (id) => {
+          let fresh: JobInfo;
           try {
-            const fresh: JobInfo = await getJob(id);
-            if (cancelled) return;
-            upsert(fresh);
+            fresh = await getJob(id);
+          } catch (err) {
+            // ft-040 follow-up: sidecar 重启会丢 in-memory _JOBS dict。
+            // 此时 GET /api/jobs/<id>/ 返回 404，前端的 job 永远卡在 "pending"。
+            // 把 404 视为终态 "done" — chain 通常已经把数据落库了，前端
+            // 显示成已完成最贴近事实；用户能看到 "Read →" 链接而非永远转圈。
+            // 网络瞬断（无 response.status）不命中。
+            const httpStatus = (err as { response?: { status?: number } })
+              ?.response?.status;
+            if (httpStatus === 404 && !cancelled) {
+              const stale = jobs[id];
+              if (stale) {
+                upsert({
+                  ...stale,
+                  status: "done",
+                  finished_at: new Date().toISOString(),
+                });
+              }
+            }
+            // 其它错误（5xx / 网络瞬断）忽略，下一 tick 重试
+            return;
+          }
+          if (cancelled) return;
+          upsert(fresh);
+          try {
             // ft-031: 在 stale-cache 边沿触发通知 — 仅当此 job 此次首次进入
             // terminal 状态。失败/取消不弹（spec：只覆盖 sub run 完成）。
             if (
@@ -72,12 +95,11 @@ export function useJobPolling(intervalMs = 2000): void {
                   : i18n.t("notifications.sub_complete_body_default"),
                 jobId: fresh.job_id,
               });
-              // 未决数 badge 刷新
               qc.invalidateQueries({ queryKey: ["papers", "undecided-count"] });
               qc.invalidateQueries({ queryKey: ["papers"] });
             }
           } catch {
-            // network glitch — ignore, next tick will retry
+            // notify / invalidate 偶发问题不影响主轮询
           }
         }),
       );

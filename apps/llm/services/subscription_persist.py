@@ -85,6 +85,8 @@ def persist_subscription_results(
         limitations = list(getattr(deep, "limitations", []) or [])
         for_you = getattr(deep, "for_you", "") or ""
         tldr_zh = _compose_tldr(abstract_zh) if abstract_zh else _compose_tldr(it.abstract or "")
+        # ft-040: paper 语言，skim/deep 都带；缺一取另一；都缺 fallback 'zh'
+        lang = getattr(skim, "lang", None) or getattr(deep, "lang", None) or "zh"
 
         PaperBrief.objects.update_or_create(
             paper=paper,
@@ -98,6 +100,7 @@ def persist_subscription_results(
                 "tldr_zh": tldr_zh,
                 "perspective_used": persp_label,
                 "model_used": "",  # SkimOut/DeepOut 暂未带 model 名
+                "lang": lang,
             },
         )
         brief_n += 1

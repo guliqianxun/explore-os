@@ -53,6 +53,59 @@ def _do_download(arxiv_id: str) -> dict:
             _INFLIGHT.discard(arxiv_id)
 
 
+# ---- figures-fast 守门 ----
+_FAST_INFLIGHT: set[str] = set()
+
+
+def _do_figures_fast(arxiv_id: str, pdf_path_str: str) -> dict:
+    """job worker：跑 pdfplumber 抽 fast figures。"""
+    from pathlib import Path
+    from apps.extract.figure_pdfplumber import extract_figures_fast
+
+    try:
+        out = extract_figures_fast(Path(pdf_path_str), arxiv_id)
+        return {"arxiv_id": arxiv_id, "n_figures": len(out)}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[figures-fast] %s failed: %r", arxiv_id, exc)
+        return {"arxiv_id": arxiv_id, "error": str(exc)}
+    finally:
+        with _LOCK:
+            _FAST_INFLIGHT.discard(arxiv_id)
+
+
+def ensure_figures_fast_async(paper: "Paper") -> bool:
+    """详情页 GET 时调用 — 若 fast figures 缺失且本地 PDF 已存在 → enqueue
+    后台抽。失败 swallow。返回 True 表示排了 job。
+
+    幂等：figures-fast 目录非空时 noop；同 arxiv_id in-flight 时不重复入队。
+    """
+    arxiv_id = (paper.arxiv_id or "").strip()
+    if not arxiv_id:
+        return False
+    from apps.papers.paths import resolve_pdf_path
+    from apps.extract.figure_pdfplumber import figures_fast_dir
+
+    pdf = resolve_pdf_path(paper)
+    if pdf is None:
+        return False  # 等 ensure_pdf_async 完成；用户下次进来再触发
+    out_dir = figures_fast_dir(arxiv_id)
+    if any(out_dir.glob("*.png")):
+        return False
+    with _LOCK:
+        if arxiv_id in _FAST_INFLIGHT:
+            return False
+        _FAST_INFLIGHT.add(arxiv_id)
+    try:
+        from apps.api import jobs
+        jobs.enqueue(_do_figures_fast, arxiv_id, str(pdf), name=f"figures-fast:{arxiv_id}")
+        log.info("[figures-fast] enqueued %s", arxiv_id)
+        return True
+    except Exception:
+        with _LOCK:
+            _FAST_INFLIGHT.discard(arxiv_id)
+        raise
+
+
 def ensure_pdf_async(paper: "Paper") -> bool:
     """详情页 GET 时调用。返回 True 表示新排了一个下载 job；False 表示
     无需下载（已缓存 / 非 arxiv / 已在排队）。

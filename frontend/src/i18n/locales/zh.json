@@ -131,7 +131,20 @@
       "summary_pending": "未生成",
       "load_failed": "加载失败：{{err}}",
       "show_zh": "▸ 显示中文翻译",
-      "hide_zh": "▾ 隐藏中文翻译"
+      "hide_zh": "▾ 隐藏中文翻译",
+      "no_abstract": "暂无摘要"
+    },
+    "brief": {
+      "method_summary": "方法概要",
+      "key_innovation": "创新点",
+      "limitations": "局限",
+      "claims_preview": "关键论点",
+      "show_claims": "▸ 展开关键论点",
+      "hide_claims": "▾ 收起",
+      "no_claims": "尚未抽取论点",
+      "claims_loading": "加载论点…",
+      "lang_en_badge": "EN",
+      "lang_zh_badge": "中"
     }
   },
   "notifications": {

@@ -55,6 +55,7 @@ def generate_brief(paper: Paper, *, regenerate: bool = False) -> PaperBrief:
             tldr_zh=data["tldr_zh"],
             perspective_used=data["perspective_used"],
             model_used=data["model_used"],
+            lang=data.get("lang", ""),
         ),
     )
     return brief

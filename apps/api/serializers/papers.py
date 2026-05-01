@@ -40,6 +40,14 @@ class PaperListItemSerializer(serializers.Serializer):
     abstract_en = serializers.CharField(allow_blank=True, default="")
     # ft-031: brief 速读区按 created_at 三段分桶（今日/本周/更早）需要前端可读
     created_at = serializers.DateTimeField()
+    # ft-039 primary 卡 A+B：方法概要 + 局限。key_innovation 已存在。
+    method_summary_zh = serializers.CharField(allow_blank=True, default="")
+    limitations = serializers.ListField(
+        child=serializers.CharField(), default=list,
+    )
+    # ft-040: brief.lang ('zh' | 'en' | "")。指 abstract_zh / method_summary_zh
+    # 等内容用什么语言写的。前端用来判断是否需要 [Translate] 提示。
+    brief_lang = serializers.CharField(allow_blank=True, default="")
 
 
 class CommentSerializer(serializers.Serializer):

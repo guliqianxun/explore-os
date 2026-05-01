@@ -16,6 +16,7 @@ from apps.api.subscriptions_views import (
 from apps.api.views import (
     ClaimsView,
     ExtractTriggerView,
+    FigureFastView,
     FigureView,
     HealthView,
     InterpretTriggerView,
@@ -52,6 +53,12 @@ urlpatterns = [
         "papers/<str:arxiv_id>/figure/<int:seq>.png",
         FigureView.as_view(),
         name="api-paper-figure",
+    ),
+    # ft-039 fast lane (pdfplumber page-region crops)
+    path(
+        "papers/<str:arxiv_id>/figure-fast/<int:seq>.png",
+        FigureFastView.as_view(),
+        name="api-paper-figure-fast",
     ),
     path(
         "papers/<str:arxiv_id>/claims/",

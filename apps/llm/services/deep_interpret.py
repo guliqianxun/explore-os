@@ -15,8 +15,10 @@ import logging
 from apps.llm.budgets import DEEP_CAPTION_LIMIT
 from apps.llm.client import chat, extract_json
 from apps.llm.errors import LLMError
+from apps.llm.lang_detect import detect_paper_lang
 from apps.llm.models import get_profile
 from apps.llm.prompts.deep import SYSTEM as DEEP_SYSTEM_SUFFIX
+from apps.llm.prompts.deep_en import SYSTEM as DEEP_SYSTEM_SUFFIX_EN
 from apps.llm.services.skim_interpret import perspective_prefix
 from sources.base import Item
 from subscriptions.loader import PerspectiveSpec
@@ -38,7 +40,11 @@ DEEP_PLACEHOLDER = (
 
 @dataclass(slots=True)
 class DeepOut:
-    """精读输出。**字段不可改**（外部消费方依赖：brief_generator / email pipeline）。"""
+    """精读输出。**字段不可改**（外部消费方依赖：brief_generator / email pipeline）。
+
+    ft-040 follow-up: ``method_summary`` / ``key_innovation`` / ``limitations``
+    / ``for_you`` 内容反映 ``lang``。英文 paper → 英文输出。
+    """
 
     abstract: str          # 原文 abstract 透传
     placeholder: str       # iter-002 占位
@@ -55,6 +61,8 @@ class DeepOut:
     # 表（仅精读）
     table_path: str = ""
     table_caption: str = ""
+    # ft-040: paper 语言标记，'zh' | 'en'
+    lang: str = "zh"
 
 
 # ---------------- deep_interpret_rich ----------------
@@ -72,7 +80,8 @@ def deep_interpret_rich(
     无 body 也无 caption → 直接返回占位 ``DeepOut``（避免无意义 LLM call）。
     LLM 失败 → log.warning + 返回占位 ``DeepOut``。
     """
-    out = DeepOut(abstract=item.abstract or "", placeholder=DEEP_PLACEHOLDER)
+    lang = detect_paper_lang(item.title or "", item.abstract or "")
+    out = DeepOut(abstract=item.abstract or "", placeholder=DEEP_PLACEHOLDER, lang=lang)
     body = _compose_body(chunks) if chunks else ""
     cap_block = _compose_captions(captions or [])
     mem_block = _compose_memory(memory_papers or [])
@@ -85,18 +94,23 @@ def deep_interpret_rich(
         return out
 
     profile = get_profile("deep")
-    system = perspective_prefix(perspective) + DEEP_SYSTEM_SUFFIX
+    suffix = DEEP_SYSTEM_SUFFIX if lang == "zh" else DEEP_SYSTEM_SUFFIX_EN
+    system = perspective_prefix(perspective, lang) + suffix
+    is_zh = lang == "zh"
     user = (
         f"title: {item.title}\n\n"
         f"abstract: {item.abstract}\n"
     )
     if body:
-        user += f"\n=== 方法 / 实验 / 结论文本 ===\n{body}\n"
+        header = "方法 / 实验 / 结论文本" if is_zh else "Method / Experiments / Conclusion text"
+        user += f"\n=== {header} ===\n{body}\n"
     if cap_block:
-        user += f"\n=== 论文配图 captions + 引用上下文 ===\n{cap_block}\n"
+        header = "论文配图 captions + 引用上下文" if is_zh else "Figure captions + reference context"
+        user += f"\n=== {header} ===\n{cap_block}\n"
     if mem_block:
-        user += f"\n=== 近期推送过的相关论文（供联想/对比） ===\n{mem_block}\n"
-    user += "\n请产出 JSON 四段。"
+        header = "近期推送过的相关论文（供联想/对比）" if is_zh else "Recent related papers (for continuity/contrast)"
+        user += f"\n=== {header} ===\n{mem_block}\n"
+    user += "\n请产出 JSON 四段。" if is_zh else "\nProduce the JSON now."
 
     try:
         res = chat(

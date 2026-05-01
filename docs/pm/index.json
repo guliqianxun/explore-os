@@ -1,10 +1,10 @@
 {
   "project": "explore-os",
   "version": "v1.2-trial",
-  "updated_at": "2026-05-01-iter-021-done",
+  "updated_at": "2026-05-01-ft-039-ft-040-done",
   "roadmap": "ROADMAP.md",
-  "current_iteration": "iter-021",
-  "current_focus": "iter-021 ✅ done（5/1）：ft-031 桌面通知 + brief 三段分桶 + NavBar badge / ft-031.5 detail 页 PDF 自动下载 + 订阅 paper 详情 404 修复 / ft-037 PC 便携版 + 数据目录用户可配 / ft-038 i18n 双语 + Settings 页发布前清理。下一刀：用户即将引导重构「今日要览」页。",
+  "current_iteration": "iter-022",
+  "current_focus": "iter-022 ✅ done（5/1 同日）：ft-039 Primary 卡 A+B+E（方法概要 + 创新/局限 + Top 3 claims 懒加载）+ pdfplumber fast figures / ft-040 brief 双语（lang detect + skim_en/deep_en + perspective 双语）+ ingest 链路完善（extract 后回填 Paper.abstract + chain 后 fire-and-forget brief job + backfill_briefs mgmt 命令）。markitdown 实验单切到 exp/markitdown-vs-docling 分支。",
   "features": [
     {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
     {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
@@ -43,7 +43,9 @@
     {"id": "ft-035", "title": "user_profile 蒸馏层（α 第一刀，与 chat 分级一起做）", "status": "planned", "milestone": "v1.4"},
     {"id": "ft-036", "title": "First-user trial polish：HashRouter fix + 墙报式卡 + paper.keywords + 订阅桥 + 外链", "status": "done", "milestone": "v1.2"},
     {"id": "ft-037", "title": "PC 便携版（portable）+ 数据目录用户可配", "status": "done", "milestone": "v1.3", "spec": "features/ft-037.md"},
-    {"id": "ft-038", "title": "i18n 双语 + Settings 页发布前清理", "status": "done", "milestone": "v1.2", "spec": "features/ft-038.md"}
+    {"id": "ft-038", "title": "i18n 双语 + Settings 页发布前清理", "status": "done", "milestone": "v1.2", "spec": "features/ft-038.md"},
+    {"id": "ft-039", "title": "Primary 卡 A+B+E + pdfplumber fast figures", "status": "done", "milestone": "v1.2", "spec": "features/ft-039.md"},
+    {"id": "ft-040", "title": "Brief 双语 summary + ingest 链路完善", "status": "done", "milestone": "v1.2", "spec": "features/ft-040.md"}
   ],
   "iterations": [
     {"id": "iter-001", "status": "done"},
@@ -66,6 +68,7 @@
     {"id": "iter-018", "status": "done", "scope": ["ft-033"]},
     {"id": "iter-019", "status": "done", "scope": ["code-review", "ft-034"]},
     {"id": "iter-020", "status": "done", "scope": ["ft-036"]},
-    {"id": "iter-021", "status": "done", "scope": ["ft-031", "ft-031.5", "ft-037", "ft-038"]}
+    {"id": "iter-021", "status": "done", "scope": ["ft-031", "ft-031.5", "ft-037", "ft-038"]},
+    {"id": "iter-022", "status": "done", "scope": ["ft-039", "ft-040"]}
   ]
 }

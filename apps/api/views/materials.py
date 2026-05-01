@@ -133,3 +133,20 @@ class FigureView(APIView):
         if not p.exists():
             raise Http404("figure file missing on disk")
         return FileResponse(p.open("rb"), content_type="image/png")
+
+
+class FigureFastView(APIView):
+    """ft-039 fast lane: pdfplumber 抽出的 page-region PNG。
+
+    路径：``<DATA_DIR>/media/figures-fast/<arxiv_id>/<seq>.png``。
+    seq 从 1 开始。文件由 ``apps.papers.pdf_auto.ensure_figures_fast_async``
+    异步生成；若用户在 detail GET 后立刻查询，可能 404（job 未完成）。
+    """
+
+    def get(self, request, arxiv_id: str, seq: int):
+        from apps.extract.figure_pdfplumber import figures_fast_dir
+
+        p = figures_fast_dir(arxiv_id) / f"{seq}.png"
+        if not p.exists():
+            raise Http404("figure-fast not yet available")
+        return FileResponse(p.open("rb"), content_type="image/png")

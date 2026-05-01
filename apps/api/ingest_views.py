@@ -96,6 +96,44 @@ class IngestUploadView(APIView):
 
 # ---------------- arxiv ----------------
 
+def _backfill_arxiv_metadata(arxiv_id: str) -> None:
+    """ft-031.5 follow-up: 用 arXiv API 拉 metadata 写回 Paper.abstract / title。
+
+    幂等：abstract 已非空时不覆盖（避免覆盖订阅链路或 brief generator 已写入
+    的内容）。失败 swallow（log only）— 不应阻塞 ingest 链路。
+    """
+    try:
+        import httpx
+
+        from sources.fetchers.arxiv import _parse_atom
+        from apps.papers.models import Paper
+
+        url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
+        resp = httpx.get(url, timeout=15.0, follow_redirects=True)
+        resp.raise_for_status()
+        items = _parse_atom(resp.text)
+        if not items:
+            log.info("[ingest-arxiv] %s: arXiv API returned 0 entries", arxiv_id)
+            return
+        it = items[0]
+        paper, _ = Paper.objects.get_or_create(arxiv_id=arxiv_id)
+        updates: dict[str, str] = {}
+        if not (paper.abstract or "").strip() and it.abstract:
+            updates["abstract"] = it.abstract
+        if (not paper.title or paper.title.startswith("arxiv:")) and it.title:
+            updates["title"] = it.title
+        if updates:
+            for k, v in updates.items():
+                setattr(paper, k, v)
+            paper.save(update_fields=list(updates.keys()))
+            log.info(
+                "[ingest-arxiv] %s: backfilled %s",
+                arxiv_id, ",".join(updates.keys()),
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[ingest-arxiv] metadata backfill failed for %s: %r", arxiv_id, exc)
+
+
 class IngestArxivView(APIView):
     """JSON ``{arxiv_id}`` → 拉 arXiv PDF → 起 chain。"""
     parser_classes = [JSONParser]
@@ -125,6 +163,11 @@ class IngestArxivView(APIView):
                     {"detail": f"arxiv PDF download failed: {exc}"},
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
+
+        # ft-031.5 follow-up: 顺手拉 arXiv API metadata 把 abstract / title 写进
+        # Paper 行（订阅链路 subscription_persist 已经这么做；ingest 之前漏了，
+        # 导致 ingest arxiv 的 paper 在 brief view 没 abstract）。失败不阻塞。
+        _backfill_arxiv_metadata(arxiv_id)
 
         info = chain_extract_interpret_render(arxiv_id, path)
         return Response(

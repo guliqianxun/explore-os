@@ -68,6 +68,12 @@ export interface PaperListItem {
   abstract_en: string;
   /** ft-031: ISO8601 UTC，brief 速读区按今日/本周/更早分桶用。 */
   created_at: string;
+  /** ft-039 primary 卡 A：方法概要 markdown 文本。 */
+  method_summary_zh: string;
+  /** ft-039 primary 卡 B：局限点列表（与 key_innovation 配对）。 */
+  limitations: string[];
+  /** ft-040: brief 内容语言（'zh' | 'en' | ''）。决定是否显示 lang 标记 */
+  brief_lang: string;
 }
 
 /** Wire shape — every ft-028 field is optional during rollout. */
@@ -97,6 +103,9 @@ function normalizePaperListItem(raw: PaperListItemWire): PaperListItem {
     has_brief: raw.has_brief ?? false,
     abstract_en: raw.abstract_en ?? "",
     created_at: raw.created_at ?? "",
+    method_summary_zh: raw.method_summary_zh ?? "",
+    limitations: raw.limitations ?? [],
+    brief_lang: raw.brief_lang ?? "",
   };
 }
 

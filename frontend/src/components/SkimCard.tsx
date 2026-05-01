@@ -22,7 +22,10 @@ interface SkimCardProps {
  *   不挂 figure thumbnail / 3 meta cards —— 那是精读卡的形态.
  */
 export function SkimCard({ paper, lead, keywords, abstractEn }: SkimCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // ft-038 follow-up: 英文 UI 下隐藏「显示中文翻译」toggle —— 用户既然选了
+  // 英文界面，论文原文 abstract 已经是英文，再露一个中文翻译入口属于冗余。
+  const showZhToggle = i18n.language?.startsWith("zh") && !!lead;
   const [showZh, setShowZh] = useState(false);
   const displayTitle = paper.title || paper.arxiv_id;
   const detailHref = `/papers/${encodeURIComponent(paper.arxiv_id)}`;
@@ -62,9 +65,13 @@ export function SkimCard({ paper, lead, keywords, abstractEn }: SkimCardProps) {
                             text-[var(--fg-soft)] whitespace-pre-line">
                 {abstractEn.trim()}
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-1.5 font-serif text-[0.82rem] italic text-[var(--fg-muted)]">
+                {t("papers.tabs.no_abstract")}
+              </p>
+            )}
           </Link>
-          {lead ? (
+          {showZhToggle ? (
             <div className="mt-1.5">
               <button
                 type="button"

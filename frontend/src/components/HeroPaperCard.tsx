@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import type { PaperListItem } from "@/api/papers";
-import { MetaCards } from "@/components/PaperCard";
 import { PaperLinks } from "@/components/PaperLinks";
 import { VerdictActions } from "@/components/VerdictActions";
+import { BriefSummary } from "@/components/BriefSummary";
+import { ClaimsPreview } from "@/components/ClaimsPreview";
 
 interface HeroPaperCardProps {
   paper: PaperListItem;
@@ -25,12 +26,15 @@ interface HeroPaperCardProps {
 export function HeroPaperCard({
   paper, apiBase, lead, keywords, abstractEn,
 }: HeroPaperCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // ft-038 follow-up：英文 UI 下隐藏「显示中文翻译」toggle。
+  const showZhToggle = i18n.language?.startsWith("zh") && !!lead;
   const [showZh, setShowZh] = useState(false);
-  const thumb =
-    paper.n_figures > 0 && apiBase
-      ? `${apiBase}/papers/${encodeURIComponent(paper.arxiv_id)}/figure/1.png`
-      : null;
+  const [thumbOk, setThumbOk] = useState(true);
+  // ft-039: 图源切 fast lane (pdfplumber)；图未生成时静默不显示。
+  const thumb = apiBase && thumbOk
+    ? `${apiBase}/papers/${encodeURIComponent(paper.arxiv_id)}/figure-fast/1.png`
+    : null;
 
   const displayTitle = paper.title || paper.arxiv_id;
   const detailHref = `/papers/${encodeURIComponent(paper.arxiv_id)}`;
@@ -65,9 +69,7 @@ export function HeroPaperCard({
               loading="lazy"
               className="w-full h-full object-cover transition-transform duration-500
                          hover:scale-[1.02]"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
+              onError={() => setThumbOk(false)}
             />
           </div>
         </Link>
@@ -98,10 +100,14 @@ export function HeroPaperCard({
                         text-[var(--fg)] whitespace-pre-line">
             {abstractEn.trim()}
           </p>
-        ) : null}
+        ) : (
+          <p className="mt-3 font-serif text-[0.9rem] italic text-[var(--fg-muted)]">
+            {t("papers.tabs.no_abstract")}
+          </p>
+        )}
       </Link>
 
-      {lead ? (
+      {showZhToggle ? (
         <div className="mt-3">
           <button
             type="button"
@@ -127,7 +133,15 @@ export function HeroPaperCard({
       ) : null}
 
       <div className="clear-both" />
-      <MetaCards paper={paper} />
+      {/* ft-039 primary 卡 A+B：方法概要 + 创新 / 局限 */}
+      <BriefSummary
+        methodSummary={paper.method_summary_zh}
+        keyInnovation={paper.key_innovation}
+        limitations={paper.limitations}
+        briefLang={paper.brief_lang}
+      />
+      {/* ft-039 primary 卡 E：Top 3 claims 懒加载（默认折叠） */}
+      <ClaimsPreview arxivId={paper.arxiv_id} totalClaims={paper.n_claims} />
       <div className="mt-4">
         <VerdictActions paper={paper} />
       </div>

@@ -183,6 +183,11 @@ class PaperListView(APIView):
                 "has_brief": brief is not None and bool(brief.abstract_zh),
                 "abstract_en": p.abstract or "",
                 "created_at": p.created_at,
+                # ft-039 primary 卡 A+B
+                "method_summary_zh": (brief.method_summary_zh if brief else ""),
+                "limitations": (list(brief.limitations) if brief else []),
+                # ft-040: brief 内容语言
+                "brief_lang": (brief.lang if brief else ""),
             })
         return Response(PaperListItemSerializer(items, many=True).data)
 
@@ -214,8 +219,12 @@ class PaperDetailView(APIView):
         # 直接命中。失败/缓存命中均不阻塞响应。
         if paper is not None:
             try:
-                from apps.papers.pdf_auto import ensure_pdf_async
+                from apps.papers.pdf_auto import (
+                    ensure_figures_fast_async,
+                    ensure_pdf_async,
+                )
                 ensure_pdf_async(paper)
+                ensure_figures_fast_async(paper)
             except Exception:  # noqa: BLE001
                 log.warning("[pdf_auto] enqueue failed", exc_info=True)
 
@@ -301,6 +310,7 @@ def _serialize_brief(b: "PaperBrief") -> dict:
         "perspective_used": b.perspective_used,
         "model_used": b.model_used,
         "generated_at": b.generated_at.isoformat() if b.generated_at else None,
+        "lang": b.lang or "",
     }
 
 
