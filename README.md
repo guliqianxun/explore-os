@@ -44,6 +44,50 @@ LLM 是「填补 / 扩充」边界的，不是「替代规则」的
   - embedding：`text-embedding-v3`（综合分相关性）
   - 多模态模型已留接口（`qwen3.6-plus` / `qwen-vl-plus`），ft-014 默认不走
 
+## 应用界面
+
+应用提供 Web UI（Electron 桌面端或浏览器访问）。
+
+### Papers 论文列表页
+
+![Papers](docs/ui-01-home.png)
+
+- 左侧订阅管理面板：显示已配置的订阅，可编辑/运行
+- 中间论文卡片：显示论文标题、关键词、收录时间
+- 顶部状态筛选：All / New / Read / Archived
+
+### Subscriptions 订阅管理页
+
+![Subscriptions](docs/ui-02-subscriptions.png)
+
+- 新建订阅：设置名称、兴趣关键词、数据源、交付方式
+- 视角选择：researcher / engineer / pm / student
+- 交付设置：tldr（略读）或 deep（精读）
+
+### Ingest 摄入页
+
+![Ingest](docs/ui-03-ingest.png)
+
+- 拖拽上传：拖入 PDF 文件自动解析
+- URL 输入：输入 arXiv URL 自动拉取
+- 运行订阅：手动触发一次检索运行
+
+### Reading Station 论文阅读页（在论文详情页点击进入）
+
+![Reading Station](docs/ui-04-settings.png)
+
+- 三栏布局：目录树 + 论文正文 + ClaimCard
+- 支持 KaTeX 公式渲染
+- claim 证据展开、反向信号标记
+
+### Settings 设置页
+
+- 语言：English / 中文
+- LLM 配置：API 端点、Key、模型选择
+- 数据目录：可自定义数据存储路径
+
+---
+
 ## 快速开始
 
 ```bash
