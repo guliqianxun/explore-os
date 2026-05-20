@@ -1,6 +1,9 @@
+import { useEffect } from "react";
+
 import { CounterSignalBadge } from "./CounterSignalBadge";
 import { EquationBlock } from "./EquationBlock";
 import type { ClaimDTO, EquationDTO } from "@/api/papers";
+import { postEvent } from "@/api/state";
 
 export interface ClaimCardProps {
   claim: ClaimDTO;
@@ -39,6 +42,13 @@ function shortRef(materialId: string): string {
 export function ClaimCard({ claim, equationsById, onCiteClick }: ClaimCardProps) {
   const typeColors =
     TYPE_BADGE[claim.claim_type] ?? { fg: "var(--fg-soft)", bg: "var(--bg-muted)" };
+
+  useEffect(() => {
+    postEvent({
+      viewpoint_id: claim.claim_id,
+      trigger: "VIEW_EVIDENCE",
+    }).catch(() => {});
+  }, [claim.claim_id]);
 
   const equationEvidences = claim.evidences.filter(
     (e) => e.material_id.includes(":eq:") || e.material_id.includes(":equation:"),

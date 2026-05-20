@@ -3,6 +3,7 @@
     "papers": "论文",
     "subscriptions": "订阅",
     "ingest": "导入",
+    "profile": "知识库",
     "settings": "设置"
   },
   "common": {
@@ -146,6 +147,30 @@
       "lang_en_badge": "EN",
       "lang_zh_badge": "中"
     }
+  },
+  "profile": {
+    "title": "个人画像",
+    "active_topics": "活跃主题",
+    "knowledge_gaps": "知识缺口",
+    "activity_timeline": "活动时间线",
+    "threads": "线索板",
+    "open_questions": "待解问题",
+    "no_topics": "暂无活跃主题",
+    "no_gaps": "未检测到知识缺口",
+    "no_activity": "暂无活动数据",
+    "no_threads": "暂无线索",
+    "no_questions": "暂无待解问题",
+    "new_thread": "+ 新建线索",
+    "question_placeholder": "提出一个问题…",
+    "ask": "提问",
+    "notes_count": "{{count}} 条笔记",
+    "prereq_gaps": "前置知识缺口",
+    "decay_gaps": "衰减知识缺口",
+    "prereq_gap_text": "你正在学 {{topic}}, 但 {{prerequisite}} 基础不够",
+    "decay_gap_text": "{{topic}} 已经 {{days}} 天没碰了",
+    "find_papers": "找相关论文",
+    "review": "复习",
+    "untagged": "未分类"
   },
   "notifications": {
     "sub_complete_title": "订阅已完成",

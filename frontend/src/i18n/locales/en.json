@@ -3,6 +3,7 @@
     "papers": "Papers",
     "subscriptions": "Subscriptions",
     "ingest": "Ingest",
+    "profile": "Vault",
     "settings": "Settings"
   },
   "common": {
@@ -146,6 +147,30 @@
       "lang_en_badge": "EN",
       "lang_zh_badge": "ZH"
     }
+  },
+  "profile": {
+    "title": "Profile",
+    "active_topics": "Active Topics",
+    "knowledge_gaps": "Knowledge Gaps",
+    "activity_timeline": "Activity Timeline",
+    "threads": "Threads",
+    "open_questions": "Open Questions",
+    "no_topics": "No active topics yet.",
+    "no_gaps": "No knowledge gaps detected.",
+    "no_activity": "No activity data yet.",
+    "no_threads": "No threads yet.",
+    "no_questions": "No open questions.",
+    "new_thread": "+ New thread",
+    "question_placeholder": "Ask a question…",
+    "ask": "Ask",
+    "notes_count": "{{count}} notes",
+    "prereq_gaps": "Prerequisite Gaps",
+    "decay_gaps": "Decay Gaps",
+    "prereq_gap_text": "You're learning {{topic}}, but your {{prerequisite}} foundation is weak.",
+    "decay_gap_text": "{{topic}} has been untouched for {{days}} days.",
+    "find_papers": "Find papers",
+    "review": "Review",
+    "untagged": "Untagged"
   },
   "notifications": {
     "sub_complete_title": "Subscription complete",

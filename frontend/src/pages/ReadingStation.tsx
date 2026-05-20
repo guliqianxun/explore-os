@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -11,13 +11,8 @@ import SpeedCardPane from "@/components/reading/SpeedCardPane";
 import { NotesPane } from "@/components/reading/NotesPane";
 import { ActionBar } from "@/components/reading/ActionBar";
 import { StatusPill } from "@/components/reading/StatusPill";
-import type { PdfViewerHandle } from "@/components/reading/PdfViewer";
-
-// pdf.js bundle is ~600KB gzip — split it into its own chunk so the app's
-// main bundle doesn't carry it for users who never open a PDF.
-const PdfViewer = lazy(() =>
-  import("@/components/reading/PdfViewer").then((m) => ({ default: m.PdfViewer })),
-);
+import { NativePdfEmbed } from "@/components/reading/NativePdfEmbed";
+import type { NativePdfEmbedHandle } from "@/components/reading/NativePdfEmbed";
 
 interface ReadingStationProps {
   detail: PaperDetail;
@@ -83,35 +78,24 @@ export default function ReadingStation({
 
   // Cross-link orchestration: SpeedCardPane / ClaimCard / Evidence call into
   // pdfRef.current. handleCite resolves materialId → action.
-  const pdfRef = useRef<PdfViewerHandle | null>(null);
+  const pdfRef = useRef<NativePdfEmbedHandle | null>(null);
 
   const handleCite = useMemo(
     () => (materialId: string) => {
       const fig = detail.figures.find((f) => f.material_id === materialId);
       if (fig) {
         pdfRef.current?.scrollToPage(fig.page);
-        if (fig.bbox && fig.bbox.length >= 4) {
-          // Defer slightly so the scroll animation has a chance to settle.
-          window.setTimeout(() => {
-            pdfRef.current?.highlightBox(fig.page, fig.bbox as number[]);
-          }, 120);
-        }
         return;
       }
       const tbl = detail.tables.find((t) => t.material_id === materialId);
       if (tbl) {
         pdfRef.current?.scrollToPage(tbl.page);
-        if (tbl.bbox && tbl.bbox.length >= 4) {
-          window.setTimeout(() => {
-            pdfRef.current?.highlightBox(tbl.page, tbl.bbox as number[]);
-          }, 120);
-        }
         return;
       }
       const sec = detail.sections.find((s) => s.material_id === materialId);
       if (sec) {
-        // No page/bbox for sections — fall back to text search.
-        pdfRef.current?.searchText(sec.path.slice(0, 60));
+        // Sections carry no page; browser-native PDF doesn't support
+        // programmatic text search. No-op.
         return;
       }
       const eq = detail.equations.find((e) => e.material_id === materialId);
@@ -125,11 +109,9 @@ export default function ReadingStation({
   );
 
   const handleSectionJump = useMemo(
-    () => (sectionPath: string) => {
-      // Sections don't carry a bbox; pdf.js text search by the path's tail
-      // (e.g. "Methods / 3.2 Training" → "3.2 Training").
-      const tail = sectionPath.split("/").pop()?.trim() ?? sectionPath;
-      pdfRef.current?.searchText(tail.slice(0, 60));
+    () => (_sectionPath: string) => {
+      // Browser-native PDF embed doesn't support programmatic text search.
+      // Sections carry no page/bbox so this is a no-op.
     },
     [],
   );
@@ -265,7 +247,7 @@ function PdfPaneSuspense({
   pdfRef,
 }: {
   pdfUrl: string | null;
-  pdfRef: React.MutableRefObject<PdfViewerHandle | null>;
+  pdfRef: React.MutableRefObject<NativePdfEmbedHandle | null>;
 }) {
   if (!pdfUrl) {
     return (
@@ -274,15 +256,5 @@ function PdfPaneSuspense({
       </div>
     );
   }
-  return (
-    <Suspense
-      fallback={
-        <div className="h-full flex items-center justify-center font-serif text-[var(--fg-muted)]">
-          Loading viewer…
-        </div>
-      }
-    >
-      <PdfViewer ref={pdfRef} pdfUrl={pdfUrl} />
-    </Suspense>
-  );
+  return <NativePdfEmbed ref={pdfRef} pdfUrl={pdfUrl} />;
 }

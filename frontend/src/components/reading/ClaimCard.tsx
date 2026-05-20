@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ClaimDTO, PaperDetail } from "@/api/papers";
+import { postEvent } from "@/api/state";
 import { CounterSignalBadge } from "@/components/CounterSignalBadge";
 
 import { EvidenceItem } from "./EvidenceItem";
@@ -39,6 +40,22 @@ export function ReadingClaimCard({
 }: ReadingClaimCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const viewEvidenceReported = useRef(false);
+
+  useEffect(() => {
+    viewEvidenceReported.current = false;
+  }, [claim.claim_id]);
+
+  useEffect(() => {
+    if (expanded && !viewEvidenceReported.current) {
+      viewEvidenceReported.current = true;
+      postEvent({
+        viewpoint_id: claim.claim_id,
+        trigger: "VIEW_EVIDENCE",
+      }).catch(() => {});
+    }
+  }, [expanded, claim.claim_id]);
 
   const typeColors =
     TYPE_BADGE[claim.claim_type] ?? {

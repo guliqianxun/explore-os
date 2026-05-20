@@ -16,6 +16,8 @@ import PaperDetailPage from "@/pages/PaperDetailPage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import IngestPage from "@/pages/IngestPage";
 import SettingsPage from "@/pages/SettingsPage";
+import ProfilePage from "@/pages/ProfilePage";
+import ThreadPage from "@/pages/ThreadPage";
 import { listPapers } from "@/api/papers";
 import { onNotificationClick } from "@/lib/notify";
 import { useJobPolling } from "@/hooks/useJobPolling";
@@ -112,6 +114,7 @@ export default function App() {
           <NavItem to="/" label={t("nav.papers")} badge={undecided} />
           <NavItem to="/subscriptions" label={t("nav.subscriptions")} />
           <NavItem to="/ingest" label={t("nav.ingest")} />
+          <NavItem to="/profile" label={t("nav.profile")} />
           <NavItem to="/settings" label={t("nav.settings")} />
         </nav>
       </header>
@@ -121,6 +124,9 @@ export default function App() {
           <Route path="/papers/:arxivId" element={<PaperDetailPage />} />
           <Route path="/subscriptions" element={<SubscriptionPage />} />
           <Route path="/ingest" element={<IngestPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/threads/:id" element={<ThreadPage />} />
+          <Route path="/threads/new" element={<ThreadPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           {/* ft-027: keep old /run permalinks working. */}
           <Route path="/run" element={<Navigate to="/ingest" replace />} />
