@@ -1,74 +1,583 @@
 {
   "project": "explore-os",
-  "version": "v1.2-trial",
-  "updated_at": "2026-05-01-ft-039-ft-040-done",
-  "roadmap": "ROADMAP.md",
-  "current_iteration": "iter-022",
-  "current_focus": "iter-022 ✅ done（5/1 同日）：ft-039 Primary 卡 A+B+E（方法概要 + 创新/局限 + Top 3 claims 懒加载）+ pdfplumber fast figures / ft-040 brief 双语（lang detect + skim_en/deep_en + perspective 双语）+ ingest 链路完善（extract 后回填 Paper.abstract + chain 后 fire-and-forget brief job + backfill_briefs mgmt 命令）。markitdown 实验单切到 exp/markitdown-vs-docling 分支。",
+  "generated_at": "2026-05-04T13:07:21Z",
   "features": [
-    {"id": "ft-001", "title": "订阅配置 schema", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-002", "title": "Interest Rewriter", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-003", "title": "Source: arXiv", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-004", "title": "Source: HF Papers", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-005", "title": "推送去重 & 运行历史", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-006", "title": "LLM TL;DR 解读", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-007", "title": "Email 渲染与投递 + CLI", "status": "done", "milestone": "v0.1"},
-    {"id": "ft-008", "title": "综合分 rerank + 自适应 Top-N", "status": "done", "milestone": "v0.2"},
-    {"id": "ft-009", "title": "精读/略读分档渲染 + 视角注入", "status": "done", "milestone": "v0.2"},
-    {"id": "ft-010", "title": "Daily Narrative 跨篇合成", "status": "done", "milestone": "v0.2"},
-    {"id": "ft-011", "title": "arXiv PDF 拉取 + 章节拆分", "status": "done", "milestone": "v0.3"},
-    {"id": "ft-012", "title": "图表提取 + LLM 分类 + 多模态解读", "status": "superseded", "milestone": "v0.3"},
-    {"id": "ft-013", "title": "caption + bbox + 记忆线（精读重设计）", "status": "done", "milestone": "v0.4"},
-    {"id": "ft-014", "title": "略读升级（中文摘要+双图）+ 精读多图多表", "status": "done", "milestone": "v0.4"},
-    {"id": "ft-015", "title": "学术 PDF 解析升级（Docling-based）", "status": "done", "milestone": "v0.6"},
-    {"id": "ft-016", "title": "DeliveryAdapter 抽象层", "status": "done", "milestone": "v0.5"},
-    {"id": "ft-017", "title": "飞书 DeliveryAdapter", "status": "deferred", "milestone": "v0.5"},
-    {"id": "ft-018", "title": "微信订阅号 DeliveryAdapter", "status": "deferred", "milestone": "v0.5"},
-    {"id": "ft-019", "title": "抽取器素材索引层", "status": "done", "milestone": "v0.6"},
-    {"id": "ft-020", "title": "解读器 L1+L2 (生产侧)", "status": "done", "milestone": "v0.7"},
-    {"id": "ft-021", "title": "图谱抽象层 + Excalidraw renderer", "status": "done", "milestone": "v0.8"},
-    {"id": "ft-022", "title": "Electron 基础设施清理 + DRF API", "status": "done", "milestone": "v0.9"},
-    {"id": "ft-023", "title": "Electron shell + Python sidecar + PyInstaller", "status": "done", "milestone": "v1.0"},
-    {"id": "ft-024", "title": "前端 MVP 4 页（Vite+React+TS+Tailwind+shadcn/ui+KaTeX）", "status": "done", "milestone": "v1.1"},
-    {"id": "ft-025", "title": "自动更新 + CUDA/CPU 双轨打包", "status": "planned", "milestone": "v1.3"},
-    {"id": "ft-026", "title": "前端编辑/杂志重设计（Editorial）", "status": "done", "milestone": "v1.1"},
-    {"id": "ft-027", "title": "Subscription 表单化 + RunPage → Ingest（PDF/arxiv/URL）", "status": "done", "milestone": "v1.1"},
-    {"id": "ft-028", "title": "Paper-centric schema + user_* 层 + Inbox verdict UI", "status": "done", "milestone": "v1.2"},
-    {"id": "ft-029", "title": "Reading Station：3 栏 + pdf.js 内嵌 + ClaimCard 引文展开 + notes/tag/backlink", "status": "planned", "milestone": "v1.2"},
-    {"id": "ft-030", "title": "Library：filter + FTS5 全文搜索 + Zotero export", "status": "planned", "milestone": "v1.3"},
-    {"id": "ft-031", "title": "桌面通知 + brief 未决分组", "status": "done", "milestone": "v1.2", "spec": "features/ft-031.md"},
-    {"id": "ft-032", "title": "ClaimCard 用户修订层（user_claim_edit override + hide）", "status": "planned", "milestone": "v1.2"},
-    {"id": "ft-033", "title": "Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）", "status": "done", "milestone": "v1.2"},
-    {"id": "ft-034", "title": "services 接口规整：apps/llm 中台层 + 跨段解耦 7 条 P0（iter-019 PHASE-2-DECISION 拍板）", "status": "done", "milestone": "v1.2"},
-    {"id": "ft-035", "title": "user_profile 蒸馏层（α 第一刀，与 chat 分级一起做）", "status": "planned", "milestone": "v1.4"},
-    {"id": "ft-036", "title": "First-user trial polish：HashRouter fix + 墙报式卡 + paper.keywords + 订阅桥 + 外链", "status": "done", "milestone": "v1.2"},
-    {"id": "ft-037", "title": "PC 便携版（portable）+ 数据目录用户可配", "status": "done", "milestone": "v1.3", "spec": "features/ft-037.md"},
-    {"id": "ft-038", "title": "i18n 双语 + Settings 页发布前清理", "status": "done", "milestone": "v1.2", "spec": "features/ft-038.md"},
-    {"id": "ft-039", "title": "Primary 卡 A+B+E + pdfplumber fast figures", "status": "done", "milestone": "v1.2", "spec": "features/ft-039.md"},
-    {"id": "ft-040", "title": "Brief 双语 summary + ingest 链路完善", "status": "done", "milestone": "v1.2", "spec": "features/ft-040.md"}
+    {
+      "id": "ft-001",
+      "title": "订阅配置 schema",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.1",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-001.md"
+    },
+    {
+      "id": "ft-002",
+      "title": "Interest Rewriter（最简 LLM 翻译）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.1",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-002.md"
+    },
+    {
+      "id": "ft-003",
+      "title": "Source - arXiv",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.1",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-003.md"
+    },
+    {
+      "id": "ft-004",
+      "title": "Source - HuggingFace Papers",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.1",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-004.md"
+    },
+    {
+      "id": "ft-005",
+      "title": "推送去重 & 运行历史",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.1",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-005.md"
+    },
+    {
+      "id": "ft-006",
+      "title": "LLM TL;DR 解读",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.1",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-006.md"
+    },
+    {
+      "id": "ft-007",
+      "title": "Email 渲染与投递 + Django CLI",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.1",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-007.md"
+    },
+    {
+      "id": "ft-008",
+      "title": "综合分打分 + rerank + 自适应 Top-N",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.2",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-008.md"
+    },
+    {
+      "id": "ft-009",
+      "title": "精读/略读分档渲染 + 视角注入",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.2",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-009.md"
+    },
+    {
+      "id": "ft-010",
+      "title": "Daily Narrative（跨篇主题合成）",
+      "status": "done",
+      "priority": "P1",
+      "milestone": "v0.2",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-010.md"
+    },
+    {
+      "id": "ft-011",
+      "title": "arXiv PDF 拉取与章节拆分",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.3",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-011.md"
+    },
+    {
+      "id": "ft-012",
+      "title": "图表提取 + LLM 分类 + 多模态图表解读",
+      "status": "superseded",
+      "priority": "P0",
+      "milestone": "v0.3",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-012.md"
+    },
+    {
+      "id": "ft-013",
+      "title": "caption + bbox 渲染 + 记忆线（精读重设计，替代 ft-012）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.4",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-013.md"
+    },
+    {
+      "id": "ft-014",
+      "title": "略读升级（中文摘要 + 双图）+ 精读多图多表",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.4",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-014.md"
+    },
+    {
+      "id": "ft-015",
+      "title": "学术 PDF 解析升级（Docling-based）",
+      "status": "in_progress",
+      "priority": "P0",
+      "milestone": "v0.6",
+      "depends_on": [
+        "ft-019"
+      ],
+      "blocks": [],
+      "file": "features/ft-015.md"
+    },
+    {
+      "id": "ft-016",
+      "title": "DeliveryAdapter 抽象层（多渠道接口）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.5",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-016.md"
+    },
+    {
+      "id": "ft-017",
+      "title": "飞书 DeliveryAdapter",
+      "status": "planned",
+      "priority": "P1",
+      "milestone": "v0.5",
+      "depends_on": [
+        "ft-016"
+      ],
+      "blocks": [],
+      "file": "features/ft-017.md"
+    },
+    {
+      "id": "ft-018",
+      "title": "微信订阅号 DeliveryAdapter",
+      "status": "planned",
+      "priority": "P0",
+      "milestone": "v0.5",
+      "depends_on": [
+        "ft-016"
+      ],
+      "blocks": [],
+      "file": "features/ft-018.md"
+    },
+    {
+      "id": "ft-019",
+      "title": "抽取器素材索引层（确定性五类 material）",
+      "status": "planned",
+      "priority": "P0",
+      "milestone": "v0.6",
+      "depends_on": [
+        "ft-011",
+        "ft-013"
+      ],
+      "blocks": [
+        "ft-020",
+        "ft-021"
+      ],
+      "file": "features/ft-019.md"
+    },
+    {
+      "id": "ft-020",
+      "title": "解读器 L1+L2（claim→evidence + 反向信号）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.7",
+      "depends_on": [
+        "ft-019"
+      ],
+      "blocks": [
+        "ft-021"
+      ],
+      "file": "features/ft-020.md"
+    },
+    {
+      "id": "ft-021",
+      "title": "图谱抽象层 + Excalidraw renderer + SVG fallback",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.8",
+      "depends_on": [
+        "ft-020"
+      ],
+      "blocks": [],
+      "file": "features/ft-021.md"
+    },
+    {
+      "id": "ft-022",
+      "title": "Electron 基础设施清理 + DRF API",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v0.9",
+      "depends_on": [
+        "ft-021"
+      ],
+      "blocks": [],
+      "file": "features/ft-022.md"
+    },
+    {
+      "id": "ft-023",
+      "title": "Electron shell + Python sidecar + PyInstaller Django",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v1.0",
+      "depends_on": [
+        "ft-022"
+      ],
+      "blocks": [
+        "ft-024"
+      ],
+      "file": "features/ft-023.md"
+    },
+    {
+      "id": "ft-024",
+      "title": "前端 MVP 4 页（Vite+React+TS+Tailwind+shadcn/ui+Excalidraw）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v1.1",
+      "depends_on": [
+        "ft-023"
+      ],
+      "blocks": [],
+      "file": "features/ft-024.md"
+    },
+    {
+      "id": "ft-025",
+      "title": "自动更新 + CUDA/CPU 双轨打包",
+      "status": "planned",
+      "priority": "P1",
+      "milestone": "v1.2",
+      "depends_on": [
+        "ft-024"
+      ],
+      "blocks": [],
+      "file": "features/ft-025.md"
+    },
+    {
+      "id": "ft-026",
+      "title": "前端编辑/杂志重设计（Editorial Redesign）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v1.1",
+      "depends_on": [
+        "ft-024"
+      ],
+      "blocks": [],
+      "file": "features/ft-026.md"
+    },
+    {
+      "id": "ft-027",
+      "title": "Subscription 表单化 + RunPage → Ingest（PDF / arXiv / URL）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v1.1",
+      "depends_on": [
+        "ft-026"
+      ],
+      "blocks": [],
+      "file": "features/ft-027.md"
+    },
+    {
+      "id": "ft-028",
+      "title": "Paper-centric schema + user_* 层 + Inbox verdict UI（v1.2 地基）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v1.2",
+      "depends_on": [
+        "ft-027"
+      ],
+      "blocks": [
+        "ft-029",
+        "ft-030",
+        "ft-031"
+      ],
+      "file": "features/ft-028.md"
+    },
+    {
+      "id": "ft-029",
+      "title": "Reading Station — 3 栏 + pdf.js 内嵌 + ClaimCard 引文展开 + notes/tag/backlink",
+      "status": "planned",
+      "priority": "P0",
+      "milestone": "v1.2",
+      "depends_on": [
+        "ft-028"
+      ],
+      "blocks": [
+        "ft-030"
+      ],
+      "file": "features/ft-029.md"
+    },
+    {
+      "id": "ft-031",
+      "title": "桌面通知 + brief 未决分组",
+      "status": "planned",
+      "priority": "P1",
+      "milestone": "v1.2",
+      "depends_on": [
+        "ft-027"
+      ],
+      "blocks": [],
+      "file": "features/ft-031.md"
+    },
+    {
+      "id": "ft-032",
+      "title": "ClaimCard 用户修订层（user_claim_edit override + hide）",
+      "status": "planned",
+      "priority": "P1",
+      "milestone": "v1.2",
+      "depends_on": [
+        "ft-029"
+      ],
+      "blocks": [],
+      "file": "features/ft-032.md"
+    },
+    {
+      "id": "ft-033",
+      "title": "Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）",
+      "status": "done",
+      "priority": "P0",
+      "milestone": "v1.2",
+      "depends_on": [
+        "ft-029"
+      ],
+      "blocks": [],
+      "file": "features/ft-033.md"
+    },
+    {
+      "id": "ft-034",
+      "title": "services 接口规整 — LLM 中台层 + 三段中台跨段解耦",
+      "status": "in_progress",
+      "priority": "P0",
+      "milestone": "v1.2",
+      "depends_on": [
+        "phase-2-decision"
+      ],
+      "blocks": [],
+      "file": "features/ft-034.md"
+    },
+    {
+      "id": "ft-036",
+      "title": "First-user trial polish：墙报式卡 + paper.keywords + 订阅桥 + 外链",
+      "status": "done",
+      "priority": "",
+      "milestone": "v1.2",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-036.md"
+    },
+    {
+      "id": "ft-037",
+      "title": "PC 便携版（portable）+ 数据目录用户可配",
+      "status": "planned",
+      "priority": "P2",
+      "milestone": "v1.3",
+      "depends_on": [
+        "ft-023",
+        "ft-024"
+      ],
+      "blocks": [],
+      "file": "features/ft-037.md"
+    },
+    {
+      "id": "ft-038",
+      "title": "i18n 双语（中文 / English）+ Settings 页发布前清理",
+      "status": "done",
+      "priority": "P1",
+      "milestone": "v1.2",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-038.md"
+    },
+    {
+      "id": "ft-039",
+      "title": "Primary 卡重塑 — A+B+E + pdfplumber fast figures",
+      "status": "done",
+      "priority": "P1",
+      "milestone": "v1.2",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-039.md"
+    },
+    {
+      "id": "ft-040",
+      "title": "Brief 双语 summary（原语言生成 + 按 UI 切换显示）+ ingest 链路完善",
+      "status": "done",
+      "priority": "P1",
+      "milestone": "v1.2",
+      "depends_on": [],
+      "blocks": [],
+      "file": "features/ft-040.md"
+    },
+    {
+      "id": "ft-041",
+      "title": "explore-os 记忆/编排双层 — H0（观点状态机 + 事件日志）",
+      "status": "in_progress",
+      "priority": "P0",
+      "milestone": "v1.4",
+      "depends_on": [
+        "ft-028",
+        "ft-033"
+      ],
+      "blocks": [
+        "ft-035"
+      ],
+      "file": "features/ft-041.md"
+    }
   ],
   "iterations": [
-    {"id": "iter-001", "status": "done"},
-    {"id": "iter-002", "status": "done"},
-    {"id": "iter-003", "status": "done"},
-    {"id": "iter-004", "status": "done", "scope": ["ft-019", "ft-022", "ft-015"]},
-    {"id": "iter-005", "status": "done", "scope": ["ft-020"]},
-    {"id": "iter-006", "status": "done", "scope": ["ft-021"]},
-    {"id": "iter-007", "status": "done", "scope": ["ft-022"]},
-    {"id": "iter-008", "status": "done", "scope": ["ft-023"]},
-    {"id": "iter-009", "status": "done", "scope": ["ft-024"]},
-    {"id": "iter-010", "status": "done", "scope": ["ft-026"]},
-    {"id": "iter-011", "status": "done", "scope": ["ft-027"]},
-    {"id": "iter-012", "status": "done", "scope": ["ft-028"]},
-    {"id": "iter-013", "status": "planned", "scope": ["ft-029"]},
-    {"id": "iter-014", "status": "planned", "scope": ["ft-030"]},
-    {"id": "iter-015", "status": "superseded", "scope": ["ft-031"], "note": "ft-031 改由 iter-021 承接（iter-020 后立项，时间线已超 iter-015 占位）"},
-    {"id": "iter-016", "status": "planned", "scope": ["ft-025"]},
-    {"id": "iter-017", "status": "planned", "scope": ["ft-032"]},
-    {"id": "iter-018", "status": "done", "scope": ["ft-033"]},
-    {"id": "iter-019", "status": "done", "scope": ["code-review", "ft-034"]},
-    {"id": "iter-020", "status": "done", "scope": ["ft-036"]},
-    {"id": "iter-021", "status": "done", "scope": ["ft-031", "ft-031.5", "ft-037", "ft-038"]},
-    {"id": "iter-022", "status": "done", "scope": ["ft-039", "ft-040"]}
-  ]
+    {
+      "id": "iter-001",
+      "title": "MVP Sprint 1 — 端到端打通",
+      "status": "planned",
+      "milestone": "v0.1",
+      "file": "iterations/iter-001.md"
+    },
+    {
+      "id": "iter-002",
+      "title": "Sprint 2 — 注意力分层（邮件形态改造）",
+      "status": "done",
+      "milestone": "v0.2",
+      "file": "iterations/iter-002.md"
+    },
+    {
+      "id": "iter-003",
+      "title": "Sprint 3 — 精读深度化（PDF + 图表 + 多模态）",
+      "status": "done",
+      "milestone": "v0.3",
+      "file": "iterations/iter-003.md"
+    },
+    {
+      "id": "iter-004",
+      "title": "Sprint 4 — 三段中台：抽取层落地",
+      "status": "in_progress",
+      "milestone": "v0.6",
+      "file": "iterations/iter-004.md"
+    },
+    {
+      "id": "iter-005",
+      "title": "Sprint 5 — 解读器 L1+L2 生产侧",
+      "status": "done",
+      "milestone": "v0.7",
+      "file": "iterations/iter-005.md"
+    },
+    {
+      "id": "iter-006",
+      "title": "Sprint 6 — 渲染层（图谱抽象 + Excalidraw renderer）",
+      "status": "done",
+      "milestone": "v0.8",
+      "file": "iterations/iter-006.md"
+    },
+    {
+      "id": "iter-007",
+      "title": "Sprint 7 — Electron 基础设施清理 + DRF API",
+      "status": "done",
+      "milestone": "v0.9",
+      "file": "iterations/iter-007.md"
+    },
+    {
+      "id": "iter-008",
+      "title": "Sprint 8 — Electron shell + Python sidecar",
+      "status": "done",
+      "milestone": "v1.0",
+      "file": "iterations/iter-008.md"
+    },
+    {
+      "id": "iter-009",
+      "title": "Sprint 9 — 前端 MVP 4 页（Vite + React + Tailwind + shadcn/ui + KaTeX）",
+      "status": "done",
+      "milestone": "v1.1",
+      "file": "iterations/iter-009.md"
+    },
+    {
+      "id": "iter-010",
+      "title": "Sprint 10 — 前端编辑/杂志重设计",
+      "status": "done",
+      "milestone": "v1.1",
+      "file": "iterations/iter-010.md"
+    },
+    {
+      "id": "iter-011",
+      "title": "Sprint 11 — Subscription 表单化 + Ingest 入口",
+      "status": "done",
+      "milestone": "v1.1",
+      "file": "iterations/iter-011.md"
+    },
+    {
+      "id": "iter-012",
+      "title": "Sprint 12 — Paper-centric schema + Inbox verdict（v1.2 地基）",
+      "status": "done",
+      "milestone": "v1.2",
+      "file": "iterations/iter-012.md"
+    },
+    {
+      "id": "iter-013",
+      "title": "Sprint 13 — Reading Station + ClaimCard 引文展开（ft-029）",
+      "status": "planned",
+      "milestone": "v1.2",
+      "file": "iterations/iter-013.md"
+    },
+    {
+      "id": "iter-018",
+      "title": "Sprint 18 — Brief 内容处理层（ft-033）",
+      "status": "done",
+      "milestone": "v1.2",
+      "file": "iterations/iter-018.md"
+    },
+    {
+      "id": "iter-019",
+      "title": "Sprint 19 — 代码 review + 解耦重构（v1.2 收尾）",
+      "status": "done",
+      "milestone": "v1.2",
+      "file": "iterations/iter-019.md"
+    },
+    {
+      "id": "iter-020",
+      "title": "Sprint 20 — 首位用户实测 + UX polish + 订阅闭环",
+      "status": "done",
+      "milestone": "v1.2",
+      "file": "iterations/iter-020.md"
+    },
+    {
+      "id": "iter-021",
+      "title": "Sprint 21 — 桌面通知 + brief 未决分组",
+      "status": "planned",
+      "milestone": "v1.2",
+      "file": "iterations/iter-021.md"
+    },
+    {
+      "id": "iter-023",
+      "title": "Sprint 23 — 记忆/编排双层 H0（观点状态机 + 事件日志 + topic 种子）",
+      "status": "done",
+      "milestone": "v1.4",
+      "file": "iterations/iter-023.md"
+    }
+  ],
+  "errors": []
 }

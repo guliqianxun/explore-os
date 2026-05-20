@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### 2026-05-04 (双层架构设计) — ft-041 记忆/编排双层设计 🆕
+
+**设计落盘**：
+- Formal spec: `docs/design/explore-os-formal-spec.md` (v0.2 — 观点状态机 + 活跃度 + 记忆/编排双层)
+- 架构图: `docs/design/explore-os-architecture.md`（软件框架图 + 双层架构图）
+- Feature doc: `docs/pm/features/ft-041.md`
+- Iteration: `docs/pm/iterations/iter-023.md`
+- Dispatch: `docs/pm/communications/dsp-015.md`
+- PM tooling: `scripts/pm_index.py` + `templates/` 目录
+- 核心原子从 paper 改为 viewpoint (claim)，五态观点状态机 unseen→exposed→confirmed→linked→internalized
+- 废弃 per-topic 状态机，替换为连续活跃度 $A$ + 固化度 $C$
+- 系统不再叫 Hermes——**整个系统就是 explore-os**，记忆层 + 编排层是 core
+
 ### 2026-05-01 (iter-022) — ft-039 Primary 卡重塑 + ft-040 Brief 双语 + ingest 链路完善
 
 **ft-039 Primary 卡 A+B+E + pdfplumber fast figures（done）**

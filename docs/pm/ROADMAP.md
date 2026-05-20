@@ -89,6 +89,7 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [ft-033](features/ft-033.md) — Brief 内容处理层（PaperBrief：abstract_zh / keywords / tldr / for_you 复用老邮件 pipeline）✅
 - [ft-034](features/ft-034.md) — services 接口规整：apps/llm 中台层 + 跨段解耦 7 条 P0 ✅
 - [ft-036](features/ft-036.md) — First-user trial polish：HashRouter fix + 墙报式卡 + paper.keywords + 订阅桥 + 外链 ✅
+- [ft-041](features/ft-041.md) — 记忆/编排双层 — H0（观点状态机 + 事件日志）🆕
 
 ## 当前迭代
 
@@ -113,6 +114,7 @@ Django + uv / **SQLite**（桌面 app 长期形态，2026-04-28 弃 PG）/ React
 - [iter-019](iterations/iter-019.md) — Sprint 19：代码 review + 解耦重构（v1.2 收尾，6 组并行 review → 修复 → ft-034）✅
 - [iter-020](iterations/iter-020.md) — Sprint 20：First-user trial polish（ft-036 ✅）
 - [iter-021](iterations/iter-021.md) — Sprint 21：桌面通知 + brief 未决分组（ft-031）
+- [iter-023](iterations/iter-023.md) — Sprint 23：记忆/编排双层 H0 — 观点状态机 + 事件日志 + topic 种子（ft-041）🆕
 
 ## 战略转向（2026-04-25）
 
