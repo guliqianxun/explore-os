@@ -1,7 +1,7 @@
 """ft-022: DRF URL routes — mounted at /api/."""
 from __future__ import annotations
 
-from django.urls import path
+from django.urls import include, path
 
 from apps.api.ingest_views import (
     IngestArxivView,
@@ -160,4 +160,7 @@ urlpatterns = [
     path("settings/llm/", SettingsLLMView.as_view(), name="api-settings-llm"),
     path("settings/llm/test/", SettingsLLMTestView.as_view(),
          name="api-settings-llm-test"),
+
+    # ---- ft-041: explore academic intelligence layer ----
+    path("state/", include("apps.explore.urls")),
 ]

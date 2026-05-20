@@ -18,6 +18,10 @@ DATA_DIR = _data_dir()
 MEDIA_ROOT = DATA_DIR / "media"
 MEDIA_URL = "media/"
 
+# Serve built frontend SPA at root (dev only — Electron production uses file://)
+FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
+
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-insecure-change-me")
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
@@ -43,6 +47,7 @@ INSTALLED_APPS = [
     "apps.interpret",
     "apps.render",
     "apps.papers",
+    "apps.explore",
 ]
 
 MIDDLEWARE = [
